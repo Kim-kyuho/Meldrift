@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Meldrift",
+  title: "Meldrift+",
   description: "Meld your ideas. Drift into clarity.",
   icons: {
     icon: "/favicon.ico?v=4",
