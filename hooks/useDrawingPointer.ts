@@ -25,8 +25,6 @@ export function useDrawingPointer({
     const previousEraserPointRef = useRef<StrokePoint | null>(null);
     const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([]);
     const [eraserPoint, setEraserPoint] = useState<StrokePoint | null>(null);
-    const capturesInput = drawingTool !== "pan";
-
     const toBoardPoint = (event: ReactPointerEvent<SVGSVGElement>): StrokePoint => {
         const layerRect = layerRef.current?.getBoundingClientRect();
 
@@ -63,10 +61,6 @@ export function useDrawingPointer({
     };
 
     const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
-        if (!capturesInput) {
-            return;
-        }
-
         if (event.pointerType === "pen") {
             penContactRef.current = true;
         } else if (penContactRef.current || (event.pointerType === "touch" && !event.isPrimary)) {
@@ -99,7 +93,7 @@ export function useDrawingPointer({
     };
 
     const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
-        if (!capturesInput || (penContactRef.current && event.pointerType !== "pen")) {
+        if (penContactRef.current && event.pointerType !== "pen") {
             return;
         }
 
@@ -166,7 +160,6 @@ export function useDrawingPointer({
         layerRef,
         currentPoints,
         eraserPoint,
-        capturesInput,
         handlePointerDown,
         handlePointerMove,
         handlePointerUp,

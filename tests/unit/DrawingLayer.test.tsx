@@ -51,7 +51,7 @@ describe("DrawingLayer pointer routing", () => {
     });
 
     it("blocks text selection so a pen stroke does not drag text on iPad", () => {
-        (["draw", "erase", "pan"] as const).forEach((tool) => {
+        (["draw", "erase"] as const).forEach((tool) => {
             const layer = renderLayer(true, tool);
 
             expect(layer.style.userSelect).toBe("none");
@@ -69,14 +69,6 @@ describe("DrawingLayer pointer routing", () => {
         expect(layer.style.pointerEvents).toBe("auto");
         expect(layer.style.touchAction).toBe("none");
         expect(layer.closest(canStartBoardPanSelector)).not.toBeNull();
-    });
-
-    it("keeps cards blocked but lets the board pan while the hand tool is on", () => {
-        const layer = renderLayer(true, "pan");
-
-        expect(layer.style.pointerEvents).toBe("auto");
-        expect(layer.style.touchAction).toBe("");
-        expect(layer.closest(canStartBoardPanSelector)).toBeNull();
     });
 
     it("attaches no pointer handler while drawing mode is off", () => {

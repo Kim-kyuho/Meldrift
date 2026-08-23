@@ -290,7 +290,6 @@ export default function BoardClient(
         penWidth,
         setPenWidth,
         handleToggleDrawingMode,
-        handleTogglePanTool,
         handleToggleEraseTool,
         handleStrokeEnd,
         handleErase,
@@ -372,7 +371,6 @@ export default function BoardClient(
                 penWidth={penWidth}
                 onChangeColor={setPenColor}
                 onChangeWidth={setPenWidth}
-                onTogglePan={handleTogglePanTool}
                 onToggleErase={handleToggleEraseTool}
                 onUndo={handleUndoStroke}
             />

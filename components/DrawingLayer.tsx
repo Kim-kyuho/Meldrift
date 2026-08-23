@@ -57,7 +57,6 @@ export default function DrawingLayer({
         layerRef,
         currentPoints,
         eraserPoint,
-        capturesInput,
         handlePointerDown,
         handlePointerMove,
         handlePointerUp,
@@ -92,13 +91,13 @@ export default function DrawingLayer({
     return (
         <svg
             ref={layerRef}
-            data-drawing-capture={capturesInput ? "true" : undefined}
+            data-drawing-capture="true"
             className="absolute left-0 top-0 h-full w-full"
             style={{
                 zIndex: ACTIVE_CARD_Z - 1,
                 pointerEvents: "auto",
-                touchAction: capturesInput ? "none" : undefined,
-                cursor: capturesInput ? "crosshair" : undefined,
+                touchAction: "none",
+                cursor: "crosshair",
                 WebkitTouchCallout: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",

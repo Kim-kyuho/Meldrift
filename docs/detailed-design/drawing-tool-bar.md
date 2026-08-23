@@ -6,12 +6,11 @@
 
 | Prop | 타입 | 사용처 |
 | --- | --- | --- |
-| `drawingTool` | `DrawingTool` | 지우개/팬 버튼의 `aria-pressed`·아이콘 색(108~127줄) |
+| `drawingTool` | `DrawingTool` | 지우개 버튼의 `aria-pressed`·아이콘 색 |
 | `penColor` | `string` | Palette 아이콘 색(69줄) |
 | `penWidth` | `number` | 굵기 아이콘의 `strokeWidth`(90줄) |
 | `onChangeColor` | `(color: string) => void` | 색상 선택 시(48줄) |
 | `onChangeWidth` | `(width: number) => void` | 굵기 선택 시(53줄) |
-| `onTogglePan` | `() => void` | Pan 버튼 클릭(123줄) |
 | `onToggleErase` | `() => void` | Erase 버튼 클릭(112줄) |
 | `onUndo` | `() => void` | Undo 버튼 클릭(64줄) |
 
@@ -32,7 +31,7 @@
 | `toggleWidthMenu` | `openWidthMenu` 토글 + `openColorMenu` 강제 닫기 |
 | `handleColorSelect(color)` | `onChangeColor(color)` 호출 후 메뉴 닫기 |
 | `handleWidthSelect(width)` | `onChangeWidth(width)` 호출 후 메뉴 닫기 |
-| `closeMenus()` | 두 메뉴 모두 닫기 — Erase/Pan 버튼 클릭 시 먼저 호출(111, 122줄) |
+| `closeMenus()` | 두 메뉴 모두 닫기 — Erase 버튼 클릭 시 먼저 호출 |
 
 ## 렌더 구조 (62~134줄)
 
@@ -44,7 +43,6 @@
 | Pen width (89줄) | 항상 | `Minus` 아이콘의 `strokeWidth`로 현재 굵기 시각화 |
 | 굵기 팝업 (92줄) | `openWidthMenu`일 때만 | `penWidths`(Thin 2 / Medium 4 / Bold 8) 순회 |
 | Erase (107줄) | 항상, `aria-pressed={drawingTool==="erase"}` | 라벨이 상태에 따라 "Erase" ↔ "Stop erasing"으로 바뀜, 활성 시 아이콘이 `#ec4899`(activeToolColor) |
-| Pan (118줄) | 항상, `aria-pressed={drawingTool==="pan"}` | 라벨 "Pan the board" ↔ "Stop panning", 활성 시 동일 강조색 |
 
 ## 도구 상태 소유자: `useBoardDrawing` (`hooks/useBoardDrawing.ts`)
 
@@ -54,7 +52,7 @@
 | --- | --- | --- |
 | `strokes` | `initialStrokes` | 확정된 획 배열 |
 | `drawingMode` | `false` | 그리기 레이어 입력 활성 여부 |
-| `drawingTool` | `"draw"` | `"draw" \| "pan" \| "erase"` |
+| `drawingTool` | `"draw"` | `"draw" \| "erase"` |
 | `penColor` | `defaultPenColor` ("Ink" `#1f2937`) | - |
 | `penWidth` | `defaultPenWidth` (Medium, 4) | - |
 | `unsavedRef` | `false` | 획 추가/지우기/undo 시 `true`로 표시(저장 필요 플래그) |
@@ -65,8 +63,8 @@
 
 `saveStrokes` 성공 후에는 `onPreviewUpdate()`를 호출해 저장된 획이 보드 목록 미리보기에 반영되도록 예약한다.
 
-### `toggleDrawingTool(tool)` (72~74줄)
-같은 도구를 다시 누르면 `"draw"`로 되돌아가는 **토글** 방식 — `handleTogglePanTool`/`handleToggleEraseTool`이 이를 감쌈.
+### `handleToggleEraseTool`
+지우개를 다시 누르면 `"draw"`로 되돌아가는 토글 방식이다.
 
 ### `handleStrokeEnd`/`handleErase`/`handleUndoStroke` (76~112줄)
 셋 다 상태 변경 성공 시 `unsavedRef.current = true`로 표시. `handleErase`는 `eraseStrokesAlongPath`가 참조 동일 배열을 반환하면(실제로 지워진 게 없으면) 플래그를 세우지 않는다(97~99줄).
