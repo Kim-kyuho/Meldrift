@@ -19,7 +19,7 @@
 />
 ```
 
-`minWidth`/`minHeight`는 확대 전 보드 좌표 기준이라 줌과 무관하게 일정하다. 규보드는 Memo·Mermaid 180, Table 360x128, Image 48을 쓴다 — 이미지는 작은 아이콘 배치를 허용하려고 하한을 따로 낮췄다.
+`minWidth`/`minHeight`는 확대 전 보드 좌표 기준이라 줌과 무관하게 일정하다. Meldrift는 Memo·Mermaid 180, Table 360x128, Image 48을 쓴다 — 이미지는 작은 아이콘 배치를 허용하려고 하한을 따로 낮췄다.
 
 ## 이동
 
@@ -73,7 +73,7 @@ const handleResizeStop: RndResizeCallback = (
 <Rnd scale={zoom} />
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `components/MemoCard.tsx`
 - `components/ImageCard.tsx`

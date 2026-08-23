@@ -1,7 +1,7 @@
 // 시스템 프롬프트에 그대로 붙는다. 조작 방식이나 컴파일 규칙이 바뀌면 여기도 함께 고칠 것
 
-export const kyuboardGuide = [
-    "# KyuBoard 사용법",
+export const meldriftGuide = [
+    "# Meldrift 사용법",
     "",
     "## 기본 개념",
     "- 보드 위에 카드를 자유롭게 배치하고, 그 배치를 하나의 Markdown 문서로 컴파일한다.",

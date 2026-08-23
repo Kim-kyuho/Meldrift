@@ -3,6 +3,7 @@
 import PressableButton from "./PressableButton";
 import { Dispatch, SetStateAction } from "react";
 import { EllipsisIcon, FileText, Info } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { CurrentUser } from "@/hooks/useBoardAuth";
 
@@ -34,10 +35,11 @@ export default function BoardMenu(
 }: BoardMenuProps) {
     return(
         <>
-        <div className="fixed left-5 top-5 z-50000 rounded-xl bg-white/75 text-neutral-900 px-4 py-3 shadow-md" >
+        <div className="fixed left-5 top-5 z-50000 rounded-xl bg-white/75 px-3 py-1.5 shadow-md">
             <Link
                 href="/"
-                className="transition duration-300 active:scale-105 active:rotate-1 text-sky-500 hover:text-pink-500 font-mono text-1xl sm:text-1xl font-extrabold"
+                aria-label="Meldrift home"
+                className="flex items-center gap-1.5 transition duration-300 hover:opacity-75 active:scale-[0.98]"
                 style={{
                     // iPad(혹은 다른 터치 디바이스)에서 원치않는 텍스트 선택 방지
                     WebkitTouchCallout: "none",
@@ -45,7 +47,23 @@ export default function BoardMenu(
                     userSelect: "none",
                 }}
             >
-                •kyu.board
+                <Image
+                    src="/meldrift-mascot.png"
+                    alt=""
+                    width={256}
+                    height={256}
+                    priority
+                    className="size-7 shrink-0"
+                />
+                <Image
+                    src="/meldrift-wordmark.png"
+                    alt="meldrift"
+                    width={512}
+                    height={127}
+                    priority
+                    className="h-auto w-21 sm:w-24"
+                />
+                <span className="text-2xl font-bold leading-none text-[#8ecae6]">+</span>
             </Link>
         </div>
             <PressableButton 

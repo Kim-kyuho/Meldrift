@@ -8,8 +8,8 @@ test.describe("보드 목록", () => {
     });
 
     test("기본 목록 UI를 표시한다", async ({ page }) => {
-        await expect(page).toHaveTitle(/Kyu-board/i);
-        await expect(page.getByRole("link", { name: "•kyu.board" })).toBeVisible();
+        await expect(page).toHaveTitle(/Meldrift/i);
+        await expect(page.getByRole("link", { name: "Meldrift home" })).toBeVisible();
         await expect(page.getByRole("button", { name: "New Board" })).toBeVisible();
     });
 

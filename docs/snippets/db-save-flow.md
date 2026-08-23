@@ -78,7 +78,7 @@ await fetch(`/api/memos/${id}`, { method: "DELETE" });
 setMemos((prev) => prev.filter((memo) => memo.id !== id));
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `hooks/useBoardMemos.ts`
 - `hooks/useBoardImages.ts`

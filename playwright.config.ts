@@ -43,7 +43,7 @@ export default defineConfig({
         navigationTimeout: 30_000,
     },
 
-    // KyuBoard에서 실제로 중요한 데스크톱과 Apple 모바일 화면을 우선 검증한다.
+    // Meldrift에서 실제로 중요한 데스크톱과 Apple 모바일 화면을 우선 검증한다.
     projects: [
         {
             name: "desktop-chromium",

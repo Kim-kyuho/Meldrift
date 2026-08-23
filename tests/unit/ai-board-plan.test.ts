@@ -20,7 +20,7 @@ import {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-// 테스트 기본 보드. KyuBoard가 제공하는 가장 큰 보드 크기다.
+// 테스트 기본 보드. Meldrift가 제공하는 가장 큰 보드 크기다.
 const largeBoard = { width: 7680, height: 4320 };
 
 // app/api/boards/[boardId]/markdown/route.ts의 SQL 접점 판정과 같은 조건.

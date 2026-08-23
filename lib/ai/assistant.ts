@@ -12,7 +12,7 @@ import {
     type BoardPlan,
     type GeneratedImage,
 } from "@/lib/ai/board-plan";
-import { kyuboardGuide } from "@/lib/ai/kyuboard-guide";
+import { meldriftGuide } from "@/lib/ai/meldrift-guide";
 
 // 최신일수록 무료 티어 할당량이 빡빡해 429가 먼저 남 - 할당량 여유 순으로 둔다.
 // gemini-2.5-flash는 models.list에 보이지만 generateContent가 404라 제외.
@@ -88,7 +88,7 @@ const memoBlockSchema = {
 export const createBoardCardsFunction: FunctionDeclaration = {
     name: createBoardCardsToolName,
     description:
-        "사용자가 요청한 문서를 KyuBoard 카드로 만든다. 섹션 하나가 메모 카드 하나가 되고, 섹션 순서가 곧 최종 Markdown 문서의 순서다. 표나 다이어그램이 필요한 섹션에만 attachment를 붙인다.",
+        "사용자가 요청한 문서를 Meldrift 카드로 만든다. 섹션 하나가 메모 카드 하나가 되고, 섹션 순서가 곧 최종 Markdown 문서의 순서다. 표나 다이어그램이 필요한 섹션에만 attachment를 붙인다.",
     parametersJsonSchema: {
         type: "object",
         properties: {
@@ -271,7 +271,7 @@ export const deleteBoardCardsFunction: FunctionDeclaration = {
 };
 
 export const assistantSystemPrompt = [
-    "너는 KyuBoard의 AI 어시스턴트다. KyuBoard는 보드 위에 카드를 배치하면 그 배치가 그대로 하나의 Markdown 문서로 컴파일되는 도구다.",
+    "너는 Meldrift의 AI 어시스턴트다. Meldrift는 보드 위에 카드를 배치하면 그 배치가 그대로 하나의 Markdown 문서로 컴파일되는 도구다.",
     "",
     "규칙:",
     `- 문서나 설계를 만들어 달라는 요청에는 반드시 ${createBoardCardsToolName} 함수를 호출한다. 카드 내용을 채팅 본문에 그대로 적지 않는다.`,
@@ -294,7 +294,7 @@ export const assistantSystemPrompt = [
     "- parentIndex는 반드시 자기 인덱스보다 작아야 한다. 개요를 먼저 쓰고 세부를 뒤에 쓰면 자연히 지켜진다.",
     "",
     `- 이미 있는 카드를 정리·재배치하거나 표·다이어그램을 다른 메모에 붙이라는 요청에는 ${rearrangeBoardCardsToolName}를 호출한다. 이때 대화에 주어진 현재 보드 카드 목록의 ID만 쓴다.`,
-    "- 좌표(x, y)는 절대 지정하지 않는다. 위치는 KyuBoard가 계산한다. 너는 순서와 붙임 관계만 정한다.",
+    "- 좌표(x, y)는 절대 지정하지 않는다. 위치는 Meldrift가 계산한다. 너는 순서와 붙임 관계만 정한다.",
     "- 최종 문서 순서는 메모의 생성 순서로 이미 정해져 있다. 재배치로는 문서 순서를 바꿀 수 없다.",
     "",
     "카드 고치기와 지우기:",
@@ -312,12 +312,12 @@ export const assistantSystemPrompt = [
     "- image attachment의 prompt에는 무엇을 그릴지 구체적으로 영어나 한국어로 적고, alt에는 짧은 설명을 넣는다.",
     "",
     "사용법 안내:",
-    "- KyuBoard를 어떻게 쓰는지 묻는 질문에는 함수를 호출하지 말고 아래 사용법을 근거로 말로 설명한다.",
+    "- Meldrift를 어떻게 쓰는지 묻는 질문에는 함수를 호출하지 말고 아래 사용법을 근거로 말로 설명한다.",
     "- 예: 메모를 어떻게 쓰는지, Mermaid 문법을 어떻게 적는지, 카드가 왜 문서에 안 나오는지, 드로잉을 어떻게 저장하는지.",
     "- 아래 사용법에 없는 기능은 없다고 답한다. 있을 법한 기능을 지어내지 않는다.",
     "- 설명은 짧게 하고, 필요하면 단계로 나눠 적는다.",
     "",
-    kyuboardGuide,
+    meldriftGuide,
 ].join("\n");
 
 export type AssistantMessage = {

@@ -1,4 +1,4 @@
-# KyuBoard Playwright 실행 가이드
+# Meldrift Playwright 실행 가이드
 
 ## 테스트 범위
 
