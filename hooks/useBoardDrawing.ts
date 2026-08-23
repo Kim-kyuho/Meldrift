@@ -8,7 +8,7 @@ import {
     eraseStrokesAlongPath,
 } from "@/lib/board-stroke";
 
-export type DrawingTool = "draw" | "pan" | "erase";
+export type DrawingTool = "draw" | "erase";
 
 type UseBoardDrawingOptions = {
     initialStrokes: BoardStroke[];
@@ -74,10 +74,6 @@ export function useBoardDrawing({
         setDrawingTool("draw");
     };
 
-    const toggleDrawingTool = (tool: Exclude<DrawingTool, "draw">) => {
-        setDrawingTool((prev) => (prev === tool ? "draw" : tool));
-    };
-
     const handleStrokeEnd = (points: StrokePoint[]) => {
         if (points.length < 2) {
             return;
@@ -125,8 +121,7 @@ export function useBoardDrawing({
         penWidth,
         setPenWidth,
         handleToggleDrawingMode,
-        handleTogglePanTool: () => toggleDrawingTool("pan"),
-        handleToggleEraseTool: () => toggleDrawingTool("erase"),
+        handleToggleEraseTool: () => setDrawingTool((prev) => (prev === "erase" ? "draw" : "erase")),
         handleStrokeEnd,
         handleErase,
         handleUndoStroke,

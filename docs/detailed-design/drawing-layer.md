@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `strokes` | `BoardStroke[]` | `StrokePaths`로 렌더 (87, 112줄) |
 | `drawingMode` | `boolean` | `!drawingMode`면 입력 비활성 SVG(73~90줄), true면 입력 활성 SVG(92~134줄) |
-| `drawingTool` | `DrawingTool` (`"draw" \| "pan" \| "erase"`) | `useDrawingPointer`에 전달, 지우개 커서 렌더 조건(124줄) |
+| `drawingTool` | `DrawingTool` (`"draw" \| "erase"`) | `useDrawingPointer`에 전달, 지우개 커서 렌더 조건 |
 | `penColor` / `penWidth` | `string` / `number` | 작성 중 획 path의 `stroke`/`strokeWidth` (116~117줄) |
 | `zoom` | `number` | `eraserRadius` 보정(55줄), `useDrawingPointer`에 전달, 지우개 원 `strokeWidth={1/zoom}`(131줄) |
 | `onStrokeEnd` | `(points: StrokePoint[]) => void` | `useDrawingPointer`가 획 완료 시 호출 |
@@ -26,18 +26,16 @@
 | `previousEraserPointRef` | ref | `null` | 직전 지우개 위치 — 연속 구간을 `onErase(prev, current, radius)`로 전달하기 위함 |
 | `currentPoints` | state | `[]` | 화면 렌더용(작성 중 획 path) |
 | `eraserPoint` | state | `null` | 지우개 커서 원 위치 |
-| `capturesInput` | 파생값 | `drawingTool !== "pan"` | SVG의 `pointerEvents`/`touchAction`/`cursor` 결정(99~101줄) |
 
 ## 팜 리젝션 / 포인터 소유권 로직
 
 ### `handlePointerDown` (65~99줄)
-1. `capturesInput`이 false(pan 모드)면 즉시 종료
-2. `pointerType === "pen"` → `penContactRef = true`로 켬. 그 외 타입인데 `penContactRef`가 이미 true거나, "보조 터치"(`touch`이면서 `!isPrimary`)면 무시하고 종료 — **펜 접촉 중에는 손가락 입력을 완전히 차단**
-3. 이미 다른 포인터가 활성 상태(`activePointerRef !== null`)면: 새 입력이 펜이고 기존 입력이 펜이 아니었다면 `discardCurrentInput()`(기존 획 폐기), 아니면 `finishCurrentStroke()`(기존 획 확정)
-4. `drawingTool === "erase"`면 이 시점부터 즉시 `onErase(point, point, radius)` 1회 호출, 아니면 새 획의 첫 점 기록
+1. `pointerType === "pen"` → `penContactRef = true`로 켬. 그 외 타입인데 `penContactRef`가 이미 true거나, "보조 터치"(`touch`이면서 `!isPrimary`)면 무시하고 종료 — **펜 접촉 중에는 손가락 입력을 완전히 차단**
+2. 이미 다른 포인터가 활성 상태(`activePointerRef !== null`)면: 새 입력이 펜이고 기존 입력이 펜이 아니었다면 `discardCurrentInput()`(기존 획 폐기), 아니면 `finishCurrentStroke()`(기존 획 확정)
+3. `drawingTool === "erase"`면 이 시점부터 즉시 `onErase(point, point, radius)` 1회 호출, 아니면 새 획의 첫 점 기록
 
 ### `handlePointerMove` (101~144줄)
-- `capturesInput`이 false거나 "펜 접촉 중인데 이 이벤트가 펜이 아님"이면 무시
+- 펜 접촉 중인데 이벤트가 펜 입력이 아니면 무시
 - `pressed = event.buttons !== 0 || (pen && pressure > 0)` — 펜은 압력값으로도 눌림 판정
 - 펜인데 `pressed`가 false면 `penContactRef = false`(호버로 전환, 접촉 해제)
 - erase 모드: 소유 포인터가 눌림 해제되면 소유권 반납, 눌린 채면 `onErase(previousPoint, boardPoint, radius)` 호출 후 `previousEraserPointRef` 갱신
@@ -64,7 +62,7 @@ y = (event.clientY - layerRect.top) / zoom
 | 상태 | SVG 속성 | 내용 |
 | --- | --- | --- |
 | `drawingMode === false` (73~90줄) | `pointerEvents: "none"`, `aria-hidden` | `StrokePaths`만 렌더(과거 획 표시 전용) |
-| `drawingMode === true` (92~134줄) | `pointerEvents: "auto"`, `touchAction: capturesInput ? "none" : undefined`, `cursor: capturesInput ? "crosshair" : undefined` | `StrokePaths` + 작성 중 획(`currentPoints.length > 0`일 때) + 지우개 원(`drawingTool === "erase" && eraserPoint`일 때) |
+| `drawingMode === true` | `pointerEvents: "auto"`, `touchAction: "none"`, `cursor: "crosshair"`, `data-drawing-capture="true"` | `StrokePaths` + 작성 중 획(`currentPoints.length > 0`일 때) + 지우개 원(`drawingTool === "erase" && eraserPoint`일 때) |
 
 z-index는 두 경우 모두 `ACTIVE_CARD_Z - 1`(카드보다 한 단계 아래).
 
