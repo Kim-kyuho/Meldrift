@@ -95,7 +95,7 @@ const width = Math.round(uploadResult.width * scale);
 const height = Math.round(uploadResult.height * scale);
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `hooks/useBoardImages.ts`
 - `app/api/images/route.ts`

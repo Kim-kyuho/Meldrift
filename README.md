@@ -1,13 +1,13 @@
-# KyuBoard v1.1 Beta
+# Meldrift v1.1 Beta
 
-KyuBoard is a personal project for organizing ideas on a visual board.
+Meldrift is a personal project for organizing ideas on a visual board.
 
 ## Concept
 
-Ideas do not always begin in a clear order. KyuBoard allows memos, images, tables, diagrams, and drawings to be placed freely before their contents are organized into a Markdown document.
+Ideas do not always begin in a clear order. Meldrift allows memos, images, tables, diagrams, and drawings to be placed freely before their contents are organized into a Markdown document.
 
-![KyuBoard screenshot1](screenshot/IMG_1143.jpeg)
-![KyuBoard screenshot2](screenshot/IMG_1144.jpeg)
+![Meldrift screenshot1](screenshot/IMG_1143.jpeg)
+![Meldrift screenshot2](screenshot/IMG_1144.jpeg)
 
 ## Features
 
@@ -21,4 +21,4 @@ Ideas do not always begin in a clear order. KyuBoard allows memos, images, table
 - Compile board contents into Markdown, preview the result, and download it as an `.md` file.
 - Use an AI assistant to create, edit, delete, and arrange cards after reviewing its proposed changes.
 
-KyuBoard is currently under development.
+Meldrift is currently under development.

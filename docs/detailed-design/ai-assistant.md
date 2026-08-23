@@ -1,6 +1,6 @@
 # AI 어시스턴트 상세설계
 
-소스: `components/AiAssistantButton.tsx`, `components/AiChatPanel.tsx`, `components/GeminiIcon.tsx`, `hooks/useAiAssistant.ts`, `lib/ai/board-plan.ts`, `lib/ai/assistant.ts`, `lib/ai/kyuboard-guide.ts`, `app/api/ai/status/route.ts`, `app/api/ai/chat/route.ts`
+소스: `components/AiAssistantButton.tsx`, `components/AiChatPanel.tsx`, `components/GeminiIcon.tsx`, `hooks/useAiAssistant.ts`, `lib/ai/board-plan.ts`, `lib/ai/assistant.ts`, `lib/ai/meldrift-guide.ts`, `app/api/ai/status/route.ts`, `app/api/ai/chat/route.ts`
 
 ## 역할
 
@@ -10,7 +10,7 @@
 - **재배치**: 이미 보드에 있는 카드의 위치를 다시 잡는다. 내용은 바꾸지 않고 좌표만 바꾼다.
 - **고치기**: 이미 있는 카드의 내용을 바꾼다. 좌표와 크기는 건드리지 않는다.
 - **지우기**: 이미 있는 카드를 지운다. 저장 전까지는 화면에서만 사라진다.
-- **사용법 안내**: KyuBoard 조작법 질문에 함수 호출 없이 말로 답한다.
+- **사용법 안내**: Meldrift 조작법 질문에 함수 호출 없이 말로 답한다.
 
 이미지 카드는 사용자가 그림을 **명시적으로 요청했을 때만** 만든다. 그냥 문서를 만들어 달라는 요청에는 붙이지 않는다.
 
@@ -148,7 +148,7 @@ lucide-react에는 Gemini 아이콘이 없어 `GeminiIcon`에 별 모양 심볼�
 
 ## 사용법 안내
 
-`lib/ai/kyuboard-guide.ts`가 조작법을 사용자 관점으로 정리해 두고, 시스템 프롬프트 끝에 그대로 붙는다. 조작법 질문에는 함수를 호출하지 않고 이 내용을 근거로 답하게 하고, 여기 없는 기능은 없다고 답하도록 못박는다.
+`lib/ai/meldrift-guide.ts`가 조작법을 사용자 관점으로 정리해 두고, 시스템 프롬프트 끝에 그대로 붙는다. 조작법 질문에는 함수를 호출하지 않고 이 내용을 근거로 답하게 하고, 여기 없는 기능은 없다고 답하도록 못박는다.
 
 조작 방식이나 컴파일 규칙이 바뀌면 이 파일도 함께 고쳐야 한다. 코드와 자동으로 연결되지 않는다.
 

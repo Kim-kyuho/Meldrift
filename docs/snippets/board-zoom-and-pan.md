@@ -95,7 +95,7 @@ const handleBoardPanMove = (event: ReactPointerEvent<HTMLElement>) => {
 };
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `hooks/useBoardZoom.ts`
 - `hooks/useBoardScroll.ts`

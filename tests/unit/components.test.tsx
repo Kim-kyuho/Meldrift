@@ -45,7 +45,7 @@ describe("BoardMenu and AboutModal", () => {
         render(
             <BoardMenu
                 menuOpen
-                currentBoard={{ title: "KyuBoard" }}
+                currentBoard={{ title: "Meldrift" }}
                 setMenuOpen={vi.fn()}
                 setSignInOpen={vi.fn()}
                 setSignUpOpen={vi.fn()}

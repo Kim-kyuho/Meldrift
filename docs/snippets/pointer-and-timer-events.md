@@ -79,7 +79,7 @@ useEffect(() => {
 }, []);
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `hooks/useMemoCard.ts`
 - `hooks/useImageCard.ts`

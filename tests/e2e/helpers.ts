@@ -1,6 +1,6 @@
 import { expect, Page } from "@playwright/test";
 
-// KyuBoard의 client hydration이 끝나면 useBoardAuth가 /api/me를 요청한다.
+// Meldrift의 client hydration이 끝나면 useBoardAuth가 /api/me를 요청한다.
 // 화면이 보인다는 조건만으로는 React event handler가 연결됐다고 보장할 수 없으므로
 // 사용자 입력이 있는 테스트는 이 응답까지 기다린다.
 export async function gotoHydratedPage(page: Page, path: string) {

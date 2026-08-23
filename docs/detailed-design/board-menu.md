@@ -24,7 +24,7 @@
 
 | 요소 | 조건 | 비고 |
 | --- | --- | --- |
-| 로고 `Link` "•kyu.board" (38줄) | 항상 | `href="/"`, `fixed left-5 top-5`, `z-50000`, 터치 콜아웃/선택 비활성화 |
+| Meldrift 로고 `Link` (39줄) | 항상 | 마스코트·워드마크·`+` 표시, `aria-label="Meldrift home"`, `href="/"`, `fixed left-5 top-5`, `z-50000`, 터치 콜아웃/선택 비활성화 |
 | Ellipsis 토글 버튼 (51줄) | 항상 | `fixed right-5 top-5`, `z-50000`, 클릭 시 `setMenuOpen(prev => !prev)` |
 | 드롭다운 패널 (57줄) | `menuOpen`이 true일 때만 | `fixed right-5 top-17`, `z-50001` |
 | 보드 제목 항목 (60줄) | `currentBoard?.title`이 있을 때만 | 클릭해도 콜백 없이 메뉴만 닫힘(표시 전용) |

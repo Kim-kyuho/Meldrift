@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1180" viewBox="0 0 1800 1180" role="img" aria-labelledby="title desc">
-  <title id="title">KyuBoard Current Structure</title>
-  <desc id="desc">Current KyuBoard architecture including board previews, four card types, drawing, Markdown compilation, AI assistance, APIs, database, Cloudinary, and authentication.</desc>
+  <title id="title">Meldrift Current Structure</title>
+  <desc id="desc">Current Meldrift architecture including board previews, four card types, drawing, Markdown compilation, AI assistance, APIs, database, Cloudinary, and authentication.</desc>
   <defs>
     <style>
       .bg { fill: #f8fafc; }
@@ -37,7 +37,7 @@
     <path class="grid" d="M50 0V1180M100 0V1180M150 0V1180M200 0V1180M250 0V1180M300 0V1180M350 0V1180M400 0V1180M450 0V1180M500 0V1180M550 0V1180M600 0V1180M650 0V1180M700 0V1180M750 0V1180M800 0V1180M850 0V1180M900 0V1180M950 0V1180M1000 0V1180M1050 0V1180M1100 0V1180M1150 0V1180M1200 0V1180M1250 0V1180M1300 0V1180M1350 0V1180M1400 0V1180M1450 0V1180M1500 0V1180M1550 0V1180M1600 0V1180M1650 0V1180M1700 0V1180M1750 0V1180"/>
   </g>
 
-  <text x="60" y="58" class="panel-title">KyuBoard Current Structure</text>
+  <text x="60" y="58" class="panel-title">Meldrift Current Structure</text>
   <text x="60" y="88" class="muted">Spatial board for rich text, images, diagrams, tables, drawing, AI-assisted editing, static previews, and Markdown compilation</text>
 
   <rect x="55" y="125" width="350" height="700" rx="12" class="panel"/>

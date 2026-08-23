@@ -90,7 +90,7 @@ if (!updated[0]) {
 }
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `app/api/memos/route.ts`
 - `app/api/memos/[id]/route.ts`

@@ -81,7 +81,7 @@ response.cookies.set(sessionCookieName, sessionToken, {
 });
 ```
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `lib/auth/session.ts`
 - `lib/auth/current-user.ts`

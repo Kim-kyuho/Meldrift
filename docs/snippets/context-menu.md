@@ -111,7 +111,7 @@ const handleColorSelect = (color: string) => {
 - `ImageToolBar` / `MermaidToolBar` / `TableToolBar`: 레이어, 삭제와 각 타입 고유 도구
 - `DrawingToolBar`: 펜 색상, 굵기, 지우개, 팬, undo
 
-규보드 적용 위치:
+Meldrift 적용 위치:
 
 - `components/CardToolPortal.tsx`
 - `components/MemoToolBar.tsx`

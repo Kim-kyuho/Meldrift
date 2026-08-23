@@ -4,11 +4,11 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kyu-board",
-  description: "A free-form board for arranging rich text memos and images.",
+  title: "Meldrift",
+  description: "Meld your ideas. Drift into clarity.",
   icons: {
-    icon: "/favicon.ico?v=2",
-    apple: "/apple-touch-icon.png?v=2",
+    icon: "/favicon.ico?v=4",
+    apple: "/apple-touch-icon.png?v=4",
   },
 };
 
