@@ -76,7 +76,7 @@ export function useMermaidRenderer({ source, mermaidId }: UseMermaidRendererOpti
             return;
         }
 
-        const renderId = `kyuboard-mermaid-${Math.abs(mermaidId)}-${mermaidRenderIndex++}`;
+        const renderId = `meldrift-mermaid-${Math.abs(mermaidId)}-${mermaidRenderIndex++}`;
 
         renderMermaidSvg(renderId, source)
             .then((svg) => {

@@ -73,7 +73,7 @@
 ### 렌더 effect (59~97줄, deps `[mermaidId, source]`)
 1. `renderTicket = renderTicketRef.current + 1` 후 즉시 반영(다음 렌더가 시작되면 이전 티켓은 즉시 무효화됨)
 2. `source`가 공백뿐이면 마이크로태스크에서 `svg`/`renderError`를 빈 문자열로 초기화(티켓이 최신일 때만)
-3. `renderId = "kyuboard-mermaid-{|mermaidId|}-{전역 카운터}"` — 전역 `mermaidRenderIndex`를 매 렌더마다 증가시켜 **DOM id 충돌 방지**
+3. `renderId = "meldrift-mermaid-{|mermaidId|}-{전역 카운터}"` — 전역 `mermaidRenderIndex`를 매 렌더마다 증가시켜 **DOM id 충돌 방지**
 4. `renderMermaidSvg` 성공/실패 각각에서 **`renderTicketRef.current !== renderTicket`이면 결과를 버림** — 빠르게 타이핑할 때 이전 렌더 결과가 최신 소스를 덮어쓰는 것을 방지
 5. `finally`에서 `removeMermaidRenderArtifacts(renderId)` — Mermaid가 렌더 중 생성한 `#d{renderId}`, `#i{renderId}`와 미사용 render element를 제거
 

@@ -57,7 +57,7 @@ describe("useBoardList", () => {
 
         act(() => result.current.handleBoardClick(1, true));
 
-        expect(window.sessionStorage.getItem("kyuboard-preview-board-id")).toBe("1");
+        expect(window.sessionStorage.getItem("meldrift-preview-board-id")).toBe("1");
     });
 
     it("deletes the selected board and refreshes the route", async () => {

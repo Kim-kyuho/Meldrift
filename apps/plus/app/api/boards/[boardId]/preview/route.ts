@@ -113,7 +113,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
-                    folder: `kyuboard/boards/${boardId}`,
+                    folder: `meldrift/boards/${boardId}`,
                     public_id: "PreviewIMG",
                     format: "webp",
                     overwrite: true,

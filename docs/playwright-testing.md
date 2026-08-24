@@ -74,7 +74,7 @@ npx playwright show-trace test-results/<test-directory>/trace.zip
 ## 외부 환경 실행
 
 ```bash
-PLAYWRIGHT_BASE_URL=https://kyu-board.vercel.app npm run test:e2e
+PLAYWRIGHT_BASE_URL=https://meldrift.vercel.app npm run test:e2e
 ```
 
 `PLAYWRIGHT_BASE_URL`이 있으면 Playwright는 로컬 Next 서버를 실행하지 않는다.

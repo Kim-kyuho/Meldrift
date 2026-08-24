@@ -34,7 +34,7 @@ describe("useMermaidRenderer", () => {
         expect(result.current.svg).not.toContain('width="400"');
         expect(result.current.svg).not.toContain('height="300"');
         expect(result.current.svg).toContain('preserveAspectRatio="xMidYMid meet"');
-        expect(document.querySelector("[id^='dkyuboard-mermaid-5-']")).toBeNull();
+        expect(document.querySelector("[id^='dmeldrift-mermaid-5-']")).toBeNull();
     });
 
     it("reports syntax errors and clears an empty source", async () => {
@@ -80,7 +80,7 @@ describe("useMermaidRenderer", () => {
 
         await waitFor(() => expect(result.current.svg).toContain("<svg"));
         expect(document.querySelector(".mermaid-rendered svg")?.isConnected).toBe(true);
-        expect(document.querySelector("[id^='dkyuboard-mermaid-11-']")).toBeNull();
+        expect(document.querySelector("[id^='dmeldrift-mermaid-11-']")).toBeNull();
     });
 
     it("updates the displayed SVG when only the source changes", async () => {

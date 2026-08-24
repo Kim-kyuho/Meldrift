@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // PLAYWRIGHT_BASE_URL을 지정하면 로컬 서버를 새로 띄우지 않고 해당 환경을 검사한다.
-// 예: PLAYWRIGHT_BASE_URL=https://kyu-board.vercel.app npm run test:e2e
+// 예: PLAYWRIGHT_BASE_URL=https://meldrift.vercel.app npm run test:e2e
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3101";
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 

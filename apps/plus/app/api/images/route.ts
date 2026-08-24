@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
-                    folder: `kyuboard/boards/${boardId}`,
+                    folder: `meldrift/boards/${boardId}`,
                 },
                 (error, result) => {
                     if (error || !result) {

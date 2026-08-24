@@ -1,1 +1,1 @@
-export const boardPreviewSessionKey = "kyuboard-preview-board-id";
+export const boardPreviewSessionKey = "meldrift-preview-board-id";

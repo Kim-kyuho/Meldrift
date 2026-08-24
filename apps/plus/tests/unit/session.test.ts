@@ -13,7 +13,7 @@ describe("session tokens", () => {
         const firstToken = createSessionToken();
         const secondToken = createSessionToken();
 
-        expect(sessionCookieName).toBe("kyuboard_session");
+        expect(sessionCookieName).toBe("meldrift_session");
         expect(firstToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
         expect(secondToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
         expect(firstToken).not.toBe(secondToken);
