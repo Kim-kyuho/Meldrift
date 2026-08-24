@@ -7,21 +7,23 @@
     "apps/plus"
   ],
   "scripts": {
-    "dev": "concurrently --kill-others --names free,plus --prefix-colors cyan,magenta \"npm run dev --workspace=meldrift-free -- --hostname 0.0.0.0 --port 3000\" \"npm run dev --workspace=kyuboard -- --hostname 0.0.0.0 --port 3001\"",
+    "dev": "concurrently --kill-others --names free,plus --prefix-colors cyan,magenta \"npm run dev --workspace=meldrift-free -- --hostname 0.0.0.0 --port 3000\" \"npm run dev --workspace=meldrift-plus -- --hostname 0.0.0.0 --port 3001\"",
     "dev:free": "npm run dev --workspace=meldrift-free -- --hostname 0.0.0.0 --port 3000",
-    "dev:plus": "npm run dev --workspace=kyuboard -- --hostname 0.0.0.0 --port 3001",
-    "build": "npm run build --workspace=meldrift-free && npm run build --workspace=kyuboard",
+    "dev:plus": "npm run dev --workspace=meldrift-plus -- --hostname 0.0.0.0 --port 3001",
+    "build": "npm run build --workspace=meldrift-free && npm run build --workspace=meldrift-plus",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm exec --workspace=meldrift-free -- tsc --noEmit && npm exec --workspace=kyuboard -- tsc --noEmit",
+    "typecheck": "npm exec --workspace=meldrift-free -- tsc --noEmit && npm exec --workspace=meldrift-plus -- tsc --noEmit",
     "test": "npm run test --workspaces --if-present",
     "test:e2e:free": "npm run test:e2e --workspace=meldrift-free",
-    "test:e2e:plus": "npm run test:e2e --workspace=kyuboard"
+    "test:e2e:plus": "npm run test:e2e --workspace=meldrift-plus"
   },
   "devDependencies": {
     "concurrently": "^9.2.4"
   },
   "optionalDependencies": {
+    "@tailwindcss/oxide-linux-arm64-musl": "4.2.2",
     "@tailwindcss/oxide-linux-x64-gnu": "4.2.2",
+    "lightningcss-linux-arm64-musl": "1.32.0",
     "lightningcss-linux-x64-gnu": "1.32.0"
   }
 }

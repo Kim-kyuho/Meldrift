@@ -3,6 +3,12 @@ node_modules
 .next
 **/.next
 .git
-**/.env.local
+**/.env*
+!**/.env.example
+**/data
+**/*.sqlite
+**/*.sqlite-shm
+**/*.sqlite-wal
+**/coverage
 **/playwright-report
 **/test-results
