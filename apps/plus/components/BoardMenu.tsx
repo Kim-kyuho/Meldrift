@@ -48,7 +48,7 @@ export default function BoardMenu(
                 }}
             >
                 <Image
-                    src="/meldrift-mascot.png"
+                    src="/plus/meldrift-mascot.png"
                     alt=""
                     width={256}
                     height={256}
@@ -56,7 +56,7 @@ export default function BoardMenu(
                     className="size-7 shrink-0"
                 />
                 <Image
-                    src="/meldrift-wordmark.png"
+                    src="/plus/meldrift-wordmark.png"
                     alt="meldrift"
                     width={512}
                     height={127}

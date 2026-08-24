@@ -12,7 +12,7 @@
   }}
 >
   <div
-    className="kyu-board"
+    className="meldrift-board"
     style={{
       width: `${boardWidth}px`,
       height: `${boardHeight}px`,
@@ -34,7 +34,7 @@
 
 ```tsx
 const getBoardPoint = (clientX: number, clientY: number) => {
-  const board = document.querySelector(".kyu-board");
+  const board = document.querySelector(".meldrift-board");
   const rect = board?.getBoundingClientRect();
 
   return {

@@ -65,7 +65,7 @@ const buffer = Buffer.from(bytes);
 
 const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
   const uploadStream = cloudinary.uploader.upload_stream(
-    { folder: `kyuboard/boards/${boardId}` },
+    { folder: `meldrift/boards/${boardId}` },
     (error, result) => {
       if (error || !result) {
         reject(error ?? new Error("Cloudinary upload failed"));

@@ -41,7 +41,7 @@
 
 ## 최초 생성
 
-`boardPreviewSessionKey` 값은 `kyuboard-preview-board-id`다.
+`boardPreviewSessionKey` 값은 `meldrift-preview-board-id`다.
 
 - 새 보드 생성 성공 시 `useBoardList`가 sessionStorage에 새 ID를 기록한다.
 - 목록에서 미리보기가 없거나 로드에 실패한 보드를 열 때도 같은 ID를 기록한다.
@@ -60,7 +60,7 @@ PUT /api/boards/[boardId]/preview
 5. 다음 옵션으로 upload stream을 실행한다.
 
 ```text
-folder: kyuboard/boards/{boardId}
+folder: meldrift/boards/{boardId}
 public_id: PreviewIMG
 format: webp
 overwrite: true

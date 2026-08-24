@@ -84,7 +84,7 @@ BoardMessage(permission / memo)
 main
 └ board-scroll-layer
    └ board-size-layer
-      └ kyu-board
+      └ meldrift-board
          ├ ImageCard[]
          ├ MemoCard[]
          ├ MermaidCard[]
@@ -96,7 +96,7 @@ main
 
 - `.board-scroll-layer`: 실제 스크롤 컨테이너이자 `cardLocationRef` 대상
 - `.board-size-layer`: `boardWidth * zoom`, `boardHeight * zoom`으로 스크롤 가능한 전체 크기를 확보
-- `.kyu-board`: 원본 보드 크기를 유지하고 `transform: scale(boardZoom)` 적용
+- `.meldrift-board`: 원본 보드 크기를 유지하고 `transform: scale(boardZoom)` 적용
 - 배경은 24px 간격 점 패턴이며 패닝 상태에 따라 grab/grabbing 커서를 표시
 
 ### 카드 공통 배선

@@ -23,7 +23,7 @@
 
 | 함수/상수 | 동작 |
 | --- | --- |
-| `sessionCookieName` | `kyuboard_session` |
+| `sessionCookieName` | `meldrift_session` |
 | `sessionMaxAgeSeconds` | 7일 |
 | `createSessionToken()` | 32바이트 난수를 base64url로 인코딩해 43자 토큰 생성 |
 | `hashSessionToken(token)` | SHA-256 hex 해시 생성 |
@@ -59,7 +59,7 @@
 
 1. 현재 쿠키를 형식 검사하고 해시한다.
 2. 유효한 해시가 있으면 같은 `session_token_hash`를 가진 사용자 행의 세션 해시와 만료 시각을 `null`로 만든다.
-3. 성공 응답에서 `kyuboard_session` 쿠키를 삭제한다.
+3. 성공 응답에서 `meldrift_session` 쿠키를 삭제한다.
 
 쿠키가 없거나 형식이 잘못되어도 로그아웃 응답은 성공하며 쿠키 삭제를 시도한다. 이미 다른 기기 로그인으로 세션이 교체된 경우에도 다른 활성 세션 행을 지우지 않는다.
 

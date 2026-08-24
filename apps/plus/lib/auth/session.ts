@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 
-export const sessionCookieName = "kyuboard_session";
+export const sessionCookieName = "meldrift_session";
 export const sessionMaxAgeSeconds = 60 * 60 * 24 * 7;
 
 export function createSessionToken() {

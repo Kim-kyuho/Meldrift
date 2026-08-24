@@ -15,8 +15,7 @@ import {
 import type { BrowserDbRequest, BrowserDbResponse } from "@/lib/browser-db/protocol";
 
 const requiredTables = ["boards", "memos", "images", "mermaids", "drawings", "tables"];
-// Keep the pre-rebrand storage key so existing local boards remain accessible.
-const browserDatabaseName = "kyuboard-lite";
+const browserDatabaseName = "meldrift-free";
 const workerScope = self as DedicatedWorkerGlobalScope;
 
 let sqlite3: Sqlite3Static;

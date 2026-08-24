@@ -21,7 +21,7 @@ export default async function Home() {
   const boardsWithPreview = boards.map((board) => ({
       ...board,
       previewUrl: cloudName
-          ? `https://res.cloudinary.com/${cloudName}/image/upload/kyuboard/boards/${board.boardId}/PreviewIMG.webp`
+          ? `https://res.cloudinary.com/${cloudName}/image/upload/meldrift/boards/${board.boardId}/PreviewIMG.webp`
           : null,
   }));
 

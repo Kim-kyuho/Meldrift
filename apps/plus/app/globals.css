@@ -109,8 +109,8 @@
 }
 
 :root {
-  --kyu-background: #ffffff;
-  --kyu-foreground: #171717;
+  --meldrift-background: #ffffff;
+  --meldrift-foreground: #171717;
   --font-line-seed: "LINE Seed", "Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
 }
 
@@ -401,22 +401,22 @@
 }
 
 @theme inline {
-  --color-background: var(--kyu-background);
-  --color-foreground: var(--kyu-foreground);
+  --color-background: var(--meldrift-background);
+  --color-foreground: var(--meldrift-foreground);
   --font-sans: var(--font-line-seed);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --kyu-background: #0a0a0a;
-    --kyu-foreground: #ededed;
+    --meldrift-background: #0a0a0a;
+    --meldrift-foreground: #ededed;
   }
 }
 
 body {
-  background: var(--kyu-background);
-  color: var(--kyu-foreground);
+  background: var(--meldrift-background);
+  color: var(--meldrift-foreground);
   font-family: var(--font-line-seed);
 }
 

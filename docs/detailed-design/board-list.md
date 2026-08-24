@@ -15,7 +15,7 @@
 `BoardListBoard`는 `boardId`, `title`, `width`, `height`, `previewUrl`을 가진다. `app/page.tsx`는 DB에서 보드 목록을 조회한 뒤 Cloudinary cloud name이 있으면 다음 고정 URL을 조립한다.
 
 ```text
-https://res.cloudinary.com/{cloudName}/image/upload/kyuboard/boards/{boardId}/PreviewIMG.webp
+https://res.cloudinary.com/{cloudName}/image/upload/meldrift/boards/{boardId}/PreviewIMG.webp
 ```
 
 ## 로컬 State
@@ -62,7 +62,7 @@ https://res.cloudinary.com/{cloudName}/image/upload/kyuboard/boards/{boardId}/Pr
 
 ### 삭제
 
-관리자만 확인 다이얼로그를 열 수 있다. 서버는 보드 존재와 Cloudinary 설정을 확인하고, 해당 보드의 이미지 원본과 `kyuboard/boards/{boardId}/PreviewIMG`를 Cloudinary에서 삭제한 뒤 관련 `images`, `memos`, `mermaids`, `drawings`, `tables`, `boards` 행을 순서대로 삭제한다. 성공 시 클라이언트는 목록에서 해당 보드를 제거하고 선택 상태를 초기화한 뒤 `router.refresh()`로 서버 데이터를 재검증한다.
+관리자만 확인 다이얼로그를 열 수 있다. 서버는 보드 존재와 Cloudinary 설정을 확인하고, 해당 보드의 이미지 원본과 `meldrift/boards/{boardId}/PreviewIMG`를 Cloudinary에서 삭제한 뒤 관련 `images`, `memos`, `mermaids`, `drawings`, `tables`, `boards` 행을 순서대로 삭제한다. 성공 시 클라이언트는 목록에서 해당 보드를 제거하고 선택 상태를 초기화한 뒤 `router.refresh()`로 서버 데이터를 재검증한다.
 
 ## 렌더 구조
 

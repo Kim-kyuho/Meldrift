@@ -463,7 +463,7 @@ export default function BoardClient(
                 }}
             >
                 <div
-                    className="kyu-board relative bg-white"
+                    className="meldrift-board relative bg-white"
                     style={{
                             width: `${boardWidth}px`,
                             height: `${boardHeight}px`,

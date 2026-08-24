@@ -27,7 +27,7 @@ export function getBoardToolButton(page: Page, iconClassName: string) {
 export function boardDatabaseContainsText(page: Page, text: string) {
     return page.evaluate(async (expectedText) => {
         const databaseBytes = await new Promise<Uint8Array>((resolve, reject) => {
-            const openRequest = indexedDB.open("kyuboard-lite");
+            const openRequest = indexedDB.open("meldrift-free");
             openRequest.onerror = () => reject(openRequest.error ?? new Error("IndexedDB could not be opened."));
             openRequest.onsuccess = () => {
                 const storage = openRequest.result;

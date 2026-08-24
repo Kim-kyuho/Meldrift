@@ -16,7 +16,7 @@ test.describe("보드 작업 화면", () => {
     test("보드 좌표 레이어를 렌더링한다", async ({ page }) => {
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
         await expect(page.locator(".board-size-layer")).toBeVisible();
-        await expect(page.locator(".kyu-board")).toBeVisible();
+        await expect(page.locator(".meldrift-board")).toBeVisible();
         await expect(page.locator("#card-tool-portal")).toBeAttached();
     });
 
@@ -53,4 +53,3 @@ test.describe("보드 작업 화면", () => {
         await expect(markdownView).toBeHidden();
     });
 });
-

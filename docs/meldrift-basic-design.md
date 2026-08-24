@@ -137,7 +137,7 @@ BoardClient
 ```text
 .board-scroll-layer     실제 스크롤 컨테이너
 └── .board-size-layer   확대된 전체 스크롤 크기 보장
-    └── .kyu-board      논리 보드, transform: scale(boardZoom)
+    └── .meldrift-board 논리 보드, transform: scale(boardZoom)
 ```
 
 - 카드의 `x`, `y`, `width`, `height`는 확대 전 보드 좌표다.
@@ -339,7 +339,7 @@ erase와 pan은 토글이며 같은 도구를 다시 누르면 draw로 되돌아
 3. 두 번의 `requestAnimationFrame` 후 현재 `.board-scroll-layer` 뷰포트를 `html-to-image`의 Canvas로 캡처한다.
 4. 보이는 이미지 카드는 DOM 캡처에서 제외한 뒤 원본 이미지를 Canvas에 직접 그려 CORS·복제 오차를 줄인다.
 5. Canvas를 WebP로 변환해 `PUT /api/boards/[boardId]/preview`로 전송한다.
-6. Cloudinary의 `kyuboard/boards/{boardId}/PreviewIMG.webp`를 overwrite해 파일이 누적되지 않게 한다.
+6. Cloudinary의 `meldrift/boards/{boardId}/PreviewIMG.webp`를 overwrite해 파일이 누적되지 않게 한다.
 
 새 보드 또는 미리보기 로드에 실패한 보드를 열 때는 `sessionStorage`에 보드 ID를 기록한다. 해당 보드가 마운트되면 최초 미리보기 생성을 한 번 예약한다.
 
