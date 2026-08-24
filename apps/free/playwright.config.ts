@@ -1,8 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { aiTestPassword } from "./tests/e2e/helpers";
 
 // PLAYWRIGHT_BASE_URL을 지정하면 로컬 서버를 새로 띄우지 않고 해당 환경을 검사한다.
-// 예: PLAYWRIGHT_BASE_URL=https://kyu-board.vercel.app npm run test:e2e
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+// 예: PLAYWRIGHT_BASE_URL=https://your-deployment.example npm run test:e2e
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3100";
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 
 export default defineConfig({
@@ -64,9 +65,16 @@ export default defineConfig({
     webServer: usesExternalServer
         ? undefined
         : {
-            command: "npm run dev -- --hostname 0.0.0.0 --port 3000",
+            command: "npm run dev -- --hostname 0.0.0.0 --port 3100",
             url: baseURL,
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
+
+            // AI 어시스턴트 잠금을 검사하려면 서버에 키와 비밀번호가 있어야 한다.
+            // 실제 채팅은 보내지 않으므로 키는 더미로 충분하다. 진짜 키를 CI에 넣지 않는다.
+            env: {
+                AI_PASSWORD: aiTestPassword,
+                AI_API_KEY: "e2e-dummy-ai-key",
+            },
         },
 });

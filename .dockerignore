@@ -1,5 +1,8 @@
 node_modules
+**/node_modules
 .next
+**/.next
 .git
-.env.local
-npm-debug.log
+**/.env.local
+**/playwright-report
+**/test-results

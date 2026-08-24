@@ -1,0 +1,13 @@
+node_modules/
+.next/
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env*
+!.env.example
+.DS_Store
+playwright-report/
+test-results/
+tsconfig.tsbuildinfo
+.vercel

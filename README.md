@@ -1,24 +1,22 @@
-# Meldrift v1.1 Beta
+# Meldrift Monorepo
 
-Meldrift is a personal project for organizing ideas on a visual board.
+두 가지 Meldrift 앱을 한 저장소에서 관리한다.
 
-## Concept
+```text
+apps/
+  free/   # 기본 앱: /
+  plus/   # Plus 앱: /plus
+```
 
-Ideas do not always begin in a clear order. Meldrift allows memos, images, tables, diagrams, and drawings to be placed freely before their contents are organized into a Markdown document.
+## Local development
 
-![Meldrift screenshot1](screenshot/IMG_1143.jpeg)
-![Meldrift screenshot2](screenshot/IMG_1144.jpeg)
+```bash
+npm install
+npm run dev
+```
 
-## Features
+- Free: `http://localhost:3000`
+- Plus: `http://localhost:3000/plus`
+- Plus 직접 접속: `http://localhost:3001/plus`
 
-- Create and manage multiple boards.
-- Write rich text memo cards.
-- Add image, mermaid  and table cards.
-- Move, resize, and change the layer order of cards.
-- Draw on the board with a mouse, touch input, or Apple Pencil.
-- Search memos and navigate through them in order.
-- Zoom and pan across the board.
-- Compile board contents into Markdown, preview the result, and download it as an `.md` file.
-- Use an AI assistant to create, edit, delete, and arrange cards after reviewing its proposed changes.
-
-Meldrift is currently under development.
+배포 환경에서는 Free 프로젝트에 `PLUS_ORIGIN`을 Plus 프로젝트의 origin으로 설정한다.

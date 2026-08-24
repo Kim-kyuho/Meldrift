@@ -1,0 +1,16 @@
+services:
+  kyuboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    command: npm run dev -- --hostname 0.0.0.0
+    volumes:
+      - .:/app
+      - kyuboard_node_modules:/app/node_modules
+
+volumes:
+  kyuboard_node_modules:

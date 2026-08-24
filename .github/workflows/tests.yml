@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   verify:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       NEON_CONNECTION_STRING: ${{ secrets.NEON_CONNECTION_STRING }}
       E2E_BOARD_ID: ${{ secrets.E2E_BOARD_ID }}
@@ -34,23 +34,26 @@ jobs:
         run: npm run lint
 
       - name: Check TypeScript
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
-      - name: Run Vitest tests
+      - name: Run unit tests
         run: npm test
 
-      - name: Build
+      - name: Build applications
         run: npm run build
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit
 
-      - name: Run Playwright tests
-        run: npm run test:e2e
+      - name: Run Free E2E tests
+        run: npm run test:e2e:free
+
+      - name: Run Plus E2E tests
+        run: npm run test:e2e:plus
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: playwright-report/
+          path: apps/*/playwright-report/
           retention-days: 30

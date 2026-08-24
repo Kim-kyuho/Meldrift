@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.env*
+data
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+playwright-report
+test-results
+coverage
+.DS_Store
