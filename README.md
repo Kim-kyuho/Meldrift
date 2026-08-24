@@ -6,19 +6,43 @@ Meldrift is a personal project for organizing ideas on a visual board.
 
 Ideas do not always begin in a clear order. Meldrift allows memos, images, tables, diagrams, and drawings to be placed freely before their contents are organized into a Markdown document.
 
-[![Meldrift screenshot1](https://github.com/Kim-kyuho/Meldrift-plus/blob/main/public/IMG_1161.jpeg)
-[![Meldrift screenshot2](https://github.com/Kim-kyuho/Meldrift-plus/blob/main/public/IMG_1162.jpeg)
+![Meldrift screenshot1](screenshot/IMG_1161.jpeg)
+![Meldrift screenshot2](screenshot/IMG_1162.jpeg)
 
 ## Features
 
 - Create and manage multiple boards.
 - Write rich text memo cards.
-- Add image, mermaid  and table cards.
+- Add image, Mermaid, and table cards.
 - Move, resize, and change the layer order of cards.
-- Draw on the board with a mouse, touch input, or Apple Pencil.
+- Draw with a mouse, touch input, or Apple Pencil.
 - Search memos and navigate through them in order.
 - Zoom and pan across the board.
-- Compile board contents into Markdown, preview the result, and download it as an `.md` file.
+- Compile board contents into Markdown and download the result.
 - Use an AI assistant to create, edit, delete, and arrange cards after reviewing its proposed changes.
+
+## Editions
+
+- `apps/free`: browser-storage edition served from `/`
+- `apps/plus`: database-backed edition served from `/plus`
+
+The Plus edition defines the primary feature set and documentation. The Free edition provides a lightweight version without external database or image-storage services.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+- Free: `http://localhost:3000`
+- Plus through the Free zone: `http://localhost:3000/plus`
+- Plus directly: `http://localhost:3001/plus`
+
+Docker development uses the same routes:
+
+```bash
+docker compose up --build
+```
 
 Meldrift is currently under development.

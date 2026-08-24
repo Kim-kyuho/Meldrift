@@ -1,16 +1,31 @@
 services:
-  kyuboard:
+  free:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    env_file:
-      - .env.local
-    command: npm run dev -- --hostname 0.0.0.0
+    environment:
+      PLUS_ORIGIN: http://plus:3001
+    command: npm run dev:free
     volumes:
       - .:/app
-      - kyuboard_node_modules:/app/node_modules
+      - meldrift_node_modules:/app/node_modules
+    depends_on:
+      - plus
+
+  plus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./apps/plus/.env.local
+    command: npm run dev:plus
+    volumes:
+      - .:/app
+      - meldrift_node_modules:/app/node_modules
 
 volumes:
-  kyuboard_node_modules:
+  meldrift_node_modules:

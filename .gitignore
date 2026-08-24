@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,9 +13,11 @@
 
 # testing
 /coverage
+**/coverage
 
 # next.js
 /.next/
+**/.next/
 /out/
 
 # production
@@ -32,6 +35,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -44,7 +48,9 @@ next-env.d.ts
 # Playwright
 node_modules/
 /test-results/
+**/test-results/
 /playwright-report/
+**/playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
