@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Meldrift",
-  description: "Meld your ideas. Drift into clarity.",
+  description: "Meld your ideas. Drift into clarity. A canvas web app for placing memos freely and compiling them into Markdown.",
   icons: {
     icon: {
       url: "/favicon.ico",
