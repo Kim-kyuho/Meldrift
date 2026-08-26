@@ -16,18 +16,8 @@ export const sortMemosByOrder = <T extends OrderedMemo>(memos: T[]) =>
 export const nextMemoOrder = (memos: { sortOrder: number }[]) =>
     memos.reduce((highest, memo) => Math.max(highest, memo.sortOrder), 0) + 1;
 
-/** 순서 컬럼이 없던 시절의 파일은 값이 전부 0이라 id 순서로 떨어진다. 화면 연번은 늘 1..N이어야 한다. */
-export function rankMemoOrders(memos: { id: number; storedOrder: number }[]) {
-    return new Map(
-        [...memos]
-            .sort((left, right) => left.storedOrder - right.storedOrder || left.id - right.id)
-            .map((memo, index) => [memo.id, index + 1] as const),
-    );
-}
-
 export const memoPlainText = (content: string) =>
     content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-
 
 export function reorderMemos<T extends OrderedMemo>(memos: T[], memoId: number, targetIndex: number): T[] {
     const sorted = sortMemosByOrder(memos);

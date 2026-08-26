@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, text, integer, boolean, timestamp, varchar, check, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, varchar, check, index, jsonb } from "drizzle-orm/pg-core";
 import type { TableSource } from "@/lib/table-card";
 import type { BoardStroke } from "@/lib/board-stroke";
 
@@ -37,9 +37,14 @@ export const db_memos = pgTable("memos", {
     width: integer("width").notNull(),
     height: integer("height").notNull(),
     color: text("color").notNull(),
+    // 보드마다 1부터 매긴다.
+    sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+    // 재정렬은 보드 하나의 sort_order 구간만 읽고 쓴다.
+    index("memos_board_id_sort_order_idx").on(table.boardId, table.sortOrder),
+]);
 
 export const db_images = pgTable("images", {
     imageId: serial("image_id").primaryKey(),

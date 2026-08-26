@@ -1,5 +1,6 @@
 import TurndownService from "turndown";
 import type { BoardSnapshot } from "@/lib/board-state";
+import { sortMemosByOrder } from "@/lib/memo-order";
 import { tableSourceToMarkdown } from "@/lib/table-card";
 
 export type BoardMarkdownImageAsset = {
@@ -89,7 +90,7 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
     const imageAssets: BoardMarkdownImageAsset[] = [];
     const renderedCards = new Set<string>();
 
-    snapshot.memos.forEach((memo) => {
+    sortMemosByOrder(snapshot.memos).forEach((memo) => {
         const memoMarkdown = turndown.turndown(memo.content).trim();
         if (memoMarkdown) markdownParts.push(memoMarkdown);
 

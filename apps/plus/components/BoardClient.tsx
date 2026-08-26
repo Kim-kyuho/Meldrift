@@ -11,6 +11,7 @@ import BoardMessage from "./BoardMessage";
 import BoardSearchPanel from "./BoardSearchPanel";
 import BoardNavigator from "./BoardNavigator";
 import BoardMarkdownView from "./BoardMarkdownView";
+import MemoReorderPanel from "./MemoReorderPanel";
 import AboutModal from "./AboutModal";
 import AiAssistantButton from "./AiAssistantButton";
 import AiChatPanel from "./AiChatPanel";
@@ -33,6 +34,7 @@ import { useBoardSearch } from "@/hooks/useBoardSearch";
 import { useBoardZoom } from "@/hooks/useBoardZoom";
 import { useBoardPreview } from "@/hooks/useBoardPreview";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
+import { useMemoReorder } from "@/hooks/useMemoReorder";
 
 interface Board {
   boardId: number;
@@ -64,6 +66,7 @@ interface Memo {
     width: number;
     height: number;
     color: string;
+    sortOrder: number;
 }
 
 interface Mermaid {
@@ -185,6 +188,26 @@ export default function BoardClient(
         handleFocusPrevMemo,
         handleFocusNextMemo,
     } = useBoardMemoFocus(memos);
+
+    const {
+        reorderOpen,
+        reorderListRef,
+        reorderMemoList,
+        draggingMemoId,
+        dragOffsetY,
+        handleToggleReorderPanel,
+        handleCloseReorderPanel,
+        handleReorderStart,
+        handleRowClick,
+    } = useMemoReorder({
+        boardId: currentBoard.boardId,
+        memos,
+        setMemos,
+        canEditCard,
+        showPermissionMessage,
+        setPermissionMessage,
+        onFocusMemo: focusMemoById,
+    });
 
     const {
         searchBarOpen,
@@ -346,6 +369,8 @@ export default function BoardClient(
             onSignOut={handleSignOut}
             currentUser={currentUser}
             onCompileMarkdown={() => setMarkdownViewOpen(true)}
+            reorderOpen={reorderOpen}
+            onReorder={handleToggleReorderPanel}
             onAbout={() => setAboutOpen(true)}
         />
         <BoardToolBar
@@ -392,6 +417,17 @@ export default function BoardClient(
                 onPrev={handleFocusPrevMemo}
                 onNext={handleFocusNextMemo}
                 onMemoNumberChange={focusMemoByOrder}
+            />
+        )}
+        {reorderOpen && (
+            <MemoReorderPanel
+                memos={reorderMemoList}
+                listRef={reorderListRef}
+                draggingMemoId={draggingMemoId}
+                dragOffsetY={dragOffsetY}
+                onDragStart={handleReorderStart}
+                onRowClick={handleRowClick}
+                onClose={handleCloseReorderPanel}
             />
         )}
         {signInOpen && (

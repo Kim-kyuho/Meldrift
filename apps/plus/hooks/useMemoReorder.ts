@@ -8,19 +8,31 @@ import {
     useRef,
     useState,
 } from "react";
-import type { BoardMemo } from "@/lib/board-state";
+import type { BoardMemo } from "@/hooks/useBoardMemos";
 import { memoReorderRowHeight, reorderMemos, sortMemosByOrder } from "@/lib/memo-order";
 
 type UseMemoReorderOptions = {
+    boardId: number;
     memos: BoardMemo[];
     setMemos: Dispatch<SetStateAction<BoardMemo[]>>;
+    canEditCard: boolean;
+    showPermissionMessage: () => void;
+    setPermissionMessage: (message: string) => void;
     onFocusMemo: (memoId: number) => void;
 };
 
 // 이 안에서 끝난 입력은 끌기가 아니라 누른 것으로 본다.
 const dragThreshold = 4;
 
-export function useMemoReorder({ memos, setMemos, onFocusMemo }: UseMemoReorderOptions) {
+export function useMemoReorder({
+    boardId,
+    memos,
+    setMemos,
+    canEditCard,
+    showPermissionMessage,
+    setPermissionMessage,
+    onFocusMemo,
+}: UseMemoReorderOptions) {
     const [reorderOpen, setReorderOpen] = useState(false);
     const [draggingMemoId, setDraggingMemoId] = useState<number | null>(null);
     const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -78,6 +90,57 @@ export function useMemoReorder({ memos, setMemos, onFocusMemo }: UseMemoReorderO
         return { index, offsetY: clampedTop - index * memoReorderRowHeight };
     }, [getContentY, memoCount]);
 
+    const applyMemoOrder = (memoOrders: { id: number; sortOrder: number }[]) => {
+        const orderById = new Map(memoOrders.map((memo) => [memo.id, memo.sortOrder]));
+
+        setMemos((prev) => {
+            // 서버 응답은 보통 방금 화면에 적용한 값과 같다. 그대로면 같은 배열을 돌려줘
+            // 카드까지 다시 그려지는 것을 막는다.
+            if (prev.every((memo) => (orderById.get(memo.id) ?? memo.sortOrder) === memo.sortOrder)) {
+                return prev;
+            }
+
+            return prev.map((memo) =>
+                orderById.has(memo.id) ? { ...memo, sortOrder: orderById.get(memo.id)! } : memo
+            );
+        });
+    };
+
+    // 응답을 기다렸다가 반영하면 놓은 줄이 잠깐 원래 자리로 돌아갔다가 다시 움직인다.
+    // 화면과 서버가 같은 순수 함수로 계산하므로 성공하면 두 결과가 같다.
+    const saveMemoOrder = useCallback(async (memoId: number, targetIndex: number) => {
+        const previousMemos = memos;
+
+        applyMemoOrder(reorderMemos(memos, memoId, targetIndex));
+
+        try {
+            const response = await fetch("/api/memos/order", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ boardId, memoId, targetIndex }),
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.ok) {
+                // 순서 값만 되돌린다. 그 사이에 바뀐 본문이나 좌표는 건드리지 않는다.
+                applyMemoOrder(previousMemos);
+                setPermissionMessage(data.message ?? "Memo order could not be updated.");
+                return;
+            }
+
+            // 서버가 진실이다. 다른 기기에서 순서가 바뀌었다면 여기서 화면이 맞춰진다.
+            applyMemoOrder(data.memos ?? []);
+        } catch (error) {
+            console.error("Error reordering memos:", error);
+            applyMemoOrder(previousMemos);
+            setPermissionMessage("Memo order could not be updated.");
+        }
+        // applyMemoOrder는 매 렌더 새로 만들어짐 - 의존성에는 그 안에서 읽는 값만 적음
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [boardId, memos, setMemos, setPermissionMessage]);
+
     // 끌기는 window에서 듣는다. 줄에 setPointerCapture를 걸면 미리보기로 DOM 순서가 바뀔 때
     // 캡처를 잃을 수 있고, 패널 밖으로 나간 뒤의 입력도 놓친다.
     useEffect(() => {
@@ -107,7 +170,7 @@ export function useMemoReorder({ memos, setMemos, onFocusMemo }: UseMemoReorderO
             setDragOffsetY(0);
 
             if (position) {
-                setMemos((prev) => reorderMemos(prev, draggingMemoId, position.index));
+                void saveMemoOrder(draggingMemoId, position.index);
             }
         };
 
@@ -120,7 +183,7 @@ export function useMemoReorder({ memos, setMemos, onFocusMemo }: UseMemoReorderO
             window.removeEventListener("pointerup", handleEnd);
             window.removeEventListener("pointercancel", handleEnd);
         };
-    }, [draggingMemoId, getDragPosition, setMemos]);
+    }, [draggingMemoId, getDragPosition, saveMemoOrder]);
 
     const handleToggleReorderPanel = () => setReorderOpen((prev) => !prev);
 
@@ -128,6 +191,14 @@ export function useMemoReorder({ memos, setMemos, onFocusMemo }: UseMemoReorderO
 
     const handleReorderStart = (event: ReactPointerEvent<HTMLElement>, memoId: number) => {
         if (event.button !== 0) {
+            return;
+        }
+        if (!canEditCard) {
+            showPermissionMessage();
+            return;
+        }
+        // 저장 전 임시 카드는 서버에 없으므로 순서를 바꿀 수 없다.
+        if (memoId < 0) {
             return;
         }
 
@@ -162,5 +233,6 @@ export function useMemoReorder({ memos, setMemos, onFocusMemo }: UseMemoReorderO
         handleCloseReorderPanel,
         handleReorderStart,
         handleRowClick,
+        saveMemoOrder,
     };
 }

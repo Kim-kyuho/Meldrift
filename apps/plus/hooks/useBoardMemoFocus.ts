@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { sortMemosByOrder } from "@/lib/memo-order";
 
 type FocusMemo = {
     id: number;
+    sortOrder: number;
 };
 
 export function useBoardMemoFocus(memos: FocusMemo[]) {
@@ -10,7 +12,7 @@ export function useBoardMemoFocus(memos: FocusMemo[]) {
     const initialMemoFocusRef = useRef(false);
 
     const sortedMemoIds = useMemo(
-        () => memos.map((memo) => memo.id).sort((a, b) => a - b),
+        () => sortMemosByOrder(memos).map((memo) => memo.id),
         [memos]
     );
 

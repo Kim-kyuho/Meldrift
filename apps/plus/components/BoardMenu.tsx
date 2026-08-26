@@ -2,7 +2,7 @@
 
 import PressableButton from "./PressableButton";
 import { Dispatch, SetStateAction } from "react";
-import { EllipsisIcon, FileText, Info } from "lucide-react";
+import { EllipsisIcon, FileText, Info, ListOrdered } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { CurrentUser } from "@/hooks/useBoardAuth";
@@ -18,6 +18,8 @@ type BoardMenuProps = {
     currentUser: CurrentUser | null;
     onSignOut: () => void;
     onCompileMarkdown?: () => void;
+    reorderOpen?: boolean;
+    onReorder?: () => void;
     onAbout: () => void;
 };
 
@@ -31,6 +33,8 @@ export default function BoardMenu(
     currentUser,
     onSignOut,
     onCompileMarkdown,
+    reorderOpen,
+    onReorder,
     onAbout,
 }: BoardMenuProps) {
     return(
@@ -81,6 +85,19 @@ export default function BoardMenu(
                                 <span className="font-bold">
                                     {currentBoard.title}
                                 </span>
+                            </PressableButton>
+                            <PressableButton
+                                variant="menu"
+                                title="Change the order memos are numbered in"
+                                className="flex items-center gap-2 font-bold text-emerald-600"
+                                aria-pressed={Boolean(reorderOpen)}
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    onReorder?.();
+                                }}
+                            >
+                                <ListOrdered aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                Reorder Memos
                             </PressableButton>
                             <PressableButton
                                 variant="menu"

@@ -12,6 +12,7 @@ Meldrift는 큰 보드 위에 메모, 이미지, Mermaid 다이어그램, 표와
 - 카드 생성, 편집, 이동, 크기 조절, 삭제
 - 카드 레이어 순서 변경
 - 메모 검색과 연번 기반 탐색
+- 메모 순서 변경
 - Apple Pencil, 터치, 마우스 기반 자유 드로잉
 - 카드 배치를 Markdown 문서로 컴파일하고 다운로드
 - 로그인, 관리자 승인 기반 편집 권한
@@ -93,6 +94,7 @@ BoardClient
 │   └── card-tool-portal
 ├── BoardSearchPanel
 ├── BoardNavigator
+├── MemoReorderPanel
 ├── BoardMarkdownView
 ├── AboutModal
 ├── SignInModal / SignUpModal
@@ -120,6 +122,7 @@ BoardClient
 | 카드 컬렉션과 편집 카드 ID | `useBoardMemos`, `useBoardImages`, `useBoardMermaids`, `useBoardTables` |
 | 카드 내부 초안 | `useMemoCard`, `useImageCard`, `useMermaidCard`, `useTableCard` |
 | 메모 검색과 포커스 | `useBoardSearch`, `useBoardMemoFocus` |
+| 메모 순서 패널과 끌기 상태 | `useMemoReorder` |
 | 보드 메뉴, About, Markdown, 탐색 패널 열림 | `BoardClient` |
 | 검색 패널, 검색어, 결과와 현재 인덱스 | `useBoardSearch` |
 | 보드 줌 | `useBoardZoom` |
@@ -249,9 +252,11 @@ Bring to Front는 전체 카드의 최대 `z + 1`을 사용한다. Send to Back�
 
 두 기능은 `useBoardMemoFocus`의 포커스 동작을 공유한다. 포커스는 대상 메모를 `scrollIntoView`로 화면 중앙에 맞추며, 보드 진입 후 메모가 존재하면 첫 메모를 한 번 자동 포커스한다.
 
+탐색 연번과 검색 결과 순회는 모두 메모의 `sort_order` 오름차순을 따른다. 같은 값이면 ID 오름차순이다. 순서를 바꾸지 않은 보드에서는 생성 순서와 같다.
+
 ### 11.1 메모 탐색
 
-`BoardNavigator`는 메모를 ID 오름차순으로 정렬한 순서를 1부터 시작하는 연번으로 표시한다.
+`BoardNavigator`는 메모를 `sort_order` 오름차순으로 정렬한 순서를 1부터 시작하는 연번으로 표시한다.
 
 - 구성은 이전 버튼, 연번 입력, 전체 메모 수, 다음 버튼 순서다.
 - 연번 입력은 숫자 이외의 문자를 제거하고 값이 있으면 즉시 이동한다.
@@ -266,6 +271,29 @@ Bring to Front는 전체 카드의 최대 `z + 1`을 사용한다. Send to Back�
 - 이전과 다음은 결과 목록을 순환한다.
 - 현재 위치와 전체 결과 수를 함께 표시하고 결과가 없으면 0을 표시한다.
 - 결과가 없는 상태에서 이동을 시도하면 메모 메시지를 표시한다.
+
+### 11.3 메모 순서 변경
+
+`MemoReorderPanel`은 보드 메뉴의 `Reorder Memos` 항목으로 열고 닫는다. 화면 왼쪽 위에 고정하며 메모를 순서대로 한 줄씩 세운다. 한 번에 다섯 줄을 보여주고 나머지는 목록을 스크롤해서 본다.
+
+- 줄은 손잡이, 연번, 메모 색, 본문 미리보기 순서다. 본문은 HTML을 걷어낸 한 줄이며 넘치는 부분은 말줄임표로 자른다.
+- 순서 변경은 줄 왼쪽 손잡이에서만 시작한다. 나머지 영역은 목록 스크롤과 해당 메모로 이동하는 탭에 쓴다.
+- 4px 임계값을 넘지 않고 끝난 입력은 끌기가 아니라 누른 것으로 보고 그 메모를 포커스한다.
+- 끄는 동안 `pointermove`와 `pointerup`을 `window`에서 듣는다. 미리보기로 줄의 DOM 순서가 바뀌면 포인터 캡처를 잃을 수 있고, 패널 밖으로 나간 입력도 놓친다.
+- 끌고 있는 줄만 손가락을 따라 `translateY`로 움직이고 나머지 줄은 자리를 비켜 준다. 화면 순서는 놓기 전까지 미리보기이며 저장은 놓는 순간 한 번만 한다.
+- 줄의 위쪽 끝이 다음 칸의 절반을 넘어서면 그 자리를 넘겨받는다.
+- 편집 권한이 없으면 끌기를 시작하지 않고 권한 메시지를 표시한다. 저장 전 임시 카드는 음수 ID라 순서를 바꿀 수 없다.
+
+화면은 놓는 즉시 바꾸고 서버에는 그 뒤에 알린다. 응답을 기다렸다가 반영하면 놓은 줄이 잠깐 원래 자리로 돌아갔다가 다시 움직인다. 화면과 서버가 같은 순수 함수로 계산하므로 성공하면 두 결과가 같고, 서버가 거절하거나 요청이 실패하면 순서 값만 원래대로 되돌린다. 되돌릴 때 그 사이에 바뀐 본문이나 좌표는 건드리지 않는다.
+
+클라이언트는 `POST /api/memos/order`에 옮길 메모와 놓을 자리만 보낸다. 순서 값은 서버가 정한다.
+
+- 서버는 보드의 메모를 `sort_order`, `id` 순으로 읽어 그 값으로 새 순서를 계산한다.
+- 옮기는 메모의 `sort_order`를 목적지 값으로 바꾸고, 원래 자리와 목적지 사이에 낀 메모만 +1 또는 -1 한다. 나머지 메모는 건드리지 않는다.
+- 바뀐 행만 모아 `UPDATE ... FROM (VALUES ...)` 한 문장으로 쓴다. 재정렬 한 번에 조회 1회, 쓰기 1회다.
+- 삭제로 생긴 빈 번호가 있어도 상대 순서만 보므로 결과가 같고 값의 유일성도 유지된다.
+
+여기서 정한 순서가 곧 Markdown 문서 순서다. 카드를 보드에서 옮기는 것으로는 문서 순서가 바뀌지 않는다.
 
 ## 12. 보드 패닝과 입력 보호
 
@@ -347,7 +375,7 @@ erase와 pan은 토글이며 같은 도구를 다시 누르면 draw로 되돌아
 
 ## 15. Markdown 컴파일
 
-`GET /api/boards/[boardId]/markdown`은 메모를 ID순으로 정렬하고 각 메모 꼭짓점을 포함하는 이미지, Mermaid, 표 중 z가 가장 높은 카드를 선택한다.
+`GET /api/boards/[boardId]/markdown`은 메모를 `sort_order`, `id` 순으로 정렬하고 각 메모 꼭짓점을 포함하는 이미지, Mermaid, 표 중 z가 가장 높은 카드를 선택한다.
 
 ```text
 1: 좌상단   2: 우상단
@@ -371,7 +399,7 @@ erase와 pan은 토글이며 같은 도구를 다시 누르면 draw로 되돌아
 
 지원 범위는 동작마다 다르다. 생성은 메모와 메모에 붙는 Mermaid·표·이미지를 지원하고, 내용 수정은 메모·Mermaid·표, 삭제는 네 카드 타입 전체, 재배치는 메모와 메모에 붙는 Mermaid·표를 지원한다. 기존 이미지의 내용 수정과 재배치는 지원하지 않는다.
 
-이미지 카드는 사용자가 그림을 명시적으로 요청했을 때만 만든다. 재배치는 좌표만 바꾸며, 문서 순서는 메모 생성 순서로 고정되어 있어 재배치로 바꿀 수 없다.
+이미지 카드는 사용자가 그림을 명시적으로 요청했을 때만 만든다. 재배치는 좌표만 바꾸므로 문서 순서를 바꾸지 못한다. 문서 순서는 메모의 `sort_order`이며 `MemoReorderPanel`에서만 바꾼다.
 
 ### 16.1 사용 조건
 
@@ -425,7 +453,7 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 
 ### 16.8 저장 순서
 
-문서 순서는 메모의 serial ID 순서다. 임시 카드를 저장할 때 메모를 계획 순서대로 하나씩 INSERT해야 ID 순서가 문서 순서와 일치한다.
+문서 순서는 메모의 `sort_order` 순서다. 서버가 INSERT마다 그 보드의 `MAX(sort_order) + 1`을 매기므로, 임시 카드를 저장할 때 메모를 계획 순서대로 하나씩 INSERT해야 문서 순서가 계획 순서와 일치한다.
 
 ## 17. 인증과 권한
 
@@ -444,11 +472,13 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 | --- | --- | --- |
 | `users` | email, password_hash, session_token_hash, session_expires_at, permission_flg, role | 독립 |
 | `boards` | title, width, height, owner_id | 루트 |
-| `memos` | HTML, color, x/y/z, size | `board_id` 보유 |
+| `memos` | HTML, color, x/y/z, size, sort_order | `board_id` 보유 |
 | `images` | Cloudinary ID/URL, x/y/z, size | `board_id` 보유 |
 | `mermaids` | source, x/y/z, size | `board_id` 보유 |
 | `tables` | source JSONB, x/y/z, size | `board_id` 보유 |
 | `drawings` | 보드별 획 배열 JSONB | `board_id` unique |
+
+`memos.sort_order`는 보드 안에서만 의미가 있으므로 `(board_id, sort_order)` 인덱스를 둔다. 새 메모는 그 보드의 `MAX(sort_order) + 1`을 받는다.
 
 현재 스키마는 카드·드로잉의 `board_id`에 외래키를 두지 않는다. 보드 삭제 API가 DB 이미지 원본과 고정 미리보기 `PreviewIMG`를 Cloudinary에서 먼저 삭제하고 `images`, `memos`, `mermaids`, `drawings`, `tables`, `boards` 순서로 관련 행을 명시적으로 삭제한다.
 
@@ -462,6 +492,7 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 | PATCH/DELETE | `/api/boards/[boardId]` | 이름 변경, 보드 삭제 |
 | POST | `/api/memos`, `/api/images`, `/api/mermaids`, `/api/tables` | 카드 생성 |
 | PATCH/DELETE | `/api/{cardType}/[id]` | 카드 수정, 삭제 |
+| POST | `/api/memos/order` | 메모 순서 변경 |
 | POST | `/api/cards/layer` | 레이어 이동과 정규화 |
 | GET/PATCH | `/api/drawings/[boardId]` | 획 조회, 전체 교체 |
 | GET | `/api/boards/[boardId]/markdown` | Markdown 컴파일 |

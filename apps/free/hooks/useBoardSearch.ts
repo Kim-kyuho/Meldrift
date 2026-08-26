@@ -22,7 +22,6 @@ export function useBoardSearch({
     const [searchText, setSearchText] = useState("");
     const [searchIndex, setSearchIndex] = useState(0);
 
-    // 결과 순회는 보드 탐색과 같은 기준을 쓴다. 사용자가 정한 메모 순서다.
     const sortedMemos = useMemo(() => sortMemosByOrder(memos), [memos]);
 
     const searchResults = useMemo(() => {

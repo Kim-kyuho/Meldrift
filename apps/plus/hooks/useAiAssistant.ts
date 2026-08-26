@@ -12,6 +12,7 @@ import {
     type BoardPlan,
     type GeneratedImage,
 } from "@/lib/ai/board-plan";
+import { nextMemoOrder } from "@/lib/memo-order";
 import type { BoardImage } from "@/hooks/useBoardImages";
 import type { BoardMemo } from "@/hooks/useBoardMemos";
 import type { BoardMermaid } from "@/hooks/useBoardMermaids";
@@ -317,12 +318,13 @@ export function useAiAssistant({
 
     const applyPlan = (plan: BoardPlan, base: BoardCards, generatedImages: GeneratedImage[] = []) => {
         const planned = layoutBoardPlan(plan, getPlanOrigin(base), boardBounds, generatedImages);
-        // 증가 방향이어야 저장 전에도 메모 탐색 순서가 문서 순서와 같음
+        // 증가 방향이어야 저장 전에도 계획 순서대로 화면에 선다
         const idBase = -Date.now();
         let idOffset = 0;
         const nextTempId = () => idBase + idOffset++;
+        const orderBase = nextMemoOrder(base.memos);
 
-        const newMemos: BoardMemo[] = planned.memos.map((memo) => ({
+        const newMemos: BoardMemo[] = planned.memos.map((memo, index) => ({
             id: nextTempId(),
             boardId,
             content: memo.content,
@@ -332,6 +334,7 @@ export function useAiAssistant({
             width: memo.width,
             height: memo.height,
             color: memo.color,
+            sortOrder: orderBase + index,
         }));
         const newMermaids: BoardMermaid[] = planned.mermaids.map((mermaid) => ({
             id: nextTempId(),
@@ -672,7 +675,7 @@ export function useAiAssistant({
         }
     };
 
-    // 메모는 순서대로 저장 - serial ID 순서가 곧 문서 순서
+    // 메모는 순서대로 저장 - 서버가 INSERT마다 sort_order를 매기므로 이 순서가 곧 문서 순서
     const handleSavePendingCards = async () => {
         if (!hasPendingCards || saving) {
             return;
