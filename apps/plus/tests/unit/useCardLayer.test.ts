@@ -6,7 +6,7 @@ import type { BoardMemo } from "@/hooks/useBoardMemos";
 import type { BoardMermaid } from "@/hooks/useBoardMermaids";
 import type { BoardTable } from "@/hooks/useBoardTables";
 
-const memo = { id: 1, boardId: 9, content: "memo", x: 0, y: 0, z: 1, width: 100, height: 100, color: "#fff" };
+const memo = { id: 1, boardId: 9, content: "memo", x: 0, y: 0, z: 1, width: 100, height: 100, color: "#fff", sortOrder: 1 };
 const image = { imageId: 2, boardId: 9, publicId: "p", secureUrl: "url", fileName: null, x: 0, y: 0, z: 2, width: 100, height: 100 };
 const mermaid = { id: 3, boardId: 9, source: "flowchart LR", x: 0, y: 0, z: 3, width: 100, height: 100 };
 const table = { id: 4, boardId: 9, source: { columns: [{ id: "c", name: "C" }], rows: [] }, x: 0, y: 0, z: 4, width: 100, height: 100 };

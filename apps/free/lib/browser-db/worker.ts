@@ -245,7 +245,7 @@ function readSnapshot(db: Database): BoardSnapshot {
     );
     if (!boardRow) throw new Error("The default board is missing from the SQLite file.");
 
-    // 배열 순서는 생성 순서(id)로 유지한다. Markdown 컴파일이 이 순서를 문서 순서로 쓴다.
+    // 배열 순서는 생성 순서(id)로 유지한다. 화면 순서와 문서 순서는 sort_order가 정한다.
     const memoColumns = new Set(db.selectObjects("PRAGMA table_info(memos)").map((row) => String(row.name)));
     const hasMemoOrderColumn = memoColumns.has("sort_order");
     const memoRows = db.selectObjects(

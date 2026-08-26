@@ -1,4 +1,5 @@
 import { RefObject, useState } from "react";
+import { nextMemoOrder } from "@/lib/memo-order";
 
 export type BoardMemo = {
     id: number;
@@ -10,6 +11,7 @@ export type BoardMemo = {
     width: number;
     height: number;
     color: string;
+    sortOrder: number;
 };
 
 type UseBoardMemosOptions = {
@@ -65,6 +67,7 @@ export function useBoardMemos({
             width: 300,
             height: 200,
             color: "#fffadc",
+            sortOrder: nextMemoOrder(memos),
         };
         setMemos((prev) => [...prev, tempMemo]);
         setEditingMemoId(tempMemo.id);

@@ -72,7 +72,7 @@ const memoOf = (id: number, content: string): BoardMemo => ({
     z: 1,
     width: 400,
     height: 200,
-    color: "#fffadc",
+    color: "#fffadc", sortOrder: 1,
 });
 
 // 채팅 응답을 순서대로 돌려준다.

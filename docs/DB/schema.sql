@@ -31,9 +31,12 @@ CREATE TABLE public.memos (
     width integer NOT NULL,
     height integer NOT NULL,
     color text NOT NULL,
+    sort_order integer NOT NULL DEFAULT 0,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now()
 );
+
+CREATE INDEX memos_board_id_sort_order_idx ON public.memos USING btree (board_id, sort_order);
 
 CREATE TABLE public.images (
     image_id serial PRIMARY KEY,

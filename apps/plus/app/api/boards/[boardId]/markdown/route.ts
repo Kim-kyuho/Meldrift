@@ -113,6 +113,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
                 SELECT
                     id AS memo_id,
                     content AS memo_content,
+                    sort_order AS memo_sort_order,
                     x,
                     y,
                     width,
@@ -225,6 +226,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
             LEFT JOIN selected_cards card
                 ON card.memo_id = memo.memo_id
             ORDER BY
+                memo.memo_sort_order ASC,
                 memo.memo_id ASC,
                 card.corner_order ASC
         `);

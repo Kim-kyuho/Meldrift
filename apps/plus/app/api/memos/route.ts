@@ -1,6 +1,7 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
 import { db_memos } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
                 width: body.width,
                 height: body.height,
                 color: body.color,
+                // 새 메모는 그 보드의 맨 뒤로 간다.
+                sortOrder: sql`(SELECT COALESCE(MAX(${db_memos.sortOrder}), 0) + 1 FROM ${db_memos} WHERE ${db_memos.boardId} = ${body.boardId})`,
             })
             .returning();
 

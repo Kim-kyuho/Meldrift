@@ -52,6 +52,8 @@ describe("BoardMenu and AboutModal", () => {
                 currentUser={null}
                 onSignOut={vi.fn()}
                 onCompileMarkdown={vi.fn()}
+            reorderOpen={false}
+            onReorder={vi.fn()}
                 onAbout={vi.fn()}
             />
         );
