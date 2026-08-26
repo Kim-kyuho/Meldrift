@@ -94,8 +94,8 @@ export function useMemoReorder({
         const orderById = new Map(memoOrders.map((memo) => [memo.id, memo.sortOrder]));
 
         setMemos((prev) => {
-            // 서버 응답은 보통 방금 화면에 적용한 값과 같다. 그대로면 같은 배열을 돌려줘서
-            // 보드 전체가 한 번 더 그려지는 것을 막는다.
+            // 서버 응답은 보통 방금 화면에 적용한 값과 같다. 그대로면 같은 배열을 돌려줘
+            // 카드까지 다시 그려지는 것을 막는다.
             if (prev.every((memo) => (orderById.get(memo.id) ?? memo.sortOrder) === memo.sortOrder)) {
                 return prev;
             }

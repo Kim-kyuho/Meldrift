@@ -113,7 +113,7 @@ describe("useMemoReorder 순서 저장", () => {
 
         await act(async () => { await result.current.saveMemoOrder(20, 0); });
 
-        // [처음, 낙관적 적용, 서버 응답] - 뒤의 둘이 같은 배열이어야 리렌더가 한 번으로 끝난다.
+        // [처음, 낙관적 적용, 서버 응답] - 뒤의 둘이 같은 배열이어야 카드까지 다시 그려지지 않는다.
         expect(state.versions).toHaveLength(3);
         expect(state.versions[2]).toBe(state.versions[1]);
         expect(orderOf(state.getState())).toEqual([20, 10]);
