@@ -4,7 +4,7 @@ import { maxStoredImageBytes, supportedImageMimeTypes } from "@/lib/image-file";
 import { tableSourceSchema, type TableSource } from "@/lib/table-card";
 
 export const defaultBoardId = 1;
-export const schemaVersion = 2;
+export const schemaVersion = 3;
 
 export type BoardInfo = {
     boardId: number;
@@ -23,6 +23,7 @@ export type BoardMemo = {
     width: number;
     height: number;
     color: string;
+    sortOrder: number;
 };
 
 export type BoardImage = {
@@ -108,6 +109,7 @@ const memoSchema = z.object({
     boardId: z.literal(defaultBoardId),
     content: z.string(),
     color: z.string().min(1),
+    sortOrder: positiveInteger,
     ...geometry,
 });
 

@@ -27,7 +27,7 @@ function setLocation() {
 
 const memo: BoardMemo = {
     id: 1, boardId: 5, content: "memo", x: 10, y: 20, z: 1,
-    width: 300, height: 200, color: "#fffadc",
+    width: 300, height: 200, color: "#fffadc", sortOrder: 1,
 };
 const image: BoardImage = {
     imageId: 2, boardId: 5, url: "https://example.com/image.png", label: "image.png",

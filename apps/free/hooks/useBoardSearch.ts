@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
+import { sortMemosByOrder } from "@/lib/memo-order";
 
 type SearchMemo = {
     id: number;
     content: string;
+    sortOrder: number;
 };
 
 type UseBoardSearchOptions = {
@@ -20,6 +22,9 @@ export function useBoardSearch({
     const [searchText, setSearchText] = useState("");
     const [searchIndex, setSearchIndex] = useState(0);
 
+    // 결과 순회는 보드 탐색과 같은 기준을 쓴다. 사용자가 정한 메모 순서다.
+    const sortedMemos = useMemo(() => sortMemosByOrder(memos), [memos]);
+
     const searchResults = useMemo(() => {
         const query = searchText.trim().toLowerCase();
 
@@ -27,10 +32,10 @@ export function useBoardSearch({
             return [];
         }
 
-        return memos.filter((memo) =>
+        return sortedMemos.filter((memo) =>
             memo.content.toLowerCase().includes(query)
         );
-    }, [memos, searchText]);
+    }, [sortedMemos, searchText]);
 
     const focusSearchResult = (index: number) => {
         const targetMemo = searchResults[index];
@@ -80,7 +85,7 @@ export function useBoardSearch({
             return;
         }
 
-        const firstMemo = memos.find((memo) =>
+        const firstMemo = sortedMemos.find((memo) =>
             memo.content.toLowerCase().includes(normalizedQuery)
         );
 

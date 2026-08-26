@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { sortMemosByOrder } from "@/lib/memo-order";
 
 type FocusMemo = {
     id: number;
+    sortOrder: number;
 };
 
 export function useBoardMemoFocus(memos: FocusMemo[]) {
@@ -9,8 +11,9 @@ export function useBoardMemoFocus(memos: FocusMemo[]) {
     const [focusedMemoId, setFocusedMemoId] = useState<number | null>(null);
     const initialMemoFocusRef = useRef(false);
 
+    // 연번은 사용자가 정한 메모 순서를 따른다. 바꾸지 않았다면 생성 순서와 같다.
     const sortedMemoIds = useMemo(
-        () => memos.map((memo) => memo.id).sort((a, b) => a - b),
+        () => sortMemosByOrder(memos).map((memo) => memo.id),
         [memos]
     );
 

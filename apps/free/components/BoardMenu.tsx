@@ -2,7 +2,7 @@
 
 import PressableButton from "./PressableButton";
 import { Dispatch, SetStateAction } from "react";
-import { Download, EllipsisIcon, FileText, FolderOpen, Info, Shredder } from "lucide-react";
+import { Download, EllipsisIcon, FileText, FolderOpen, Info, ListOrdered, Shredder } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -12,6 +12,8 @@ type BoardMenuProps = {
     exportDisabled: boolean;
     transferring: boolean;
     resetting: boolean;
+    reorderOpen: boolean;
+    onReorder: () => void;
     onExport: () => void;
     onImport: () => void;
     onCompileMarkdown: () => void;
@@ -25,6 +27,8 @@ export default function BoardMenu({
     exportDisabled,
     transferring,
     resetting,
+    reorderOpen,
+    onReorder,
     onExport,
     onImport,
     onCompileMarkdown,
@@ -74,6 +78,16 @@ export default function BoardMenu({
                 // AI 어시스턴트 버튼이 위로 올라오는 것을 방지하기 위해 z를 한 단계 올림
                 <div className="fixed right-5 top-17 z-50001 w-56 rounded-xl bg-white/75 px-2 py-3 shadow-md">
                     <div className="px-3 py-2 font-bold text-neutral-900">Free Edition</div>
+                    <PressableButton
+                        variant="menu"
+                        title="Change the order memos are numbered in"
+                        className="flex items-center gap-2 font-bold text-emerald-600"
+                        aria-pressed={reorderOpen}
+                        onClick={() => runAndClose(onReorder)}
+                    >
+                        <ListOrdered aria-hidden="true" className="h-4 w-4 shrink-0" />
+                        Reorder Memos
+                    </PressableButton>
                     <PressableButton
                         variant="menu"
                         disabled={exportDisabled || transferring || resetting}
