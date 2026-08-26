@@ -16,10 +16,12 @@ const memo = (id: number, sortOrder: number): BoardMemo => ({
 
 function createStateSetter(initial: BoardMemo[]) {
     let state = initial;
+    const versions = [initial];
     const setter = vi.fn((update: React.SetStateAction<BoardMemo[]>) => {
         state = typeof update === "function" ? update(state) : update;
+        versions.push(state);
     });
-    return { setter, getState: () => state };
+    return { setter, getState: () => state, versions };
 }
 
 const orderOf = (memos: BoardMemo[]) =>
@@ -95,6 +97,26 @@ describe("useMemoReorder 순서 저장", () => {
         await act(async () => { await result.current.saveMemoOrder(20, 0); });
 
         expect(state.getState().map((item) => item.sortOrder)).toEqual([7, 3]);
+    });
+
+    it("서버 값이 화면과 같으면 상태를 새로 만들지 않는다", async () => {
+        const memos = [memo(10, 1), memo(20, 2)];
+        // 서버가 낙관적으로 적용한 값과 똑같이 응답하는, 가장 흔한 경우.
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+                ok: true,
+                memos: [{ id: 10, sortOrder: 2 }, { id: 20, sortOrder: 1 }],
+            }),
+        }));
+        const { result, state } = setup(memos);
+
+        await act(async () => { await result.current.saveMemoOrder(20, 0); });
+
+        // [처음, 낙관적 적용, 서버 응답] - 뒤의 둘이 같은 배열이어야 리렌더가 한 번으로 끝난다.
+        expect(state.versions).toHaveLength(3);
+        expect(state.versions[2]).toBe(state.versions[1]);
+        expect(orderOf(state.getState())).toEqual([20, 10]);
     });
 
     it("서버가 거절하면 순서를 되돌리고 이유를 알린다", async () => {
