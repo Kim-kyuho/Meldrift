@@ -1,5 +1,6 @@
 import { RefObject, useState } from "react";
 import { nextPositiveId, type BoardMemo } from "@/lib/board-state";
+import { nextMemoOrder } from "@/lib/memo-order";
 
 export type { BoardMemo } from "@/lib/board-state";
 
@@ -43,6 +44,7 @@ export function useBoardMemos({
             width: 300,
             height: 200,
             color: "#fffadc",
+            sortOrder: nextMemoOrder(memos),
         };
         setMemos((prev) => [...prev, tempMemo]);
         setEditingMemoId(tempMemo.id);
@@ -52,7 +54,7 @@ export function useBoardMemos({
         setMemos((prev) => {
             const id = nextPositiveId(prev.map((memo) => memo.id));
             return prev.map((memo) => memo.id === tempId
-                ? { id, boardId, content, x, y, z, width, height, color }
+                ? { ...memo, id, boardId, content, x, y, z, width, height, color }
                 : memo);
         });
     };

@@ -10,7 +10,7 @@ describe("browser SQLite board snapshots", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.memos.push({
             id: 1, boardId: 1, content: "Saved memo", x: 1, y: 2, z: 3,
-            width: 300, height: 200, color: "#fffadc",
+            width: 300, height: 200, color: "#fffadc", sortOrder: 1,
         });
 
         expect(parseBoardSnapshot(snapshot)).toEqual(snapshot);

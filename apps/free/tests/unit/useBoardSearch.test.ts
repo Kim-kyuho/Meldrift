@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { useBoardSearch } from "@/hooks/useBoardSearch";
 
 const memos = [
-    { id: 1, content: "Alpha memo" },
-    { id: 2, content: "Beta alpha" },
-    { id: 3, content: "Gamma" },
+    { id: 1, content: "Alpha memo", sortOrder: 1 },
+    { id: 2, content: "Beta alpha", sortOrder: 2 },
+    { id: 3, content: "Gamma", sortOrder: 3 },
 ];
 
 describe("useBoardSearch", () => {
@@ -44,6 +44,25 @@ describe("useBoardSearch", () => {
         act(() => result.current.handleSearchPrev());
         expect(result.current.searchIndex).toBe(1);
         expect(focusMemoById).toHaveBeenLastCalledWith(2);
+    });
+
+    it("walks results in the order the user set, not the order memos were made", () => {
+        const focusMemoById = vi.fn();
+        // 배열 순서(생성 순서)와 사용자가 정한 순서가 어긋난 보드.
+        const reordered = [
+            { id: 1, content: "Alpha memo", sortOrder: 3 },
+            { id: 2, content: "Beta alpha", sortOrder: 1 },
+        ];
+        const { result } = renderHook(() => useBoardSearch({
+            memos: reordered,
+            focusMemoById,
+            setMemoMessage: vi.fn(),
+        }));
+
+        act(() => result.current.handleSearchTextChange("alpha"));
+
+        expect(result.current.searchResults.map((memo) => memo.id)).toEqual([2, 1]);
+        expect(focusMemoById).toHaveBeenCalledWith(2);
     });
 
     it("reports an empty result set", () => {

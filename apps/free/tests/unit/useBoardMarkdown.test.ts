@@ -29,7 +29,7 @@ function markdownSnapshot(): BoardSnapshot {
         ...createEmptyBoardSnapshot(),
         memos: [{
             id: 1, boardId: 1, content: "<h1>Title</h1><p>End</p>",
-            x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fffadc",
+            x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fffadc", sortOrder: 1,
         }],
         mermaids: [{
             id: 1, boardId: 1, source: "flowchart LR\nA-->B",

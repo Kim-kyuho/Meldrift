@@ -53,6 +53,8 @@ describe("Free Edition board controls", () => {
             exportDisabled
             transferring={false}
             resetting={false}
+            reorderOpen={false}
+            onReorder={vi.fn()}
             onExport={vi.fn()}
             onImport={vi.fn()}
             onCompileMarkdown={vi.fn()}

@@ -11,6 +11,7 @@ import {
     type BoardEdit,
     type BoardPlan,
 } from "@/lib/ai/board-plan";
+import { nextMemoOrder } from "@/lib/memo-order";
 import type { BoardImage } from "@/hooks/useBoardImages";
 import type { BoardMemo } from "@/hooks/useBoardMemos";
 import type { BoardMermaid } from "@/hooks/useBoardMermaids";
@@ -342,8 +343,9 @@ export function useAiAssistant({
         const idBase = -Date.now();
         let idOffset = 0;
         const nextTempId = () => idBase + idOffset++;
+        const orderBase = nextMemoOrder(base.memos);
 
-        const newMemos: BoardMemo[] = planned.memos.map((memo) => ({
+        const newMemos: BoardMemo[] = planned.memos.map((memo, index) => ({
             id: nextTempId(),
             boardId,
             content: memo.content,
@@ -353,6 +355,7 @@ export function useAiAssistant({
             width: memo.width,
             height: memo.height,
             color: memo.color,
+            sortOrder: orderBase + index,
         }));
         const newMermaids: BoardMermaid[] = planned.mermaids.map((mermaid) => ({
             id: nextTempId(),

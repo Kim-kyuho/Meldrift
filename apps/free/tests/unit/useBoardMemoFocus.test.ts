@@ -13,12 +13,13 @@ describe("useBoardMemoFocus", () => {
 
     afterEach(() => vi.useRealTimers());
 
-    it("focuses the lowest memo id initially and scrolls it into view", () => {
+    it("focuses the first memo in order initially and scrolls it into view", () => {
         const target = document.createElement("div");
         target.className = "memo-rnd-2";
         document.body.appendChild(target);
 
-        const { result } = renderHook(() => useBoardMemoFocus([{ id: 8 }, { id: 2 }]));
+        const { result } = renderHook(() =>
+            useBoardMemoFocus([{ id: 8, sortOrder: 2 }, { id: 2, sortOrder: 1 }]));
         act(() => vi.runAllTimers());
 
         expect(result.current.focusedMemoId).toBe(2);
@@ -30,7 +31,8 @@ describe("useBoardMemoFocus", () => {
     });
 
     it("moves between memos and reports both boundaries", () => {
-        const { result } = renderHook(() => useBoardMemoFocus([{ id: 1 }, { id: 3 }]));
+        const { result } = renderHook(() =>
+            useBoardMemoFocus([{ id: 1, sortOrder: 1 }, { id: 3, sortOrder: 2 }]));
         act(() => vi.runAllTimers());
 
         act(() => result.current.handleFocusNextMemo());
@@ -54,7 +56,8 @@ describe("useBoardMemoFocus", () => {
     });
 
     it("focuses a memo by its sorted number and reports an invalid number", () => {
-        const { result } = renderHook(() => useBoardMemoFocus([{ id: 8 }, { id: 2 }, { id: 5 }]));
+        const { result } = renderHook(() =>
+            useBoardMemoFocus([{ id: 8, sortOrder: 3 }, { id: 2, sortOrder: 1 }, { id: 5, sortOrder: 2 }]));
         act(() => vi.runAllTimers());
 
         act(() => result.current.focusMemoByOrder(2));
@@ -65,5 +68,16 @@ describe("useBoardMemoFocus", () => {
         act(() => result.current.focusMemoByOrder(4));
         expect(result.current.memoMessage).toBe("Memo does not exist.");
         expect(result.current.focusedMemoId).toBe(5);
+    });
+
+    it("numbers memos by their order instead of their id", () => {
+        const { result } = renderHook(() =>
+            useBoardMemoFocus([{ id: 1, sortOrder: 3 }, { id: 2, sortOrder: 1 }, { id: 3, sortOrder: 2 }]));
+        act(() => vi.runAllTimers());
+
+        expect(result.current.focusedMemoId).toBe(2);
+
+        act(() => result.current.focusMemoByOrder(3));
+        expect(result.current.focusedMemoId).toBe(1);
     });
 });

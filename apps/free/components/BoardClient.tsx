@@ -13,6 +13,7 @@ import BoardMessage from "./BoardMessage";
 import BoardSearchPanel from "./BoardSearchPanel";
 import BoardNavigator from "./BoardNavigator";
 import BoardMarkdownView from "./BoardMarkdownView";
+import MemoReorderPanel from "./MemoReorderPanel";
 import MermaidCard from "./MermaidCard";
 import TableCard from "./TableCard";
 import DrawingLayer from "./DrawingLayer";
@@ -29,6 +30,7 @@ import { useBoardScroll } from "@/hooks/useBoardScroll";
 import { useBoardSearch } from "@/hooks/useBoardSearch";
 import { useBoardZoom } from "@/hooks/useBoardZoom";
 import { useBoardTransfer } from "@/hooks/useBoardTransfer";
+import { useMemoReorder } from "@/hooks/useMemoReorder";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
 import { defaultBoard, type BoardSnapshot } from "@/lib/board-state";
 import { loadBoardState, replaceBoardState } from "@/lib/browser-db/client";
@@ -99,6 +101,22 @@ export default function BoardClient() {
         handleFocusPrevMemo,
         handleFocusNextMemo,
     } = useBoardMemoFocus(memos);
+
+    const {
+        reorderOpen,
+        reorderListRef,
+        reorderMemoList,
+        draggingMemoId,
+        dragOffsetY,
+        handleToggleReorderPanel,
+        handleCloseReorderPanel,
+        handleReorderStart,
+        handleRowClick,
+    } = useMemoReorder({
+        memos,
+        setMemos,
+        onFocusMemo: focusMemoById,
+    });
 
     const {
         searchBarOpen,
@@ -348,6 +366,8 @@ export default function BoardClient() {
             exportDisabled={exportDisabled}
             transferring={transferring}
             resetting={resetting}
+            reorderOpen={reorderOpen}
+            onReorder={handleToggleReorderPanel}
             onExport={handleExport}
             onImport={handleImportClick}
             onCompileMarkdown={() => setMarkdownViewOpen(true)}
@@ -398,6 +418,17 @@ export default function BoardClient() {
                 onPrev={handleFocusPrevMemo}
                 onNext={handleFocusNextMemo}
                 onMemoNumberChange={focusMemoByOrder}
+            />
+        )}
+        {reorderOpen && (
+            <MemoReorderPanel
+                memos={reorderMemoList}
+                listRef={reorderListRef}
+                draggingMemoId={draggingMemoId}
+                dragOffsetY={dragOffsetY}
+                onDragStart={handleReorderStart}
+                onRowClick={handleRowClick}
+                onClose={handleCloseReorderPanel}
             />
         )}
         {aboutOpen && (

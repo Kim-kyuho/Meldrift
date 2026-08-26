@@ -13,6 +13,7 @@ import {
     type BoardSnapshot,
 } from "@/lib/board-state";
 import type { BrowserDbRequest, BrowserDbResponse } from "@/lib/browser-db/protocol";
+import { rankMemoOrders } from "@/lib/memo-order";
 
 const requiredTables = ["boards", "memos", "images", "mermaids", "drawings", "tables"];
 const browserDatabaseName = "meldrift-free";
@@ -46,6 +47,7 @@ const schemaSql = `
         width INTEGER NOT NULL CHECK (width > 0),
         height INTEGER NOT NULL CHECK (height > 0),
         color TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -102,19 +104,29 @@ function exec(db: Database, sql: string, bind: SqlValue[] = []) {
     db.exec({ sql, bind });
 }
 
+const isSupportedVersion = (version: number) =>
+    Number.isInteger(version) && version >= 1 && version <= schemaVersion;
+
 function migrateDatabase(db: Database) {
     const version = Number(db.selectValue("PRAGMA user_version"));
     if (version === schemaVersion) {
         db.exec(schemaSql);
         return;
     }
-    if (version !== 1) {
+    if (!isSupportedVersion(version)) {
         throw new Error(`Unsupported browser database version: ${version}.`);
     }
 
     db.transaction(() => {
-        exec(db, "ALTER TABLE images ADD COLUMN image_data BLOB");
-        exec(db, "ALTER TABLE images ADD COLUMN mime_type TEXT");
+        if (version < 2) {
+            exec(db, "ALTER TABLE images ADD COLUMN image_data BLOB");
+            exec(db, "ALTER TABLE images ADD COLUMN mime_type TEXT");
+        }
+        if (version < 3) {
+            // 기존 보드는 id 순서가 곧 탐색 순서였다. 그 순서를 그대로 옮겨 담는다.
+            exec(db, "ALTER TABLE memos ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
+            exec(db, "UPDATE memos SET sort_order = id");
+        }
         exec(db, `PRAGMA user_version = ${schemaVersion}`);
     });
     db.exec(schemaSql);
@@ -233,13 +245,24 @@ function readSnapshot(db: Database): BoardSnapshot {
     );
     if (!boardRow) throw new Error("The default board is missing from the SQLite file.");
 
-    const memos = db.selectObjects(
-        "SELECT id, board_id, content, x, y, z, width, height, color FROM memos WHERE board_id = ? ORDER BY id",
+    // 배열 순서는 생성 순서(id)로 유지한다. Markdown 컴파일이 이 순서를 문서 순서로 쓴다.
+    const memoColumns = new Set(db.selectObjects("PRAGMA table_info(memos)").map((row) => String(row.name)));
+    const hasMemoOrderColumn = memoColumns.has("sort_order");
+    const memoRows = db.selectObjects(
+        hasMemoOrderColumn
+            ? "SELECT id, board_id, content, x, y, z, width, height, color, sort_order FROM memos WHERE board_id = ? ORDER BY id"
+            : "SELECT id, board_id, content, x, y, z, width, height, color FROM memos WHERE board_id = ? ORDER BY id",
         [defaultBoardId],
-    ).map((row) => ({
+    );
+    const memoOrderById = rankMemoOrders(memoRows.map((row) => ({
+        id: numberValue(row.id),
+        storedOrder: hasMemoOrderColumn ? numberValue(row.sort_order) : 0,
+    })));
+    const memos = memoRows.map((row) => ({
         id: numberValue(row.id), boardId: numberValue(row.board_id), content: stringValue(row.content),
         x: numberValue(row.x), y: numberValue(row.y), z: numberValue(row.z),
         width: numberValue(row.width), height: numberValue(row.height), color: stringValue(row.color),
+        sortOrder: memoOrderById.get(numberValue(row.id)) ?? 1,
     }));
 
     const imageColumns = new Set(db.selectObjects("PRAGMA table_info(images)").map((row) => String(row.name)));
@@ -299,8 +322,11 @@ function replaceSnapshot(db: Database, value: BoardSnapshot) {
             snapshot.board.boardId, snapshot.board.title, snapshot.board.width, snapshot.board.height,
         ]);
         snapshot.memos.forEach((memo) => exec(db,
-            "INSERT INTO memos (id, board_id, content, x, y, z, width, height, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [memo.id, memo.boardId, memo.content, memo.x, memo.y, memo.z, memo.width, memo.height, memo.color],
+            "INSERT INTO memos (id, board_id, content, x, y, z, width, height, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                memo.id, memo.boardId, memo.content, memo.x, memo.y, memo.z,
+                memo.width, memo.height, memo.color, memo.sortOrder,
+            ],
         ));
         snapshot.images.forEach((image) => exec(db,
             "INSERT INTO images (image_id, board_id, url, image_data, mime_type, label, x, y, z, width, height) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -363,7 +389,7 @@ async function importDatabase(bytes: ArrayBuffer) {
         }
 
         const version = Number(imported.selectValue("PRAGMA user_version"));
-        if (version !== 1 && version !== schemaVersion) {
+        if (!isSupportedVersion(version)) {
             throw new Error(`Unsupported save file version: ${version}.`);
         }
 
