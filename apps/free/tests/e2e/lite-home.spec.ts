@@ -119,3 +119,54 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(page.locator('[class*="image-rnd-"]')).toHaveCount(0);
     });
 });
+
+test.describe("Meldrift Free Edition Help", () => {
+    test("opens for an empty board and reopens with the Ctrl and Command Help shortcuts", async ({ page }) => {
+        await page.goto("/");
+        await expect(page.locator(".board-scroll-layer")).toBeVisible();
+
+        const helpDialog = page.getByRole("dialog", { name: "Help" });
+        await expect(helpDialog).toBeVisible();
+        const usesCommandKey = await page.evaluate(() =>
+            /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(window.navigator.userAgent)
+        );
+        await expect(helpDialog.getByLabel(
+            usesCommandKey
+                ? "Help shortcut: Command Shift H"
+                : "Help shortcut: Control Shift H"
+        )).toBeVisible();
+        await expect(helpDialog.getByRole("heading", { name: "Welcome to Meldrift!" })).toBeVisible();
+        await expect(helpDialog.getByRole("img", { name: "Meldrift help 1" })).toBeVisible();
+        await expect(helpDialog.getByRole("img", { name: "Meldrift help 2" })).toBeVisible();
+        await expect(helpDialog.getByRole("img", { name: "Meldrift help 3" })).toBeVisible();
+        await expect(helpDialog.getByRole("button", { name: /download/i })).toHaveCount(0);
+
+        await helpDialog.getByRole("button", { name: "Close Help" }).click();
+        await expect(helpDialog).toHaveCount(0);
+
+        await page.reload();
+        await expect(page.locator(".board-scroll-layer")).toBeVisible();
+        await expect(helpDialog).toBeVisible();
+
+        await helpDialog.getByRole("button", { name: "Close Help" }).click();
+        await getBoardToolButton(page, "lucide-square-pen").click();
+        const editingCard = page.locator(".card-editing");
+        await expect(editingCard).toBeVisible();
+        await editingCard.locator('[contenteditable="true"]').fill("My first memo");
+        const cardBox = (await editingCard.boundingBox())!;
+        await page.mouse.click(cardBox.x + cardBox.width / 2, cardBox.y - 40);
+        await expect(page.locator(".card-editing")).toHaveCount(0);
+        await page.waitForTimeout(600);
+
+        await page.reload();
+        await expect(page.locator(".board-scroll-layer")).toBeVisible();
+        await expect(helpDialog).toHaveCount(0);
+
+        await page.keyboard.press("Control+Shift+H");
+        await expect(helpDialog).toBeVisible();
+
+        await helpDialog.getByRole("button", { name: "Close Help" }).click();
+        await page.keyboard.press("Meta+Shift+H");
+        await expect(helpDialog).toBeVisible();
+    });
+});
