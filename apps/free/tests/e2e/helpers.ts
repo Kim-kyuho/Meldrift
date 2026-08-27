@@ -7,6 +7,11 @@ export const aiTestPassword = "e2e-assistant-password";
 export async function gotoHydratedPage(page: Page, path: string) {
     await page.goto(path);
     await expect(page.locator(".board-scroll-layer")).toBeVisible();
+
+    const closeHelpButton = page.getByRole("button", { name: "Close Help" });
+    if (await closeHelpButton.isVisible()) {
+        await closeHelpButton.click();
+    }
 }
 
 export async function openTestBoard(page: Page) {

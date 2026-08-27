@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageCard from "./ImageCard";
 import AboutModal from "./AboutModal";
+import HelpModal from "./HelpModal";
 import AiAssistantButton from "./AiAssistantButton";
 import AiChatPanel from "./AiChatPanel";
 import AiUnlockPanel from "./AiUnlockPanel";
@@ -35,6 +36,7 @@ import { useAiAssistant } from "@/hooks/useAiAssistant";
 import { defaultBoard, type BoardSnapshot } from "@/lib/board-state";
 import { loadBoardState, replaceBoardState } from "@/lib/browser-db/client";
 import { imageInputAccept } from "@/lib/image-file";
+import { isBoardContentEmpty } from "@/lib/help";
 
 // 보드 컴포넌트
 export default function BoardClient() {
@@ -46,9 +48,17 @@ export default function BoardClient() {
     const cardLocationRef = useRef<HTMLDivElement | null>(null);
     const [menuOpen, setMenuOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
     const [markdownViewOpen, setMarkdownViewOpen] = useState(false);
     const [boardNavigatorOpen, setBoardNavigatorOpen] = useState(false);
     const [boardMessage, setBoardMessage] = useState("");
+
+    const openHelp = useCallback(() => {
+        setMenuOpen(false);
+        setAboutOpen(false);
+        setMarkdownViewOpen(false);
+        setHelpOpen(true);
+    }, []);
 
     const {
         boardZoom,
@@ -256,6 +266,7 @@ export default function BoardClient() {
                 if (!active) return;
                 applySnapshot(stored);
                 setDatabaseReady(true);
+                if (isBoardContentEmpty(stored)) openHelp();
             })
             .catch((error: unknown) => {
                 if (!active) return;
@@ -264,7 +275,19 @@ export default function BoardClient() {
         return () => {
             active = false;
         };
-    }, [applySnapshot]);
+    }, [applySnapshot, openHelp]);
+
+    useEffect(() => {
+        const handleHelpShortcut = (event: KeyboardEvent) => {
+            const modifierPressed = event.ctrlKey || event.metaKey;
+            if (!modifierPressed || !event.shiftKey || event.key.toLowerCase() !== "h") return;
+            event.preventDefault();
+            openHelp();
+        };
+
+        window.addEventListener("keydown", handleHelpShortcut, true);
+        return () => window.removeEventListener("keydown", handleHelpShortcut, true);
+    }, [openHelp]);
 
     // Export는 내보내기 전에 현재 snapshot을 파일에 쓴다. 편집 중과 마찬가지로 AI 제안이
     // 남아 있는 동안에도 잠근다. 임시 카드는 음수 ID라서 저장 단계에서 검증에 걸린다.
@@ -433,6 +456,9 @@ export default function BoardClient() {
         )}
         {aboutOpen && (
             <AboutModal onClose={() => setAboutOpen(false)} />
+        )}
+        {helpOpen && (
+            <HelpModal onClose={() => setHelpOpen(false)} />
         )}
         {resetDialogOpen && (
             <ConfirmDialog
