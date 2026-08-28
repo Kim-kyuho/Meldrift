@@ -1,5 +1,5 @@
 import { RefObject, useState } from "react";
-import { defaultTableSource } from "@/lib/table-card";
+import { defaultTableSource } from "@meldrift/core/table-card";
 import { nextPositiveId, type BoardTable } from "@/lib/board-state";
 
 export type { BoardTable } from "@/lib/board-state";

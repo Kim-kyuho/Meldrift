@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@meldrift/ai", "@meldrift/core", "@meldrift/ui"],
   basePath: process.env.PLUS_STANDALONE === "true" ? undefined : "/plus",
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),

@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useImageCard, type ImageCardData } from "@/hooks/useImageCard";
-import { useMemoCard, type MemoCardData } from "@/hooks/useMemoCard";
-import { useMermaidCard, type MermaidCardData } from "@/hooks/useMermaidCard";
-import { useTableCard } from "@/hooks/useTableCard";
+import { useMemoCard, type MemoCardData } from "@meldrift/ui/useMemoCard";
+import { useMermaidCard, type MermaidCardData } from "@meldrift/ui/useMermaidCard";
+import { useTableCard } from "@meldrift/ui/useTableCard";
 import type { BoardTable } from "@/hooks/useBoardTables";
 
 function dispatchBoardPress(type: "pointerdown" | "pointerup") {
@@ -16,7 +16,7 @@ function dispatchBoardPress(type: "pointerdown" | "pointerup") {
 
 const memo: MemoCardData = {
     id: 1, boardId: 5, content: "memo", x: 10.4, y: 20.4, z: 3,
-    width: 300, height: 200, color: "#fffadc",
+    width: 300, height: 200, color: "#fffadc", sortOrder: 1,
 };
 const image: ImageCardData = {
     imageId: 2, boardId: 5, url: "https://example.com/image.png", label: "image.png",

@@ -13,7 +13,7 @@ import {
     type BoardSnapshot,
 } from "@/lib/board-state";
 import type { BrowserDbRequest, BrowserDbResponse } from "@/lib/browser-db/protocol";
-import { rankMemoOrders } from "@/lib/memo-order";
+import { rankMemoOrders } from "@meldrift/core/memo-order";
 
 const requiredTables = ["boards", "memos", "images", "mermaids", "drawings", "tables"];
 const browserDatabaseName = "meldrift-free";

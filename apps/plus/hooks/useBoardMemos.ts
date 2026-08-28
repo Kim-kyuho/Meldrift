@@ -1,18 +1,8 @@
 import { RefObject, useState } from "react";
-import { nextMemoOrder } from "@/lib/memo-order";
+import type { MemoCardData } from "@meldrift/core/cards";
+import { nextMemoOrder } from "@meldrift/core/memo-order";
 
-export type BoardMemo = {
-    id: number;
-    boardId: number;
-    content: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    color: string;
-    sortOrder: number;
-};
+export type BoardMemo = MemoCardData;
 
 type UseBoardMemosOptions = {
     initialMemos: BoardMemo[];

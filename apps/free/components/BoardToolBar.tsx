@@ -1,9 +1,9 @@
 "use client";
 
-import PressableButton from "./PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import { Dispatch, SetStateAction } from "react";
 import { Camera, Check, Compass, Pencil, Search, SquarePen, Table2, Workflow } from "lucide-react";
-import BoardZoomControl from "./BoardZoomControl";
+import BoardZoomControl from "@meldrift/ui/BoardZoomControl";
 
 type BoardToolBarProps = {
     cardEditing: boolean;

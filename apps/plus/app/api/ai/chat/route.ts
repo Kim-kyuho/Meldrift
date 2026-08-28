@@ -1,7 +1,7 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import {
     AssistantUnavailableError,
-    runBoardAssistant,
+    runAssistant,
     type AssistantMessage,
     type BoardSnapshot,
 } from "@/lib/ai/assistant";
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
                 : 0,
         };
 
-        const result = await runBoardAssistant(apiKey, messages, snapshot);
+        const result = await runAssistant(apiKey, messages, snapshot);
 
         return NextResponse.json({
             ok: true,
@@ -107,7 +107,6 @@ export async function POST(request: NextRequest) {
             arrangement: result.arrangement,
             edit: result.edit,
             deletion: result.deletion,
-            images: result.images,
         });
     } catch (error) {
         if (error instanceof AssistantUnavailableError) {

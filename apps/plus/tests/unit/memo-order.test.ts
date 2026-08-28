@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { memoPlainText, nextMemoOrder, reorderMemos, sortMemosByOrder } from "@/lib/memo-order";
+import { memoPlainText, nextMemoOrder, reorderMemos, sortMemosByOrder } from "@meldrift/core/memo-order";
 
 const memo = (id: number, sortOrder: number) => ({ id, sortOrder });
 

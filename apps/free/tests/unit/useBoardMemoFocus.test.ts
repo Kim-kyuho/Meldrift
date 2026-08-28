@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useBoardMemoFocus } from "@/hooks/useBoardMemoFocus";
+import { useBoardMemoFocus } from "@meldrift/ui/useBoardMemoFocus";
 
 describe("useBoardMemoFocus", () => {
     beforeEach(() => {

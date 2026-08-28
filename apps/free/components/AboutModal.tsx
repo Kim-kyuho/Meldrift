@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { BookOpen, ExternalLink, Mail, X } from "lucide-react";
-import PressableButton from "./PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 
 type AboutModalProps = {
     onClose: () => void;

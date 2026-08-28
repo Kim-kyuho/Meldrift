@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/db";
 import { db_boards } from "@/lib/db/schema";
-import { tableSourceSchema, tableSourceToMarkdown } from "@/lib/table-card";
+import { tableSourceSchema, tableSourceToMarkdown } from "@meldrift/core/table-card";
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import TurndownService from "turndown";

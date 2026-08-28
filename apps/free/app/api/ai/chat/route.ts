@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
     AssistantUnavailableError,
-    runBoardAssistant,
+    runAssistant,
     type AssistantMessage,
     type BoardSnapshot,
 } from "@/lib/ai/assistant";
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
                 : 0,
         };
 
-        const result = await runBoardAssistant(apiKey, messages, snapshot);
+        const result = await runAssistant(apiKey, messages, snapshot);
 
         return NextResponse.json({
             ok: true,

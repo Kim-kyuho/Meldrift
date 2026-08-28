@@ -10,8 +10,8 @@ import {
     type BoardDeletion,
     type BoardEdit,
     type BoardPlan,
-} from "@/lib/ai/board-plan";
-import { nextMemoOrder } from "@/lib/memo-order";
+} from "@meldrift/core/board-plan";
+import { nextMemoOrder } from "@meldrift/core/memo-order";
 import type { BoardImage } from "@/hooks/useBoardImages";
 import type { BoardMemo } from "@/hooks/useBoardMemos";
 import type { BoardMermaid } from "@/hooks/useBoardMermaids";

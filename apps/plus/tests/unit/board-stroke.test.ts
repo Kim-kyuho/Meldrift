@@ -7,7 +7,7 @@ import {
     eraseStrokesAlongPath,
     eraseStrokesInCircle,
     strokeToPath,
-} from "@/lib/board-stroke";
+} from "@meldrift/core/board-stroke";
 
 const stroke = {
     id: "s1",

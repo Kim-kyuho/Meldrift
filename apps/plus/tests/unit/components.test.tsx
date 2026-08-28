@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import CreateBoardModal from "@/components/CreateBoardModal";
-import PressableButton from "@/components/PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import RenameBoardModal from "@/components/RenameBoardModal";
 import AboutModal from "@/components/AboutModal";
 import BoardMenu from "@/components/BoardMenu";
-import BoardNavigator from "@/components/BoardNavigator";
+import BoardNavigator from "@meldrift/ui/BoardNavigator";
 import BoardToolBar from "@/components/BoardToolBar";
 
 describe("PressableButton", () => {

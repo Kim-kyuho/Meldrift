@@ -11,7 +11,7 @@ const mermaidMock = vi.hoisted(() => ({
 vi.mock("mermaid", () => ({ default: mermaidMock }));
 vi.mock("@mermaid-js/mermaid-zenuml", () => ({ default: { id: "zenuml" } }));
 
-import { useMermaidRenderer } from "@/hooks/useMermaidRenderer";
+import { useMermaidRenderer } from "@meldrift/ui/useMermaidRenderer";
 
 describe("useMermaidRenderer", () => {
     beforeEach(() => {

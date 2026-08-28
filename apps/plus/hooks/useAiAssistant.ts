@@ -10,9 +10,8 @@ import {
     type BoardDeletion,
     type BoardEdit,
     type BoardPlan,
-    type GeneratedImage,
-} from "@/lib/ai/board-plan";
-import { nextMemoOrder } from "@/lib/memo-order";
+} from "@meldrift/core/board-plan";
+import { nextMemoOrder } from "@meldrift/core/memo-order";
 import type { BoardImage } from "@/hooks/useBoardImages";
 import type { BoardMemo } from "@/hooks/useBoardMemos";
 import type { BoardMermaid } from "@/hooks/useBoardMermaids";
@@ -70,17 +69,6 @@ type BoardCards = {
     mermaids: BoardMermaid[];
     tables: BoardTable[];
     images: BoardImage[];
-};
-
-const base64ToFile = (data: string, mimeType: string, name: string) => {
-    const binary = atob(data);
-    const bytes = new Uint8Array(binary.length);
-
-    for (let index = 0; index < binary.length; index += 1) {
-        bytes[index] = binary.charCodeAt(index);
-    }
-
-    return new File([bytes], name, { type: mimeType });
 };
 
 const newColumnGap = 120;
@@ -316,8 +304,8 @@ export function useAiAssistant({
         };
     };
 
-    const applyPlan = (plan: BoardPlan, base: BoardCards, generatedImages: GeneratedImage[] = []) => {
-        const planned = layoutBoardPlan(plan, getPlanOrigin(base), boardBounds, generatedImages);
+    const applyPlan = (plan: BoardPlan, base: BoardCards) => {
+        const planned = layoutBoardPlan(plan, getPlanOrigin(base), boardBounds);
         // 증가 방향이어야 저장 전에도 계획 순서대로 화면에 선다
         const idBase = -Date.now();
         let idOffset = 0;
@@ -357,36 +345,17 @@ export function useAiAssistant({
             height: table.height,
         }));
 
-        const newImages: BoardImage[] = planned.images.map((image, index) => {
-            const file = base64ToFile(image.data, image.mimeType, `ai-image-${index + 1}.png`);
-
-            return {
-                imageId: nextTempId(),
-                boardId,
-                publicId: "",
-                secureUrl: URL.createObjectURL(file),
-                fileName: image.alt,
-                file,
-                x: image.x,
-                y: image.y,
-                z: 1,
-                width: image.width,
-                height: image.height,
-            };
-        });
-
         commitCards({
             memos: [...base.memos, ...newMemos],
             mermaids: [...base.mermaids, ...newMermaids],
             tables: [...base.tables, ...newTables],
-            images: [...base.images, ...newImages],
+            images: base.images,
         });
         setPendingCards({
             memoIds: newMemos.map((memo) => memo.id),
             mermaidIds: newMermaids.map((mermaid) => mermaid.id),
             tableIds: newTables.map((table) => table.id),
         });
-        setPendingImageIds(newImages.map((image) => image.imageId));
 
         const locationElement = cardLocationRef.current;
         if (locationElement && newMemos[0]) {
@@ -621,15 +590,8 @@ export function useAiAssistant({
             }
 
             if (data.plan) {
-                const result = applyPlan(data.plan, base, data.images ?? []);
-                const requestedImages = data.plan.sections.filter(
-                    (section: { attachment?: { type?: string } }) => section.attachment?.type === "image"
-                ).length;
-                const madeImages = (data.images ?? []).length;
+                const result = applyPlan(data.plan, base);
 
-                if (requestedImages > madeImages) {
-                    notes.push(`Skipped ${requestedImages - madeImages} image(s) that could not be generated.`);
-                }
                 if (result.droppedSections > 0) {
                     notes.push(
                         `Could not place ${result.droppedSections} section(s) because the board is full. Clear some space or use a larger board.`

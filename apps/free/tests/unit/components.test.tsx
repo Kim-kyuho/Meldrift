@@ -3,11 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import BoardMenu from "@/components/BoardMenu";
 import AboutModal from "@/components/AboutModal";
 import BoardMessage from "@/components/BoardMessage";
-import BoardNavigator from "@/components/BoardNavigator";
+import BoardNavigator from "@meldrift/ui/BoardNavigator";
 import BoardToolBar from "@/components/BoardToolBar";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import DrawingToolBar from "@/components/DrawingToolBar";
-import PressableButton from "@/components/PressableButton";
+import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
+import DrawingToolBar from "@meldrift/ui/DrawingToolBar";
+import PressableButton from "@meldrift/ui/PressableButton";
 
 describe("PressableButton", () => {
     it("applies and clears touch feedback while forwarding callbacks", () => {

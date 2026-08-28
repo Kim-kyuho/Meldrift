@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { boardStrokesSchema, type BoardStroke } from "@/lib/board-stroke";
+import type { MemoCardData, MermaidCardData, TableCardData } from "@meldrift/core/cards";
+import { boardStrokesSchema, type BoardStroke } from "@meldrift/core/board-stroke";
 import { maxStoredImageBytes, supportedImageMimeTypes } from "@/lib/image-file";
-import { tableSourceSchema, type TableSource } from "@/lib/table-card";
+import { tableSourceSchema } from "@meldrift/core/table-card";
 
 export const defaultBoardId = 1;
 export const schemaVersion = 3;
@@ -13,18 +14,7 @@ export type BoardInfo = {
     height: number;
 };
 
-export type BoardMemo = {
-    id: number;
-    boardId: number;
-    content: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-    color: string;
-    sortOrder: number;
-};
+export type BoardMemo = MemoCardData;
 
 export type BoardImage = {
     imageId: number;
@@ -40,27 +30,9 @@ export type BoardImage = {
     height: number;
 };
 
-export type BoardMermaid = {
-    id: number;
-    boardId: number;
-    source: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-};
+export type BoardMermaid = MermaidCardData;
 
-export type BoardTable = {
-    id: number;
-    boardId: number;
-    source: TableSource;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-};
+export type BoardTable = TableCardData;
 
 export type BoardSnapshot = {
     board: BoardInfo;

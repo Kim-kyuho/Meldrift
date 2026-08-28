@@ -8,7 +8,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 
-import PressableButton from "@/components/PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import { getHelpShortcut, helpMarkdownUrl } from "@/lib/help";
 
 type HelpModalProps = {

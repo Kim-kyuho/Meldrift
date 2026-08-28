@@ -5,7 +5,7 @@ import {
     rankMemoOrders,
     reorderMemos,
     sortMemosByOrder,
-} from "@/lib/memo-order";
+} from "@meldrift/core/memo-order";
 
 const memo = (id: number, sortOrder: number) => ({ id, sortOrder });
 

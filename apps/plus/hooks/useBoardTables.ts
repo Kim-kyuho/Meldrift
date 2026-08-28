@@ -1,16 +1,8 @@
 import { RefObject, useState } from "react";
-import { defaultTableSource, TableSource } from "@/lib/table-card";
+import type { TableCardData } from "@meldrift/core/cards";
+import { defaultTableSource } from "@meldrift/core/table-card";
 
-export type BoardTable = {
-    id: number;
-    boardId: number;
-    source: TableSource;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-};
+export type BoardTable = TableCardData;
 
 type UseBoardTablesOptions = {
     initialTables: BoardTable[];

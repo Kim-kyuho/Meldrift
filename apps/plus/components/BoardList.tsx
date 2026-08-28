@@ -10,7 +10,7 @@ import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import CreateBoardModal from "./CreateBoardModal";
 import RenameBoardModal from "./RenameBoardModal";
-import ConfirmDialog from "./ConfirmDialog";
+import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import BoardActionMenu from "./BoardActionMenu";
 import AboutModal from "./AboutModal";
 import { useBoardAuth } from "@/hooks/useBoardAuth";
