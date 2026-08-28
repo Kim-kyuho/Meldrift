@@ -1,6 +1,6 @@
 "use client";
 
-import PressableButton from "@/components/PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useState } from "react";

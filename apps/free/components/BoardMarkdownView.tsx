@@ -7,9 +7,9 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 
-import PressableButton from "@/components/PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import { useBoardMarkdown } from "@/hooks/useBoardMarkdown";
-import { useMermaidRenderer } from "@/hooks/useMermaidRenderer";
+import { useMermaidRenderer } from "@meldrift/ui/useMermaidRenderer";
 import type { BoardSnapshot } from "@/lib/board-state";
 
 type BoardMarkdownViewProps = {
@@ -110,7 +110,7 @@ export default function BoardMarkdownView({ snapshot, onClose }: BoardMarkdownVi
                                             rehypePlugins={[rehypeRaw, rehypeSanitize]}
                                             components={{
                                                 img: ({ src, alt, title }) => (
-                                                    // Blob URLs are already resized local images and must bypass Next image optimization.
+                                                    // Blob URL은 previewImageUrls에서 가져오고, 그 외의 경우는 그대로 src를 사용
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img
                                                         src={typeof src === "string"

@@ -2,8 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ImageCard from "@/components/ImageCard";
-import MermaidCard from "@/components/MermaidCard";
-import TableCard from "@/components/TableCard";
+import MermaidCard from "@meldrift/ui/MermaidCard";
+import TableCard from "@meldrift/ui/TableCard";
 
 vi.mock("react-rnd", () => ({
     Rnd: ({ children, className }: { children: ReactNode; className?: string }) => (
@@ -11,7 +11,7 @@ vi.mock("react-rnd", () => ({
     ),
 }));
 
-vi.mock("@/hooks/useMermaidRenderer", () => ({
+vi.mock("@meldrift/ui/useMermaidRenderer", () => ({
     useMermaidRenderer: () => ({ svg: "", renderError: null }),
 }));
 

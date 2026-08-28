@@ -1,17 +1,12 @@
 import { Dispatch, SetStateAction } from "react";
+import type { CardLayer, CardLayerAction, CardType } from "@meldrift/core/cards";
 import { BoardImage } from "@/hooks/useBoardImages";
 import { BoardMemo } from "@/hooks/useBoardMemos";
 import { BoardMermaid } from "@/hooks/useBoardMermaids";
 import { BoardTable } from "@/hooks/useBoardTables";
 
-export type CardLayerType = "memo" | "image" | "mermaid" | "table";
-export type CardLayerAction = "front" | "back";
-
-type CardLayer = {
-    type: CardLayerType;
-    id: number;
-    z: number;
-};
+export type CardLayerType = CardType;
+export type { CardLayerAction };
 
 type UseCardLayerOptions = {
     boardId: number;

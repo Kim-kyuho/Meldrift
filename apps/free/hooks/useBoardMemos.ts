@@ -1,6 +1,6 @@
 import { RefObject, useState } from "react";
 import { nextPositiveId, type BoardMemo } from "@/lib/board-state";
-import { nextMemoOrder } from "@/lib/memo-order";
+import { nextMemoOrder } from "@meldrift/core/memo-order";
 
 export type { BoardMemo } from "@/lib/board-state";
 

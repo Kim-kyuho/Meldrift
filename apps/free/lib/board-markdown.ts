@@ -1,7 +1,8 @@
 import TurndownService from "turndown";
+import { cardTypeOrder, type CardType } from "@meldrift/core/cards";
 import type { BoardSnapshot } from "@/lib/board-state";
-import { sortMemosByOrder } from "@/lib/memo-order";
-import { tableSourceToMarkdown } from "@/lib/table-card";
+import { sortMemosByOrder } from "@meldrift/core/memo-order";
+import { tableSourceToMarkdown } from "@meldrift/core/table-card";
 
 export type BoardMarkdownImageAsset = {
     path: string;
@@ -15,7 +16,8 @@ export type BoardMarkdownDocument = {
 };
 
 type BoardCard = {
-    type: "image" | "mermaid" | "table";
+    // 메모는 문서의 뼈대라 카드 후보가 아니다. 카드 종류가 늘면 여기서 컴파일 에러로 잡힌다.
+    type: Exclude<CardType, "memo">;
     id: number;
     content: string;
     label: string | null;
@@ -27,7 +29,6 @@ type BoardCard = {
     imageAsset: BoardMarkdownImageAsset | null;
 };
 
-const typeOrder: Record<BoardCard["type"], number> = { image: 1, mermaid: 2, table: 3 };
 const turndown = new TurndownService({
     headingStyle: "atx",
     bulletListMarker: "-",
@@ -88,6 +89,7 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
     ];
     const markdownParts: string[] = [];
     const imageAssets: BoardMarkdownImageAsset[] = [];
+
     const renderedCards = new Set<string>();
 
     sortMemosByOrder(snapshot.memos).forEach((memo) => {
@@ -106,7 +108,7 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
                 .filter((candidate) =>
                     candidate.x < cornerX && cornerX < candidate.x + candidate.width &&
                     candidate.y < cornerY && cornerY < candidate.y + candidate.height)
-                .sort((left, right) => right.z - left.z || typeOrder[left.type] - typeOrder[right.type] || left.id - right.id)[0];
+                .sort((left, right) => right.z - left.z || cardTypeOrder[left.type] - cardTypeOrder[right.type] || left.id - right.id)[0];
             if (!card) return;
 
             const key = `${card.type}:${card.id}`;

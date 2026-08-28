@@ -2,7 +2,7 @@
 
 import { Ref } from "react";
 import { Pencil,Trash2 } from "lucide-react";
-import PressableButton from "./PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 
 interface BoardActionMenuProps {
     ref?: Ref<HTMLDivElement>;

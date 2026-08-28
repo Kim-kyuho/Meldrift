@@ -1,34 +1,23 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
 import { db_images, db_memos, db_mermaids, db_tables } from "@/lib/db/schema";
+import {
+    cardTypeOrder,
+    isCardLayerAction,
+    isCardType,
+    type CardLayer,
+    type CardType,
+} from "@meldrift/core/cards";
 import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-type CardLayerType = "memo" | "image" | "mermaid" | "table";
-type CardLayerAction = "front" | "back";
-
-type LayerCard = {
-    type: CardLayerType;
-    id: number;
-    z: number;
-};
+type CardLayerType = CardType;
 
 const normalizeThreshold = 9000;
-const typeOrder: Record<CardLayerType, number> = {
-    memo: 1,
-    image: 2,
-    mermaid: 3,
-    table: 4,
-};
 
-const isCardLayerType = (value: unknown): value is CardLayerType =>
-    value === "memo" || value === "image" || value === "mermaid" || value === "table";
-
-const isCardLayerAction = (value: unknown): value is CardLayerAction => value === "front" || value === "back";
-
-const normalizeLayerCards = (cards: LayerCard[]) =>
+const normalizeLayerCards = (cards: CardLayer[]) =>
     [...cards]
-        .sort((a, b) => a.z - b.z || typeOrder[a.type] - typeOrder[b.type] || a.id - b.id)
+        .sort((a, b) => a.z - b.z || cardTypeOrder[a.type] - cardTypeOrder[b.type] || a.id - b.id)
         .map((card, index) => ({
             ...card,
             z: index + 1,
@@ -92,7 +81,7 @@ async function getLayerCards(boardId: number) {
     ];
 }
 
-async function updateCardZ(card: LayerCard) {
+async function updateCardZ(card: CardLayer) {
     const db = getDb();
 
     if (card.type === "memo") {
@@ -183,7 +172,7 @@ async function sendCardToBack(type: CardLayerType, id: number, boardId: number) 
     }
 }
 
-async function normalizeCards(cards: LayerCard[]) {
+async function normalizeCards(cards: CardLayer[]) {
     const normalizedCards = normalizeLayerCards(cards);
 
     await Promise.all(normalizedCards.map((card) => updateCardZ(card)));
@@ -217,7 +206,7 @@ export async function POST(request: NextRequest) {
             boardId <= 0 ||
             !Number.isInteger(id) ||
             id <= 0 ||
-            !isCardLayerType(type) ||
+            !isCardType(type) ||
             !isCardLayerAction(action)
         ) {
             return NextResponse.json(
@@ -243,7 +232,7 @@ export async function POST(request: NextRequest) {
         }
 
         const maxZ = Math.max(...cards.map((card) => card.z), 1);
-        let nextCards: LayerCard[];
+        let nextCards: CardLayer[];
 
         if (action === "front") {
             const nextZ = maxZ + 1;

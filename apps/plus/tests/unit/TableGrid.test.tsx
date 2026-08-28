@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
-import TableGrid from "@/components/TableGrid";
-import type { TableSource } from "@/lib/table-card";
+import TableGrid from "@meldrift/ui/TableGrid";
+import type { TableSource } from "@meldrift/core/table-card";
 
 const initialSource: TableSource = {
     columns: [

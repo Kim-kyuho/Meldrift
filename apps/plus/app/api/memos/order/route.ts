@@ -1,7 +1,7 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
 import { db_memos } from "@/lib/db/schema";
-import { reorderMemos } from "@/lib/memo-order";
+import { reorderMemos } from "@meldrift/core/memo-order";
 import { asc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

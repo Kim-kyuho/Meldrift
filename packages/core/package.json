@@ -1,0 +1,23 @@
+{
+  "name": "@meldrift/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./cards": "./src/cards.ts",
+    "./board-plan": "./src/board-plan.ts",
+    "./board-stroke": "./src/board-stroke.ts",
+    "./memo-order": "./src/memo-order.ts",
+    "./table-card": "./src/table-card.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.9"
+  }
+}

@@ -9,7 +9,7 @@ import {
     useState,
 } from "react";
 import type { BoardMemo } from "@/hooks/useBoardMemos";
-import { memoReorderRowHeight, reorderMemos, sortMemosByOrder } from "@/lib/memo-order";
+import { memoReorderRowHeight, reorderMemos, sortMemosByOrder } from "@meldrift/core/memo-order";
 
 type UseMemoReorderOptions = {
     boardId: number;

@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { useBoardSearch } from "@/hooks/useBoardSearch";
+import { useBoardSearch } from "@meldrift/ui/useBoardSearch";
 
 const memos = [
     { id: 1, content: "Alpha memo", sortOrder: 1 },

@@ -1,6 +1,6 @@
 "use client";
 
-import PressableButton from "./PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import { Dispatch, SetStateAction } from "react";
 import { Download, EllipsisIcon, FileText, FolderOpen, Info, ListOrdered, Shredder } from "lucide-react";
 import Image from "next/image";

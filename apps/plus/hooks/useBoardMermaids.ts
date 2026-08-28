@@ -1,15 +1,7 @@
 import { RefObject, useState } from "react";
+import type { MermaidCardData } from "@meldrift/core/cards";
 
-export type BoardMermaid = {
-    id: number;
-    boardId: number;
-    source: string;
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-};
+export type BoardMermaid = MermaidCardData;
 
 type UseBoardMermaidsOptions = {
     initialMermaids: BoardMermaid[];

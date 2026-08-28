@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const plusOrigin = process.env.PLUS_ORIGIN ?? "http://localhost:3001";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@meldrift/ai", "@meldrift/core", "@meldrift/ui"],
   allowedDevOrigins: ['192.168.1.230', 'macbookpro.tail82cf40.ts.net'],
   async rewrites() {
     return {

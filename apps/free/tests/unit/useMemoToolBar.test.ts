@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { useMemoToolBar } from "@/hooks/useMemoToolBar";
+import { useMemoToolBar } from "@meldrift/ui/useMemoToolBar";
 
 describe("useMemoToolBar", () => {
     it("offers the full beta memo color palette", () => {

@@ -1,14 +1,14 @@
 import { Dispatch, SetStateAction } from "react";
+import {
+    cardTypeOrder,
+    type CardLayer,
+    type CardLayerAction,
+    type CardType,
+} from "@meldrift/core/cards";
 import type { BoardImage, BoardMemo, BoardMermaid, BoardTable } from "@/lib/board-state";
 
-export type CardLayerType = "memo" | "image" | "mermaid" | "table";
-export type CardLayerAction = "front" | "back";
-
-type CardLayer = {
-    type: CardLayerType;
-    id: number;
-    z: number;
-};
+export type CardLayerType = CardType;
+export type { CardLayerAction };
 
 type UseCardLayerOptions = {
     memos: BoardMemo[];
@@ -20,8 +20,6 @@ type UseCardLayerOptions = {
     setMermaids: Dispatch<SetStateAction<BoardMermaid[]>>;
     setTables: Dispatch<SetStateAction<BoardTable[]>>;
 };
-
-const typeOrder: Record<CardLayerType, number> = { memo: 0, image: 1, mermaid: 2, table: 3 };
 
 export function useCardLayer({
     memos,
@@ -49,7 +47,7 @@ export function useCardLayer({
             ...images.map((image) => ({ type: "image" as const, id: image.imageId, z: image.z })),
             ...mermaids.map((mermaid) => ({ type: "mermaid" as const, id: mermaid.id, z: mermaid.z })),
             ...tables.map((table) => ({ type: "table" as const, id: table.id, z: table.z })),
-        ].sort((left, right) => left.z - right.z || typeOrder[left.type] - typeOrder[right.type] || left.id - right.id);
+        ].sort((left, right) => left.z - right.z || cardTypeOrder[left.type] - cardTypeOrder[right.type] || left.id - right.id);
 
         const targetIndex = cards.findIndex((card) => card.type === type && card.id === id);
         if (targetIndex < 0) return;

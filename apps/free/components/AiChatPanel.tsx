@@ -2,8 +2,8 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Loader2, Lock, Send, X } from "lucide-react";
-import GeminiIcon from "./GeminiIcon";
-import PressableButton from "./PressableButton";
+import GeminiIcon from "@meldrift/ui/GeminiIcon";
+import PressableButton from "@meldrift/ui/PressableButton";
 import type { AiChatMessage } from "@/hooks/useAiAssistant";
 
 type AiChatPanelProps = {

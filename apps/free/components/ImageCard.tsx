@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { Rnd } from "react-rnd";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import { ImageCardData, useImageCard } from "@/hooks/useImageCard";
-import { ACTIVE_CARD_Z } from "@/lib/zIndex";
+import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
 import { imageBytesToBlob } from "@/lib/image-file";
-import ImageToolBar from "./ImageToolBar";
+import ImageToolBar from "@meldrift/ui/ImageToolBar";
 
 type ImageCardProps = {
     image: ImageCardData;

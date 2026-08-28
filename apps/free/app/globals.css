@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 공유 패키지는 node_modules 심링크라 자동 탐지 대상이 아니다. 명시적으로 스캔한다. */
+@source "../../../packages/ui/src";
+
 @font-face {
   font-family: "LINE Seed";
   src: url("/font/LINESeedSans_W_Th.woff2") format("woff2");

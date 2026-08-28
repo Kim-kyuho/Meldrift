@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DrawingLayer from "@/components/DrawingLayer";
 import type { DrawingTool } from "@/hooks/useBoardDrawing";
-import { defaultPenColor, defaultPenWidth, type BoardStroke } from "@/lib/board-stroke";
+import { defaultPenColor, defaultPenWidth, type BoardStroke } from "@meldrift/core/board-stroke";
 
 const canStartBoardPanSelector =
     "[data-editing='true'], [data-drawing-capture='true'], .board-toolbar, .confirm-dialog, button, input, textarea, a, [contenteditable='true']";

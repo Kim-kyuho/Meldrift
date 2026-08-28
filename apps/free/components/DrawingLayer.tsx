@@ -5,10 +5,10 @@ import {
     StrokePoint,
     eraserScreenRadius,
     strokeToPath,
-} from "@/lib/board-stroke";
+} from "@meldrift/core/board-stroke";
 import type { DrawingTool } from "@/hooks/useBoardDrawing";
-import { useDrawingPointer } from "@/hooks/useDrawingPointer";
-import { ACTIVE_CARD_Z } from "@/lib/zIndex";
+import { useDrawingPointer } from "@meldrift/ui/useDrawingPointer";
+import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
 type DrawingLayerProps = {

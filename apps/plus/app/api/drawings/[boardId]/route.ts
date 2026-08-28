@@ -1,7 +1,7 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
 import { db_drawings } from "@/lib/db/schema";
-import { boardStrokesSchema } from "@/lib/board-stroke";
+import { boardStrokesSchema } from "@meldrift/core/board-stroke";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

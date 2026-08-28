@@ -6,9 +6,10 @@ import {
     defaultPenColor,
     defaultPenWidth,
     eraseStrokesAlongPath,
-} from "@/lib/board-stroke";
+    type DrawingTool,
+} from "@meldrift/core/board-stroke";
 
-export type DrawingTool = "draw" | "erase";
+export type { DrawingTool };
 
 type UseBoardDrawingOptions = {
     initialStrokes: BoardStroke[];

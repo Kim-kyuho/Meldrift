@@ -7,9 +7,9 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 
-import PressableButton from "@/components/PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 import { useBoardMarkdown } from "@/hooks/useBoardMarkdown";
-import { useMermaidRenderer } from "@/hooks/useMermaidRenderer";
+import { useMermaidRenderer } from "@meldrift/ui/useMermaidRenderer";
 
 type BoardMarkdownViewProps = {
     boardId: number;

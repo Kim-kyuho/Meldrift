@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, serial, text, integer, boolean, timestamp, varchar, check, index, jsonb } from "drizzle-orm/pg-core";
-import type { TableSource } from "@/lib/table-card";
-import type { BoardStroke } from "@/lib/board-stroke";
+import type { TableSource } from "@meldrift/core/table-card";
+import type { BoardStroke } from "@meldrift/core/board-stroke";
 
 export const db_users = pgTable("users", {
     id: serial("id").primaryKey(),

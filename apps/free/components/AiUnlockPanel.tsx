@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Loader2, Lock, X } from "lucide-react";
-import PressableButton from "./PressableButton";
+import PressableButton from "@meldrift/ui/PressableButton";
 
 type AiUnlockPanelProps = {
     unlocking: boolean;

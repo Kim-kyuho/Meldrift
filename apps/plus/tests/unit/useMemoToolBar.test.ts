@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { useMemoToolBar } from "@/hooks/useMemoToolBar";
+import { useMemoToolBar } from "@meldrift/ui/useMemoToolBar";
 
 describe("useMemoToolBar", () => {
     it("keeps color and heading submenus mutually exclusive", () => {

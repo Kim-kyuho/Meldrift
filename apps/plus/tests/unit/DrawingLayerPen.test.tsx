@@ -1,7 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DrawingLayer from "@/components/DrawingLayer";
-import { defaultPenColor, defaultPenWidth } from "@/lib/board-stroke";
+import { defaultPenColor, defaultPenWidth } from "@meldrift/core/board-stroke";
 
 function setup() {
     const onStrokeEnd = vi.fn();
