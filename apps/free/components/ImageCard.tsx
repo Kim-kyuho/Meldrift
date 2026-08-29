@@ -28,7 +28,7 @@ type ImageCardProps = {
     onSendToBack: () => void;
 };
 
-// 이미지 카드 컴포넌트
+// 이미지 카드 컴포넌트는 free와 plus에서 다른 저장구조를 가지기 때문에 패키지를 만들지 않고 각각의 컴포넌트를 이용한다.
 export default function ImageCard(props: ImageCardProps) {
     const {
         image,
