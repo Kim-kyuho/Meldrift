@@ -80,7 +80,7 @@ const [permissionMessage, setPermissionMessage] = useState("");
 
 Meldrift 적용 위치:
 
-- `components/PressableButton.tsx`
-- `components/MemoCard.tsx`
+- `packages/ui/src/components/PressableButton.tsx`
+- `packages/ui/src/components/MemoCard.tsx`
 - `components/BoardMessage.tsx`
-- `components/BoardZoomControl.tsx`
+- `packages/ui/src/components/BoardZoomControl.tsx`

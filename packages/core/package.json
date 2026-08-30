@@ -8,6 +8,7 @@
     "./board-plan": "./src/board-plan.ts",
     "./board-stroke": "./src/board-stroke.ts",
     "./memo-order": "./src/memo-order.ts",
+    "./mermaid-language": "./src/mermaid-language.ts",
     "./table-card": "./src/table-card.ts"
   },
   "scripts": {

@@ -81,6 +81,6 @@ useEffect(() => {
 
 Meldrift 적용 위치:
 
-- `hooks/useMemoCard.ts`
+- `packages/ui/src/hooks/useMemoCard.ts`
 - `hooks/useImageCard.ts`
 - `hooks/useBoardList.ts`

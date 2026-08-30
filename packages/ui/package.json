@@ -18,6 +18,7 @@
     "./MemoReorderPanel": "./src/components/MemoReorderPanel.tsx",
     "./MemoToolBar": "./src/components/MemoToolBar.tsx",
     "./MermaidCard": "./src/components/MermaidCard.tsx",
+    "./MermaidCodeEditor": "./src/components/MermaidCodeEditor.tsx",
     "./MermaidToolBar": "./src/components/MermaidToolBar.tsx",
     "./PressableButton": "./src/components/PressableButton.tsx",
     "./TableCard": "./src/components/TableCard.tsx",
@@ -36,6 +37,10 @@
     "./useTableEdit": "./src/hooks/useTableEdit.tsx"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.11.0",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.9",
     "@meldrift/core": "*",
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
     "@tanstack/react-table": "^8.21.3",

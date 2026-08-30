@@ -21,12 +21,17 @@ Ideas do not always begin in a clear order. Meldrift allows memos, images, table
 - Compile board contents into Markdown and download the result.
 - Use an AI assistant to create, edit, delete, and arrange cards after reviewing its proposed changes.
 
-## Editions
+## Structure
+
+Meldrift is an npm workspace monorepo.
 
 - `apps/free`: browser-storage edition served from `/`
 - `apps/plus`: database-backed edition served from `/plus`
+- `packages/core`: framework-free rules and schemas shared by both editions
+- `packages/ui`: React components and hooks shared by both editions
+- `packages/ai`: the assistant body shared by both editions
 
-The Plus edition defines the primary feature set and documentation. The Free edition provides a lightweight version without external database or image-storage services.
+The Plus edition defines the primary feature set and documentation. The Free edition provides a lightweight version without external database or image-storage services. Whatever differs between the editions — image storage, board persistence, edition-specific assistant wording — stays inside each app.
 
 ## Development
 
