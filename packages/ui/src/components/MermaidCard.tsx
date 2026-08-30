@@ -1,12 +1,24 @@
 "use client";
 
+import { lazy, Suspense } from "react";
+import { PenTool } from "lucide-react";
 import { Rnd } from "react-rnd";
 import { noop } from "../internal/noop";
 import { MermaidCardData, useMermaidCard } from "../hooks/useMermaidCard";
 import { useMermaidRenderer } from "../hooks/useMermaidRenderer";
 import ConfirmDialog from "./ConfirmDialog";
 import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
+import {
+    detectMermaidDiagramType,
+    getMermaidTemplate,
+    hasMermaidHandDrawnLook,
+    mermaidDiagramDefinitions,
+    toggleMermaidHandDrawnLook,
+    type MermaidDiagramType,
+} from "@meldrift/core/mermaid-language";
 import MermaidToolBar from "./MermaidToolBar";
+
+const MermaidCodeEditor = lazy(() => import("./MermaidCodeEditor"));
 
 type MermaidCardProps = {
     mermaid: MermaidCardData;
@@ -86,6 +98,7 @@ export default function MermaidCard({
         source,
         mermaidId: mermaid.id,
     });
+    const handDrawn = hasMermaidHandDrawnLook(source);
 
     return (
         <>
@@ -127,12 +140,25 @@ export default function MermaidCard({
                 >
                     <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl">
                         {isEditing && (
-                            <textarea
-                                value={source}
-                                onChange={(event) => setSource(event.target.value)}
-                                className="h-2/5 min-h-24 resize-none border-b border-neutral-200 bg-neutral-50 p-3 font-mono text-base text-neutral-900 outline-none"
-                                spellCheck={false}
-                            />
+                            <div className="flex h-2/5 min-h-24 border-b border-neutral-200 bg-neutral-50">
+                                {/* size를 주면 팝업 대신 인라인 목록으로 그려져 높이와 스크롤을 CSS로 잡을 수 있다. */}
+                                <select
+                                    size={5}
+                                    aria-label="Mermaid diagram type"
+                                    value={detectMermaidDiagramType(source)}
+                                    onChange={(event) => setSource(getMermaidTemplate(event.target.value as MermaidDiagramType))}
+                                    className="h-full w-40 min-w-24 overflow-y-auto border-0 border-r border-neutral-200 bg-white text-sm font-semibold text-neutral-700 outline-none"
+                                >
+                                    {mermaidDiagramDefinitions.map((diagram) => (
+                                        <option key={diagram.id} value={diagram.id}>
+                                            {diagram.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <Suspense fallback={<div className="min-h-0 min-w-0 flex-1 bg-neutral-50" />}>
+                                    <MermaidCodeEditor value={source} onChange={setSource} />
+                                </Suspense>
+                            </div>
                         )}
 
                         <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-3">
@@ -160,6 +186,21 @@ export default function MermaidCard({
                             >
                                 <div className={`h-1.5 w-24 rounded-full transition duration-150 ${dragHandlePressed ? "bg-black/70" : "bg-black/25"}`} />
                             </div>
+                        )}
+
+                        {isEditing && (
+                            <button
+                                type="button"
+                                aria-label="Hand drawn look"
+                                aria-pressed={handDrawn}
+                                title="Hand drawn look"
+                                onClick={() => setSource(toggleMermaidHandDrawnLook(source))}
+                                className={`absolute bottom-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full transition duration-150 ${
+                                    handDrawn ? "bg-neutral-900 text-white" : "bg-black/10 text-neutral-500 hover:bg-black/20"
+                                }`}
+                            >
+                                <PenTool className="h-3.5 w-3.5" />
+                            </button>
                         )}
 
                     </div>

@@ -113,7 +113,7 @@ const handleColorSelect = (color: string) => {
 
 Meldrift 적용 위치:
 
-- `components/CardToolPortal.tsx`
-- `components/MemoToolBar.tsx`
-- `components/DrawingToolBar.tsx`
-- `hooks/useMemoToolBar.ts`
+- `packages/ui/src/components/CardToolPortal.tsx`
+- `packages/ui/src/components/MemoToolBar.tsx`
+- `packages/ui/src/components/DrawingToolBar.tsx`
+- `packages/ui/src/hooks/useMemoToolBar.ts`

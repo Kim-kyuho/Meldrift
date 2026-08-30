@@ -2,7 +2,7 @@
 
 작성 기준: 2026-08-21 현재 워크스페이스 구현
 
-이 문서는 기존 `meldrift-detailed-design.md`의 시스템 설계와 `drawing-basic-design.md`의 드로잉 설계를 합친 Meldrift 기준 문서다. 컴포넌트 내부 구현은 [상세설계 폴더](./detailed-design/)에서 관리한다.
+이 문서는 기존 `meldrift-detailed-design.md`의 시스템 설계와 `drawing-basic-design.md`의 드로잉 설계를 합친 Meldrift 기준 문서다. 컴포넌트 내부 구현은 [상세설계 폴더](./shared/), [Plus](./plus/), [Free](./free/)에서 관리한다.
 
 ## 1. 목적과 범위
 

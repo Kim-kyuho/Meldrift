@@ -75,7 +75,7 @@ const handleResizeStop: RndResizeCallback = (
 
 Meldrift 적용 위치:
 
-- `components/MemoCard.tsx`
+- `packages/ui/src/components/MemoCard.tsx`
 - `components/ImageCard.tsx`
-- `hooks/useMemoCard.ts`
+- `packages/ui/src/hooks/useMemoCard.ts`
 - `hooks/useImageCard.ts`

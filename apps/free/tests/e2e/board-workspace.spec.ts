@@ -65,7 +65,7 @@ test.describe("보드 작업 화면", () => {
     test("Mermaid 소스 변경을 새로고침 없이 렌더링한다", async ({ page }) => {
         await getBoardToolButton(page, "lucide-workflow").click();
 
-        const sourceEditor = page.locator("textarea");
+        const sourceEditor = page.getByLabel("Mermaid source");
         await expect(sourceEditor).toBeVisible();
         await sourceEditor.fill("flowchart TD\nA[Live preview] --> B[Without reload]");
 

@@ -82,5 +82,5 @@ Meldrift 적용 위치:
 
 - `hooks/useBoardMemos.ts`
 - `hooks/useBoardImages.ts`
-- `hooks/useMemoCard.ts`
+- `packages/ui/src/hooks/useMemoCard.ts`
 - `hooks/useImageCard.ts`
