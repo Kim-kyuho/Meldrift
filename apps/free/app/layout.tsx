@@ -7,11 +7,6 @@ export const metadata: Metadata = {
   title: "Meldrift",
   description: "Meld your Drifting ideas into clarity. A canvas web app for placing memos freely and compiling them into Markdown.",
   icons: {
-    icon: {
-      url: "/favicon.ico",
-      sizes: "48x48",
-      type: "image/x-icon",
-    },
     apple: "/apple-touch-icon.png?v=4",
   },
   verification: {
