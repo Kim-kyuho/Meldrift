@@ -140,14 +140,12 @@ export default function MermaidCard({
                 >
                     <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl">
                         {isEditing && (
-                            <div className="flex h-2/5 min-h-24 border-b border-neutral-200 bg-neutral-50">
-                                {/* size를 주면 팝업 대신 인라인 목록으로 그려져 높이와 스크롤을 CSS로 잡을 수 있다. */}
+                            <div className="flex h-2/5 min-h-24 flex-col border-b border-neutral-200 bg-neutral-50">
                                 <select
-                                    size={5}
                                     aria-label="Mermaid diagram type"
                                     value={detectMermaidDiagramType(source)}
                                     onChange={(event) => setSource(getMermaidTemplate(event.target.value as MermaidDiagramType))}
-                                    className="h-full w-40 min-w-24 overflow-y-auto border-0 border-r border-neutral-200 bg-white text-sm font-semibold text-neutral-700 outline-none"
+                                    className="h-8 w-full shrink-0 border-0 border-b border-neutral-200 bg-white px-2 text-sm font-semibold text-neutral-700 outline-none"
                                 >
                                     {mermaidDiagramDefinitions.map((diagram) => (
                                         <option key={diagram.id} value={diagram.id}>

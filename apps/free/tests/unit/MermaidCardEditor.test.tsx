@@ -48,8 +48,7 @@ describe("MermaidCard editor", () => {
     it("provides every registered diagram type and loads its template", async () => {
         renderEditingCard();
 
-        // size가 붙은 select는 combobox가 아니라 listbox로 매핑된다.
-        const typeSelect = screen.getByRole("listbox", { name: "Mermaid diagram type" });
+        const typeSelect = screen.getByRole("combobox", { name: "Mermaid diagram type" });
         expect(typeSelect.querySelectorAll("option")).toHaveLength(mermaidDiagramDefinitions.length);
 
         fireEvent.change(typeSelect, { target: { value: "sequence" } });
