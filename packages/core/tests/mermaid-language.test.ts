@@ -74,6 +74,18 @@ describe("Mermaid completion engine", () => {
         ]));
     });
 
+    it("suggests shapes for a new object typed after a flowchart arrow", () => {
+        const source = `flowchart LR\n    A["Start"] --> NewObject`;
+        const result = getMermaidCompletions(source, source.length);
+
+        expect(result?.from).toBe(source.lastIndexOf("NewObject"));
+        expect(result?.options).toEqual(expect.arrayContaining([
+            expect.objectContaining({ apply: `NewObject["Text"]`, detail: "Rectangle" }),
+            expect.objectContaining({ apply: `NewObject("Text")`, detail: "Rounded rectangle" }),
+            expect.objectContaining({ apply: `NewObject{"Text"}`, detail: "Diamond" }),
+        ]));
+    });
+
     it("suggests diagram-specific keywords", () => {
         const source = "sequenceDiagram\n    part";
         const result = getMermaidCompletions(source, source.length);

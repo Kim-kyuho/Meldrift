@@ -443,6 +443,14 @@ const symbolCompletions = (symbols: MermaidSymbol[]): MermaidCompletion[] =>
         kind: "symbol",
     }));
 
+const flowchartShapeCompletions = (id: string): MermaidCompletion[] =>
+    flowchartShapes.map((shape) => ({
+        label: `${id}${shape.suffix}`,
+        apply: `${id}${shape.suffix}`,
+        detail: shape.label,
+        kind: "node",
+    }));
+
 export const getMermaidCompletions = (
     source: string,
     cursor: number,
@@ -464,22 +472,18 @@ export const getMermaidCompletions = (
             return {
                 from,
                 options: [
-                    ...flowchartShapes.map((shape) => ({
-                        label: `${id}${shape.suffix}`,
-                        apply: `${id}${shape.suffix}`,
-                        detail: shape.label,
-                        kind: "node" as const,
-                    })),
+                    ...flowchartShapeCompletions(id),
                     ...symbolCompletions(symbols),
                 ],
             };
         }
 
         if (/(?:-->|---|-\.->|-\.-|==>|===|--o|--x)\s*[A-Za-z_\w-]*$/.test(line)) {
-            const { from } = currentWordRange(source, safeCursor);
+            const { from, word } = currentWordRange(source, safeCursor);
             return {
                 from,
                 options: [
+                    ...(word ? flowchartShapeCompletions(word) : []),
                     ...symbolCompletions(symbols),
                     { label: "New node", apply: `Node["Text"]`, detail: "Create object", kind: "node" },
                 ],
