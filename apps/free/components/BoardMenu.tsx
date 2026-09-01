@@ -77,7 +77,7 @@ export default function BoardMenu({
             {menuOpen && (
                 // AI 어시스턴트 버튼이 위로 올라오는 것을 방지하기 위해 z를 한 단계 올림
                 <div className="fixed right-5 top-17 z-50001 w-56 rounded-xl bg-white/75 px-2 py-3 shadow-md">
-                    <div className="px-3 py-2 font-bold text-neutral-900">Free Edition</div>
+                    <div className="px-3 py-2 font-bold text-neutral-900">Free Board</div>
                     <PressableButton
                         variant="menu"
                         title="Change the order memos are numbered in"
