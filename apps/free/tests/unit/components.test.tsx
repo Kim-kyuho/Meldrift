@@ -65,7 +65,7 @@ describe("Free Edition board controls", () => {
         const meldriftHome = screen.getByRole("link", { name: "Meldrift home" });
         expect(meldriftHome).toContainElement(screen.getByAltText("meldrift"));
         expect(meldriftHome.querySelector('img[alt=""]')).toBeInTheDocument();
-        expect(screen.getByText("Free Edition")).toBeVisible();
+        expect(screen.getByText("Free Board")).toBeVisible();
         expect(screen.getByRole("button", { name: "Export" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Export" }).querySelector(".lucide-download")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Import" }).querySelector(".lucide-folder-open")).toBeInTheDocument();

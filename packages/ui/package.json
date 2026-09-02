@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./fonts.css": "./font/fonts.css",
+    "./globals.css": "./styles/globals.css",
     "./AiAssistantButton": "./src/components/AiAssistantButton.tsx",
     "./BoardNavigator": "./src/components/BoardNavigator.tsx",
     "./BoardSearchPanel": "./src/components/BoardSearchPanel.tsx",
