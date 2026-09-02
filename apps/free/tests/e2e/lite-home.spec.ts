@@ -26,7 +26,7 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(wordmark.getByAltText("meldrift")).toBeVisible();
 
         await getBoardMenuButton(page).click();
-        await expect(page.getByText("Free Edition", { exact: true })).toBeVisible();
+        await expect(page.getByText("Free Board", { exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Export" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Import" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Compile to Markdown" })).toBeVisible();
