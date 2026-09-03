@@ -210,11 +210,10 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
             cell: TableColumnCell,
         } satisfies ColumnDef<TableRow>)),
         // input 재마운트를 방지하기 위해 source.columns 대신 columnStructureKey로 열 구조 변경만 감지
-        // 의존성 배열에 source.columns가 포함되지 않아 출력되는 의존성 경고를 막기 위해 주석 추가
         // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [columnStructureKey]);
 
-    // React 컴파일러의 자동 최적화 경고를 막기 위해 주석 추가
+    // React 컴파일러가 최적화할 수 없는 외부 라이브러리라 경고를 끈다.
     // eslint-disable-next-line react-hooks/incompatible-library
     const tableInstance = useReactTable({
         data: source.rows,

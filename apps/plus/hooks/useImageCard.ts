@@ -141,11 +141,12 @@ export function useImageCard({
         }
 
         const currentTime = event.timeStamp;
-        const isDoubleTap = currentTime - lastImageTapRef.current < 300;
+        const isDoubleTap = 
+            currentTime - lastImageTapRef.current > 80 && 
+            currentTime - lastImageTapRef.current < 300;
         lastImageTapRef.current = currentTime;
 
         if (isDoubleTap) {
-            // event.preventDefault();
             editImage();
         }
     };

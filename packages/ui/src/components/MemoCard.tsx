@@ -47,7 +47,6 @@ type MemoCardProps = {
     onSendToBack: () => void;
 };
 
-// 메모 카드 컴포넌트
 export default function MemoCard(props: MemoCardProps) {
     const {
         memo,

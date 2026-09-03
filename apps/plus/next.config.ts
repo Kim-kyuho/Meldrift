@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
   },
-  /* config options here */
   allowedDevOrigins: ['192.168.1.230', 'macbookpro.tail82cf40.ts.net'],
   images: {
     remotePatterns: [

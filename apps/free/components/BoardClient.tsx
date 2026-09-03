@@ -39,7 +39,6 @@ import { loadBoardState, replaceBoardState } from "@/lib/browser-db/client";
 import { imageInputAccept } from "@/lib/image-file";
 import { isBoardContentEmpty } from "@/lib/help";
 
-// 보드 컴포넌트
 export default function BoardClient() {
     const [currentBoard, setCurrentBoard] = useState(defaultBoard);
     const [databaseReady, setDatabaseReady] = useState(false);

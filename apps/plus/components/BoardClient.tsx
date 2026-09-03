@@ -92,7 +92,6 @@ interface Table {
     height: number;
 }
 
-// 보드 컴포넌트
 export default function BoardClient(
   {currentBoard, mappedImages, mappedMemos, mappedMermaids, mappedTables, mappedStrokes}:{currentBoard:Board, mappedImages: Image[], mappedMemos: Memo[], mappedMermaids: Mermaid[], mappedTables: Table[], mappedStrokes: BoardStroke[]}
 ) {

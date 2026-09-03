@@ -7,7 +7,6 @@ export type { MemoCardData };
 
 type UseMemoCardOptions = {
     memo: MemoCardData;
-    /** 권한 개념이 없는 앱은 기본값을 그대로 쓴다. */
     canEdit?: boolean;
     isEditing: boolean;
     isFocused: boolean;
@@ -59,7 +58,6 @@ export function useMemoCard({
     const [dragHandlePressed, setDragHandlePressed] = useState(false);
     const memoFocusRef = useRef<HTMLDivElement | null>(null);
     const lastMemoTapRef = useRef(0);
-    // 카드 내부에서 드래그하여 카드 외부에서 Pointer up이벤트가 발상한 경우 내용 저장을 방지하기 위한 Ref
     const outsidePressStartedRef = useRef(false);
 
     const [memoState, setMemoState] = useState({
@@ -151,7 +149,9 @@ export function useMemoCard({
         }
 
         const currentTime = event.timeStamp;
-        const isDoubleTap = currentTime - lastMemoTapRef.current < 300;
+        const isDoubleTap =             
+            currentTime - lastMemoTapRef.current > 80 &&
+            currentTime - lastMemoTapRef.current < 300;
         lastMemoTapRef.current = currentTime;
 
         if (isDoubleTap) {
