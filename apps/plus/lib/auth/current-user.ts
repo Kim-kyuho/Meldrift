@@ -4,7 +4,6 @@ import { db_users } from "@/lib/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 import { NextRequest } from "next/server";
 
-// 현재 유저정보 GET 위한 라이브러리
 export async function getCurrentUserFromRequest(request: NextRequest) {
     try {
         const sessionTokenHash = getSessionTokenHash(
@@ -39,15 +38,12 @@ export async function getCurrentUserFromRequest(request: NextRequest) {
     }
 }
 
-// 카드 편집 권한 메시지
 export function getCardPermissionMessage(
     user: Awaited<ReturnType<typeof getCurrentUserFromRequest>>
 ) {
-    // Sign in을 하지 않았을 경우 출력 메시지
     if (!user) {
         return "Please sign in before editing cards.";
     }
-    // Sign up 후 허가되지 않은 유저의 경우 출력 메시지
     if (!user.isApproved) {
         return "Your account is waiting for administrator approval.";
     }

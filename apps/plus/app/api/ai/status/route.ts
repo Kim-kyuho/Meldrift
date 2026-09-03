@@ -1,7 +1,6 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { NextRequest, NextResponse } from "next/server";
 
-// AI 어시스턴트를 쓸 수 있는 상태인지 알려준다.
 // 채팅을 보내기 전에 버튼 단계에서 막기 위한 용도라 키 값 자체는 다루지 않는다.
 export async function GET(request: NextRequest) {
     try {

@@ -40,7 +40,7 @@ export function useTableCard({
     const sourceRef = useRef(source);
     const cardStateRef = useRef(cardState);
     const lastTapRef = useRef(0);
-    // 카드 내부에서 드래그하여 카드 외부에서 Pointer up이벤트가 발상한 경우 내용 저장을 방지하기 위한 Ref
+    // 카드 내부에서 드래그하여 카드 외부에서 Pointer up 이벤트가 발생한 경우 내용 저장을 방지하기 위한 Ref
     const outsidePressStartedRef = useRef(false);
 
     useEffect(() => {
@@ -79,10 +79,15 @@ export function useTableCard({
     };
 
     const handleDoubleTap = (event: ReactPointerEvent<HTMLDivElement>) => {
-        if (event.pointerType !== "touch") return;
-
-        const isDoubleTap = event.timeStamp - lastTapRef.current < 300;
-        lastTapRef.current = event.timeStamp;
+        if (event.pointerType !== "touch") {
+            return;
+        }
+        
+        const currentTime = event.timeStamp;
+        const isDoubleTap = 
+            currentTime - lastTapRef.current > 80 && 
+            currentTime - lastTapRef.current < 300;
+        lastTapRef.current = currentTime;
         if (isDoubleTap) editTable();
     };
 

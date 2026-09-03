@@ -29,7 +29,7 @@ type UseBoardImagesOptions = {
     setPermissionMessage: (message: string) => void;
     onPreviewUpdate: () => void;
 };
-// FUNCTION_PAYLOAD_TOO_LARGE를 막기위해 이미지 업로드 전에 클라이언트에서 이미지를 압축하는 함수
+// 업로드가 FUNCTION_PAYLOAD_TOO_LARGE로 막히지 않게 클라이언트에서 미리 줄인다.
 async function compressImage(file: File) {
     try {
         const maxFileSize = 4 * 1024 * 1024;

@@ -144,7 +144,6 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                                     }}
                                 >
                                     <div>
-                                        {/* 보드 미리보기 영역 */}
                                         <div
                                             className="relative aspect-video overflow-hidden bg-white"
                                             style={{
@@ -171,7 +170,6 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                                                 />
                                             )}
                                         </div>
-                                        {/* 보드 제목 영역 */}
                                         <div className="border-t border-neutral-100 px-3 py-2">
                                             <p className="truncate text-sm font-semibold text-neutral-900">
                                                 {board.title}
@@ -209,7 +207,6 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                             </div>
                         ))}
 
-                        {/* New Board 버튼 - admin권한이 있는 경우 보드 생성 모달을 표시 */}
                         <button
                             type="button"
                             onClick={handleCreateBoardClick}

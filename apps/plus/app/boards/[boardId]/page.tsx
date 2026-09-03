@@ -1,5 +1,3 @@
-// app/boards/[boardId]/page.tsx
-
 import BoardClient from "@/components/BoardClient";
 import { getDb } from "@/lib/db";
 import { db_boards, db_drawings, db_images, db_memos, db_mermaids, db_tables } from "@/lib/db/schema";

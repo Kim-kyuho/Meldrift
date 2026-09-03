@@ -92,7 +92,6 @@ export type MemoEditorHandle = {
   toggleHighlight: () => void;
 };
 
-// 메모 에디터 컴포넌트 - TipTap 리치 텍스트를 적용
 export default function MemoEditor({
   ref,
   content,

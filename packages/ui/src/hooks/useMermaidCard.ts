@@ -60,7 +60,7 @@ export function useMermaidCard({
     const lastMermaidTapRef = useRef(0);
     const sourceRef = useRef(source);
     const cardStateRef = useRef(cardState);
-    // 카드 내부에서 드래그하여 카드 외부에서 Pointer up이벤트가 발상한 경우 내용 저장을 방지하기 위한 Ref
+    // 카드 내부에서 드래그하여 카드 외부에서 Pointer up 이벤트가 발생한 경우 내용 저장을 방지하기 위한 Ref
     const outsidePressStartedRef = useRef(false);
 
     useEffect(() => {
@@ -125,7 +125,9 @@ export function useMermaidCard({
         }
 
         const currentTime = event.timeStamp;
-        const isDoubleTap = currentTime - lastMermaidTapRef.current < 300;
+        const isDoubleTap =
+            currentTime - lastMermaidTapRef.current > 80 &&
+            currentTime - lastMermaidTapRef.current < 300;
         lastMermaidTapRef.current = currentTime;
 
         if (isDoubleTap) {
