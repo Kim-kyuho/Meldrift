@@ -4,7 +4,7 @@ import BoardMenu from "@/components/BoardMenu";
 import AboutModal from "@/components/AboutModal";
 import BoardMessage from "@/components/BoardMessage";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
-import BoardToolBar from "@/components/BoardToolBar";
+import BoardToolBar from "@meldrift/ui/BoardToolBar";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import DrawingToolBar from "@meldrift/ui/DrawingToolBar";
 import PressableButton from "@meldrift/ui/PressableButton";

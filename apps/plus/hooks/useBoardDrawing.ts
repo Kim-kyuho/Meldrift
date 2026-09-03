@@ -1,15 +1,7 @@
-import { useRef, useState } from "react";
-import {
-    BoardStroke,
-    StrokePoint,
-    createStrokeId,
-    defaultPenColor,
-    defaultPenWidth,
-    eraseStrokesAlongPath,
-    type DrawingTool,
-} from "@meldrift/core/board-stroke";
+import { useBoardDrawing as useSharedBoardDrawing } from "@meldrift/ui/useBoardDrawing";
+import type { BoardStroke } from "@meldrift/core/board-stroke";
 
-export type { DrawingTool };
+export type { DrawingTool } from "@meldrift/ui/useBoardDrawing";
 
 type UseBoardDrawingOptions = {
     initialStrokes: BoardStroke[];
@@ -28,13 +20,6 @@ export function useBoardDrawing({
     setPermissionMessage,
     onPreviewUpdate,
 }: UseBoardDrawingOptions) {
-    const [strokes, setStrokes] = useState(initialStrokes);
-    const [drawingMode, setDrawingMode] = useState(false);
-    const [drawingTool, setDrawingTool] = useState<DrawingTool>("draw");
-    const [penColor, setPenColor] = useState(defaultPenColor);
-    const [penWidth, setPenWidth] = useState(defaultPenWidth);
-    const unsavedRef = useRef(false);
-
     const saveStrokes = async (nextStrokes: BoardStroke[]) => {
         const response = await fetch(`/api/drawings/${boardId}`, {
             method: "PATCH",
@@ -53,78 +38,10 @@ export function useBoardDrawing({
         onPreviewUpdate();
     };
 
-    const handleToggleDrawingMode = () => {
-        if (drawingMode) {
-            setDrawingMode(false);
-            setDrawingTool("draw");
-
-            if (unsavedRef.current) {
-                unsavedRef.current = false;
-                void saveStrokes(strokes);
-            }
-
-            return;
-        }
-
-        if (!canEditCard) {
-            showPermissionMessage();
-            return;
-        }
-
-        setDrawingMode(true);
-        setDrawingTool("draw");
-    };
-
-    const handleStrokeEnd = (points: StrokePoint[]) => {
-        if (points.length < 2) {
-            return;
-        }
-
-        unsavedRef.current = true;
-        setStrokes((prev) => [
-            ...prev,
-            {
-                id: createStrokeId(),
-                color: penColor,
-                width: penWidth,
-                points,
-            },
-        ]);
-    };
-
-    const handleErase = (start: StrokePoint, end: StrokePoint, radius: number) => {
-        setStrokes((prev) => {
-            const nextStrokes = eraseStrokesAlongPath(prev, start, end, radius);
-
-            if (nextStrokes !== prev) {
-                unsavedRef.current = true;
-            }
-
-            return nextStrokes;
-        });
-    };
-
-    const handleUndoStroke = () => {
-        if (strokes.length === 0) {
-            return;
-        }
-
-        unsavedRef.current = true;
-        setStrokes((prev) => prev.slice(0, -1));
-    };
-
-    return {
-        strokes,
-        drawingMode,
-        drawingTool,
-        penColor,
-        setPenColor,
-        penWidth,
-        setPenWidth,
-        handleToggleDrawingMode,
-        handleToggleEraseTool: () => setDrawingTool((prev) => (prev === "erase" ? "draw" : "erase")),
-        handleStrokeEnd,
-        handleErase,
-        handleUndoStroke,
-    };
+    return useSharedBoardDrawing({
+        initialStrokes,
+        canEditCard,
+        showPermissionMessage,
+        onDrawingModeEnd: (nextStrokes) => void saveStrokes(nextStrokes),
+    });
 }

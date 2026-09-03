@@ -6,9 +6,10 @@ import {
     eraserScreenRadius,
     strokeToPath,
 } from "@meldrift/core/board-stroke";
-import type { DrawingTool } from "@/hooks/useBoardDrawing";
-import { useDrawingPointer } from "@meldrift/ui/useDrawingPointer";
+import type { DrawingTool } from "@meldrift/core/board-stroke";
+import { useDrawingPointer } from "../hooks/useDrawingPointer";
 import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 type DrawingLayerProps = {
     strokes: BoardStroke[];
@@ -22,6 +23,9 @@ type DrawingLayerProps = {
 };
 
 const markerStrokeOpacity = 0.82;
+const stopPointerPropagation = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+};
 
 function StrokePaths({ strokes }: { strokes: BoardStroke[] }) {
     return (
@@ -89,8 +93,9 @@ export default function DrawingLayer({
     }
 
     return (
-        <svg
-            ref={layerRef}
+        // 일부 모바일 브라우저에서는 SVG의 touch-action이 안정적으로 적용된지 않아 드로잉 중 보드 패닝이 발생하는 버그를 발견
+        // 따라서, SVG 대신 div를 사용하고, SVG를 div 내부에 배치하여 touch-action을 안정적으로 적용하도록 변경
+        <div
             data-drawing-capture="true"
             className="absolute left-0 top-0 h-full w-full"
             style={{
@@ -102,34 +107,43 @@ export default function DrawingLayer({
                 WebkitUserSelect: "none",
                 userSelect: "none",
             }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onPointerLeave={handlePointerLeave}
+            onPointerDown={stopPointerPropagation}
+            onPointerMove={stopPointerPropagation}
+            onPointerUp={stopPointerPropagation}
+            onPointerCancel={stopPointerPropagation}
         >
-            <StrokePaths strokes={strokes} />
-            {currentPoints.length > 0 && (
-                <path
-                    d={strokeToPath(currentPoints)}
-                    stroke={penColor}
-                    strokeWidth={penWidth}
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeOpacity={markerStrokeOpacity}
-                />
-            )}
-            {drawingTool === "erase" && eraserPoint && (
-                <circle
-                    cx={eraserPoint[0]}
-                    cy={eraserPoint[1]}
-                    r={eraserRadius}
-                    fill="#ffffff"
-                    stroke="#a3a3a3"
-                    strokeWidth={1 / zoom}
-                />
-            )}
-        </svg>
+            <svg
+                ref={layerRef}
+                className="block h-full w-full"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onPointerLeave={handlePointerLeave}
+            >
+                <StrokePaths strokes={strokes} />
+                {currentPoints.length > 0 && (
+                    <path
+                        d={strokeToPath(currentPoints)}
+                        stroke={penColor}
+                        strokeWidth={penWidth}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeOpacity={markerStrokeOpacity}
+                    />
+                )}
+                {drawingTool === "erase" && eraserPoint && (
+                    <circle
+                        cx={eraserPoint[0]}
+                        cy={eraserPoint[1]}
+                        r={eraserRadius}
+                        fill="#ffffff"
+                        stroke="#a3a3a3"
+                        strokeWidth={1 / zoom}
+                    />
+                )}
+            </svg>
+        </div>
     );
 }
