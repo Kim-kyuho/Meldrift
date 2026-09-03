@@ -1,6 +1,6 @@
 # BoardToolBar 상세설계
 
-소스: `components/BoardToolBar.tsx`
+소스: `packages/ui/src/components/BoardToolBar.tsx`
 
 ## Props
 

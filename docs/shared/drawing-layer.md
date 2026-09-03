@@ -1,6 +1,6 @@
 # DrawingLayer 상세설계
 
-소스: `components/DrawingLayer.tsx`, `packages/ui/src/hooks/useDrawingPointer.ts`, `packages/core/src/board-stroke.ts`
+소스: `packages/ui/src/components/DrawingLayer.tsx`, `packages/ui/src/hooks/useDrawingPointer.ts`, `packages/core/src/board-stroke.ts`
 
 ## DrawingLayer Props
 

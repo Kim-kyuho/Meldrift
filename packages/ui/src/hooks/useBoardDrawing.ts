@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
     BoardStroke,
     StrokePoint,
@@ -8,26 +8,45 @@ import {
     eraseStrokesAlongPath,
     type DrawingTool,
 } from "@meldrift/core/board-stroke";
+import { noop } from "../internal/noop";
 
 export type { DrawingTool };
 
 type UseBoardDrawingOptions = {
     initialStrokes: BoardStroke[];
+    canEditCard?: boolean;
+    showPermissionMessage?: () => void;
+    onDrawingModeEnd?: (strokes: BoardStroke[]) => void;
 };
 
 export function useBoardDrawing({
     initialStrokes,
+    canEditCard = true,
+    showPermissionMessage = noop,
+    onDrawingModeEnd = noop,
 }: UseBoardDrawingOptions) {
     const [strokes, setStrokes] = useState(initialStrokes);
     const [drawingMode, setDrawingMode] = useState(false);
     const [drawingTool, setDrawingTool] = useState<DrawingTool>("draw");
     const [penColor, setPenColor] = useState(defaultPenColor);
     const [penWidth, setPenWidth] = useState(defaultPenWidth);
+    const changedRef = useRef(false);
+
     const handleToggleDrawingMode = () => {
         if (drawingMode) {
             setDrawingMode(false);
             setDrawingTool("draw");
 
+            if (changedRef.current) {
+                changedRef.current = false;
+                onDrawingModeEnd(strokes);
+            }
+
+            return;
+        }
+
+        if (!canEditCard) {
+            showPermissionMessage();
             return;
         }
 
@@ -40,6 +59,7 @@ export function useBoardDrawing({
             return;
         }
 
+        changedRef.current = true;
         setStrokes((prev) => [
             ...prev,
             {
@@ -55,6 +75,10 @@ export function useBoardDrawing({
         setStrokes((prev) => {
             const nextStrokes = eraseStrokesAlongPath(prev, start, end, radius);
 
+            if (nextStrokes !== prev) {
+                changedRef.current = true;
+            }
+
             return nextStrokes;
         });
     };
@@ -64,6 +88,7 @@ export function useBoardDrawing({
             return;
         }
 
+        changedRef.current = true;
         setStrokes((prev) => prev.slice(0, -1));
     };
 

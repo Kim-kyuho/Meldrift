@@ -4,7 +4,7 @@ import {
     defaultTableSource,
     tableSourceSchema,
     tableSourceToMarkdown,
-} from "@meldrift/core/table-card";
+} from "../src/table-card";
 
 describe("tableSourceSchema", () => {
     it("accepts a valid table source", () => {

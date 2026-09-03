@@ -9,9 +9,11 @@
     "./AiAssistantButton": "./src/components/AiAssistantButton.tsx",
     "./BoardNavigator": "./src/components/BoardNavigator.tsx",
     "./BoardSearchPanel": "./src/components/BoardSearchPanel.tsx",
+    "./BoardToolBar": "./src/components/BoardToolBar.tsx",
     "./BoardZoomControl": "./src/components/BoardZoomControl.tsx",
     "./CardToolPortal": "./src/components/CardToolPortal.tsx",
     "./ConfirmDialog": "./src/components/ConfirmDialog.tsx",
+    "./DrawingLayer": "./src/components/DrawingLayer.tsx",
     "./DrawingToolBar": "./src/components/DrawingToolBar.tsx",
     "./GeminiIcon": "./src/components/GeminiIcon.tsx",
     "./ImageToolBar": "./src/components/ImageToolBar.tsx",
@@ -26,6 +28,7 @@
     "./TableCard": "./src/components/TableCard.tsx",
     "./TableGrid": "./src/components/TableGrid.tsx",
     "./TableToolBar": "./src/components/TableToolBar.tsx",
+    "./useBoardDrawing": "./src/hooks/useBoardDrawing.ts",
     "./useBoardMemoFocus": "./src/hooks/useBoardMemoFocus.ts",
     "./useBoardPinchZoom": "./src/hooks/useBoardPinchZoom.ts",
     "./useBoardScroll": "./src/hooks/useBoardScroll.ts",
@@ -38,6 +41,10 @@
     "./useMermaidRenderer": "./src/hooks/useMermaidRenderer.ts",
     "./useTableCard": "./src/hooks/useTableCard.ts",
     "./useTableEdit": "./src/hooks/useTableEdit.tsx"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
@@ -59,5 +66,11 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.9"
   }
 }

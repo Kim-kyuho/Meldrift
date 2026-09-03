@@ -1,6 +1,6 @@
 # 보드 껍데기 상세설계 (Free)
 
-소스: `app/layout.tsx`, `components/BoardMenu.tsx`, `components/BoardToolBar.tsx`, `components/BoardMessage.tsx`, `components/AboutModal.tsx`
+소스: `app/layout.tsx`, `components/BoardMenu.tsx`, `components/BoardMessage.tsx`, `components/AboutModal.tsx`
 
 카드와 캔버스를 둘러싼 화면 요소다. Plus와 이름이 같지만 담는 항목이 다르다. 인증·보드 목록·미리보기가 없고, 대신 세이브 파일 조작이 들어온다.
 
@@ -40,16 +40,7 @@ About은 구분선 아래에 따로 둔다.
 
 ## `BoardToolBar`
 
-| Props | 역할 |
-| --- | --- |
-| `cardEditing`, `drawingMode` | 툴바를 숨길지 판정 |
-| `searchBarOpen`, `boardNavigatorOpen` | 패널 토글 상태 |
-| `boardZoom`, `setBoardZoom` | `BoardZoomControl`에 전달 |
-| `setMenuOpen`, `setSearchBarOpen`, `setBoardNavigatorOpen` | 패널 열기 |
-| `onMemoCreateClick`, `onImageUploadClick`, `onMermaidCreateClick`, `onTableCreateClick` | 카드 추가 |
-| `onDrawingToggleClick` | 드로잉 모드 토글 |
-
-Plus의 툴바에 있던 인증 관련 props와 권한에 따른 잠금이 없다. 카드 추가 네 개가 항상 열려 있다.
+두 Edition이 공유한다. [BoardToolBar 상세설계](../shared/board-tool-bar.md)를 참조한다.
 
 `BoardZoomControl`은 `@meldrift/ui`에서 그대로 쓴다.
 

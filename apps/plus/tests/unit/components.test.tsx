@@ -7,7 +7,7 @@ import RenameBoardModal from "@/components/RenameBoardModal";
 import AboutModal from "@/components/AboutModal";
 import BoardMenu from "@/components/BoardMenu";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
-import BoardToolBar from "@/components/BoardToolBar";
+import BoardToolBar from "@meldrift/ui/BoardToolBar";
 
 describe("PressableButton", () => {
     it("applies and clears touch feedback while forwarding callbacks", () => {

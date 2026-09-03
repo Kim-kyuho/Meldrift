@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useBoardDrawing } from "@/hooks/useBoardDrawing";
+import { useBoardDrawing } from "@meldrift/ui/useBoardDrawing";
 import { defaultPenColor, defaultPenWidth, type BoardStroke } from "@meldrift/core/board-stroke";
 
 const existingStroke: BoardStroke = {
