@@ -289,8 +289,6 @@ export default function BoardClient() {
         return () => window.removeEventListener("keydown", handleHelpShortcut, true);
     }, [openHelp]);
 
-    // Export는 내보내기 전에 현재 snapshot을 파일에 쓴다. 편집 중과 마찬가지로 AI 제안이
-    // 남아 있는 동안에도 잠근다. 임시 카드는 음수 ID라서 저장 단계에서 검증에 걸린다.
     const exportDisabled = isEditing || drawingMode || hasPendingAiCards;
 
     const {
@@ -310,8 +308,6 @@ export default function BoardClient() {
         getSnapshot: () => snapshot,
     });
 
-    // AI 제안이 남아 있거나 Reset이 진행 중일 때에는 저장하지 않는다. 임시 카드는 음수 ID라서
-    // 스키마 검증에 걸리고, Reset 중 저장하면 방금 지운 브라우저 DB가 다시 생길 수 있다.
     useEffect(() => {
         if (!databaseReady || isEditing || drawingMode || hasPendingAiCards || resetting) return;
 

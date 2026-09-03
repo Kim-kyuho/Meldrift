@@ -93,8 +93,8 @@ export default function DrawingLayer({
     }
 
     return (
-        // 일부 모바일 브라우저에서는 SVG의 touch-action이 안정적으로 적용되지 않아
-        // 드로잉 중 보드 패닝이 발생할 수 있으므로 HTML 오버레이로 감싼다.
+        // 일부 모바일 브라우저에서는 SVG의 touch-action이 안정적으로 적용된지 않아 드로잉 중 보드 패닝이 발생하는 버그를 발견
+        // 따라서, SVG 대신 div를 사용하고, SVG를 div 내부에 배치하여 touch-action을 안정적으로 적용하도록 변경
         <div
             data-drawing-capture="true"
             className="absolute left-0 top-0 h-full w-full"
