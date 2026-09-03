@@ -30,6 +30,7 @@ import { useBoardMemos } from "@/hooks/useBoardMemos";
 import { useBoardScroll } from "@meldrift/ui/useBoardScroll";
 import { useBoardSearch } from "@meldrift/ui/useBoardSearch";
 import { useBoardZoom } from "@meldrift/ui/useBoardZoom";
+import { useBoardPinchZoom } from "@meldrift/ui/useBoardPinchZoom";
 import { useBoardTransfer } from "@/hooks/useBoardTransfer";
 import { useMemoReorder } from "@/hooks/useMemoReorder";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
@@ -333,6 +334,13 @@ export default function BoardClient() {
         boardScrollRef: cardLocationRef,
     });
 
+    useBoardPinchZoom({
+        boardScrollRef: cardLocationRef,
+        boardZoom,
+        setBoardZoom,
+        enabled: databaseReady,
+    });
+
     const { handleCardLayer } = useCardLayer({
         memos,
         images,
@@ -523,103 +531,126 @@ export default function BoardClient() {
                 onPointerMove={handleBoardPanMove}
                 onPointerUp={handleBoardPanEnd}
             >
-            <div
-                className="board-size-layer"
-                style={{
-                    width: `${boardWidth * boardZoom}px`,
-                    height: `${boardHeight * boardZoom}px`,
-                }}
-            >
                 <div
-                    className="meldrift-board relative bg-white"
+                    className="board-size-layer"
                     style={{
-                            width: `${boardWidth}px`,
-                            height: `${boardHeight}px`,
-                            transform: `scale(${boardZoom})`,
-                            transformOrigin: "top left",
-                            backgroundImage: "radial-gradient(#d4d4d8 1px, transparent 1px)",
-                            backgroundSize: "24px 24px",
-                            WebkitUserSelect: "none",
-                            userSelect: "none",
-                            WebkitTouchCallout: "none",
-                            cursor: boardPanning ? "grabbing" : "grab",
-                        }}
+                        width: `${boardWidth * boardZoom}px`,
+                        height: `${boardHeight * boardZoom}px`,
+                    }}
                 >
-                    {images.map((image) => (
-                        <ImageCard
-                            key={image.imageId}
-                            image={image}
+                    <div
+                        className="meldrift-board relative bg-white"
+                        style={{
+                                width: `${boardWidth}px`,
+                                height: `${boardHeight}px`,
+                                transform: `scale(${boardZoom})`,
+                                transformOrigin: "top left",
+                                backgroundImage: "radial-gradient(#d4d4d8 1px, transparent 1px)",
+                                backgroundSize: "24px 24px",
+                                WebkitUserSelect: "none",
+                                userSelect: "none",
+                                WebkitTouchCallout: "none",
+                                cursor: boardPanning ? "grabbing" : "grab",
+                            }}
+                    >
+                        {images.map((image) => (
+                            <ImageCard
+                                key={image.imageId}
+                                image={image}
+                                zoom={boardZoom}
+                                isEditing={editingImageId === image.imageId}
+                                onEditing={() => {
+                                    setEditingImageId(image.imageId);
+                                    setEditingMemoId(null);
+                                    setEditingMermaidId(null);
+                                    setEditingTableId(null);
+                                    setFocusedMemoId(null);
+                                }}
+                                onEditingClear={() => setEditingImageId(null)}
+                                onUpdate={handleUpdateImage}
+                                onDelete={handleDeleteImage}
+                                onBringToFront={() => handleCardLayer("image", image.imageId, "front")}
+                                onSendToBack={() => handleCardLayer("image", image.imageId, "back")}
+                            />
+                        ))}
+                        {memos.map((memo) => (
+                            <MemoCard
+                                key={memo.id}
+                                memo={memo}
+                                zoom={boardZoom}
+                                isEditing={editingMemoId === memo.id}
+                                isFocused={focusedMemoId === memo.id}
+                                onFocus={() => setFocusedMemoId(memo.id)}
+                                onFocusClear={() => setFocusedMemoId(null)}
+                                onEditing={() => {
+                                    setEditingMemoId(memo.id);
+                                    setEditingImageId(null);
+                                    setEditingMermaidId(null);
+                                    setEditingTableId(null);
+                                }}
+                                onEditingClear={() => setEditingMemoId(null)}
+                                onInsert={handleInsertMemo}
+                                onUpdate={handleUpdateMemo}
+                                onDelete={handleDeleteMemo}
+                                onBringToFront={() => handleCardLayer("memo", memo.id, "front")}
+                                onSendToBack={() => handleCardLayer("memo", memo.id, "back")}
+                            />
+                        ))}
+                        {mermaids.map((mermaid) => (
+                            <MermaidCard
+                                key={mermaid.id}
+                                mermaid={mermaid}
+                                zoom={boardZoom}
+                                isEditing={editingMermaidId === mermaid.id}
+                                onEditing={() => {
+                                    setEditingMermaidId(mermaid.id);
+                                    setEditingMemoId(null);
+                                    setEditingImageId(null);
+                                    setEditingTableId(null);
+                                    setFocusedMemoId(null);
+                                }}
+                                onEditingClear={() => setEditingMermaidId(null)}
+                                onInsert={handleInsertMermaid}
+                                onUpdate={handleUpdateMermaid}
+                                onDelete={handleDeleteMermaid}
+                                onBringToFront={() => handleCardLayer("mermaid", mermaid.id, "front")}
+                                onSendToBack={() => handleCardLayer("mermaid", mermaid.id, "back")}
+                            />
+                        ))}
+                        {tables.map((table) => (
+                            <TableCard
+                                key={table.id}
+                                table={table}
+                                zoom={boardZoom}
+                                isEditing={editingTableId === table.id}
+                                onEditing={() => {
+                                    setEditingTableId(table.id);
+                                    setEditingMemoId(null);
+                                    setEditingImageId(null);
+                                    setEditingMermaidId(null);
+                                    setFocusedMemoId(null);
+                                }}
+                                onEditingClear={() => setEditingTableId(null)}
+                                onInsert={handleInsertTable}
+                                onUpdate={handleUpdateTable}
+                                onDelete={handleDeleteTable}
+                                onBringToFront={() => handleCardLayer("table", table.id, "front")}
+                                onSendToBack={() => handleCardLayer("table", table.id, "back")}
+                            />
+                        ))}
+                        <DrawingLayer
+                            key={drawingMode ? "drawing-active" : "drawing-inactive"}
+                            strokes={strokes}
+                            drawingMode={drawingMode}
+                            drawingTool={drawingTool}
+                            penColor={penColor}
+                            penWidth={penWidth}
                             zoom={boardZoom}
-                            isEditing={editingImageId === image.imageId}
-                            onEditing={() => setEditingImageId(image.imageId)}
-                            onEditingClear={() => setEditingImageId(null)}
-                            onUpdate={handleUpdateImage}
-                            onDelete={handleDeleteImage}
-                            onBringToFront={() => handleCardLayer("image", image.imageId, "front")}
-                            onSendToBack={() => handleCardLayer("image", image.imageId, "back")}
+                            onStrokeEnd={handleStrokeEnd}
+                            onErase={handleErase}
                         />
-                    ))}
-                    {memos.map((memo) => (
-                        <MemoCard
-                            key={memo.id}
-                            memo={memo}
-                            zoom={boardZoom}
-                            isEditing={editingMemoId === memo.id}
-                            isFocused={focusedMemoId === memo.id}
-                            onFocus={() => setFocusedMemoId(memo.id)}
-                            onFocusClear={() => setFocusedMemoId(null)}
-                            onEditing={() => setEditingMemoId(memo.id)}
-                            onEditingClear={() => setEditingMemoId(null)}
-                            onInsert={handleInsertMemo}
-                            onUpdate={handleUpdateMemo}
-                            onDelete={handleDeleteMemo}
-                            onBringToFront={() => handleCardLayer("memo", memo.id, "front")}
-                            onSendToBack={() => handleCardLayer("memo", memo.id, "back")}
-                        />
-                    ))}
-                    {mermaids.map((mermaid) => (
-                        <MermaidCard
-                            key={mermaid.id}
-                            mermaid={mermaid}
-                            zoom={boardZoom}
-                            isEditing={editingMermaidId === mermaid.id}
-                            onEditing={() => setEditingMermaidId(mermaid.id)}
-                            onEditingClear={() => setEditingMermaidId(null)}
-                            onInsert={handleInsertMermaid}
-                            onUpdate={handleUpdateMermaid}
-                            onDelete={handleDeleteMermaid}
-                            onBringToFront={() => handleCardLayer("mermaid", mermaid.id, "front")}
-                            onSendToBack={() => handleCardLayer("mermaid", mermaid.id, "back")}
-                        />
-                    ))}
-                    {tables.map((table) => (
-                        <TableCard
-                            key={table.id}
-                            table={table}
-                            zoom={boardZoom}
-                            isEditing={editingTableId === table.id}
-                            onEditing={() => setEditingTableId(table.id)}
-                            onEditingClear={() => setEditingTableId(null)}
-                            onInsert={handleInsertTable}
-                            onUpdate={handleUpdateTable}
-                            onDelete={handleDeleteTable}
-                            onBringToFront={() => handleCardLayer("table", table.id, "front")}
-                            onSendToBack={() => handleCardLayer("table", table.id, "back")}
-                        />
-                    ))}
-                    <DrawingLayer
-                        key={drawingMode ? "drawing-active" : "drawing-inactive"}
-                        strokes={strokes}
-                        drawingMode={drawingMode}
-                        drawingTool={drawingTool}
-                        penColor={penColor}
-                        penWidth={penWidth}
-                        zoom={boardZoom}
-                        onStrokeEnd={handleStrokeEnd}
-                        onErase={handleErase}
-                    />
+                    </div>
                 </div>
-            </div>
             </div>
         </main>
     </>

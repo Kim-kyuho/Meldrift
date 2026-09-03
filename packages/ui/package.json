@@ -27,6 +27,7 @@
     "./TableGrid": "./src/components/TableGrid.tsx",
     "./TableToolBar": "./src/components/TableToolBar.tsx",
     "./useBoardMemoFocus": "./src/hooks/useBoardMemoFocus.ts",
+    "./useBoardPinchZoom": "./src/hooks/useBoardPinchZoom.ts",
     "./useBoardScroll": "./src/hooks/useBoardScroll.ts",
     "./useBoardSearch": "./src/hooks/useBoardSearch.ts",
     "./useBoardZoom": "./src/hooks/useBoardZoom.ts",

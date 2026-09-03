@@ -193,6 +193,7 @@ export function useMemoCard({
 
             if (isEditing && startedInsideEmptyBoard && isPressInsideEmptyBoard) {
                 saveMemo();
+                onFocusClear();
                 onEditingClear();
                 return;
             }

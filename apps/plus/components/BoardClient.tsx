@@ -32,6 +32,7 @@ import { useBoardMemos } from "@/hooks/useBoardMemos";
 import { useBoardScroll } from "@meldrift/ui/useBoardScroll";
 import { useBoardSearch } from "@meldrift/ui/useBoardSearch";
 import { useBoardZoom } from "@meldrift/ui/useBoardZoom";
+import { useBoardPinchZoom } from "@meldrift/ui/useBoardPinchZoom";
 import { useBoardPreview } from "@/hooks/useBoardPreview";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
 import { useMemoReorder } from "@/hooks/useMemoReorder";
@@ -341,6 +342,12 @@ export default function BoardClient(
         cardEditing: isEditing,
         boardScrollRef: cardLocationRef,
     });
+    
+    useBoardPinchZoom({
+        boardScrollRef: cardLocationRef,
+        boardZoom,
+        setBoardZoom,
+    });
 
     const { handleCardLayer } = useCardLayer({
         boardId: currentBoard.boardId,
@@ -520,7 +527,13 @@ export default function BoardClient(
                             zoom={boardZoom}
                             canEdit={canEditCard}
                             isEditing={editingImageId === image.imageId}
-                            onEditing={() => setEditingImageId(image.imageId)}
+                            onEditing={() => {
+                                setEditingImageId(image.imageId);
+                                setEditingMemoId(null);
+                                setEditingMermaidId(null);
+                                setEditingTableId(null);
+                                setFocusedMemoId(null);
+                            }}
                             onEditingClear={() => setEditingImageId(null)}
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertImage}
@@ -540,7 +553,12 @@ export default function BoardClient(
                             isFocused={focusedMemoId === memo.id}
                             onFocus={() => setFocusedMemoId(memo.id)}
                             onFocusClear={() => setFocusedMemoId(null)}
-                            onEditing={() => setEditingMemoId(memo.id)}
+                            onEditing={() => {
+                                setEditingMemoId(memo.id);
+                                setEditingImageId(null);
+                                setEditingMermaidId(null);
+                                setEditingTableId(null);
+                            }}
                             onEditingClear={() => setEditingMemoId(null)}
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertMemo}
@@ -557,7 +575,13 @@ export default function BoardClient(
                             zoom={boardZoom}
                             canEdit={canEditCard}
                             isEditing={editingMermaidId === mermaid.id}
-                            onEditing={() => setEditingMermaidId(mermaid.id)}
+                            onEditing={() => {
+                                setEditingMermaidId(mermaid.id);
+                                setEditingMemoId(null);
+                                setEditingImageId(null);
+                                setEditingTableId(null);
+                                setFocusedMemoId(null);
+                            }}
                             onEditingClear={() => setEditingMermaidId(null)}
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertMermaid}
@@ -574,7 +598,13 @@ export default function BoardClient(
                             zoom={boardZoom}
                             canEdit={canEditCard}
                             isEditing={editingTableId === table.id}
-                            onEditing={() => setEditingTableId(table.id)}
+                            onEditing={() => {
+                                setEditingTableId(table.id);
+                                setEditingMemoId(null);
+                                setEditingImageId(null);
+                                setEditingMermaidId(null);
+                                setFocusedMemoId(null);
+                            }}
                             onEditingClear={() => setEditingTableId(null)}
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertTable}
