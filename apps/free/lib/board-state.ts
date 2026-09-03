@@ -45,9 +45,9 @@ export type BoardSnapshot = {
 
 export const defaultBoard: BoardInfo = {
     boardId: defaultBoardId,
-    title: "Meldrift Free Edition",
-    width: 4000,
-    height: 3000,
+    title: "Meldrift Free Board",
+    width: 7680,
+    height: 4320,
 };
 
 export const createEmptyBoardSnapshot = (): BoardSnapshot => ({
