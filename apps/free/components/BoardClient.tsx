@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import ImageCard from "./ImageCard";
 import AboutModal from "./AboutModal";
 import HelpModal from "./HelpModal";
@@ -32,17 +32,15 @@ import { useBoardSearch } from "@meldrift/ui/useBoardSearch";
 import { useBoardZoom } from "@meldrift/ui/useBoardZoom";
 import { useBoardPinchZoom } from "@meldrift/ui/useBoardPinchZoom";
 import { useBoardTransfer } from "@/hooks/useBoardTransfer";
+import { useBoardPersistance } from "@/hooks/useBoardPersistance";
+import { useBoardShortcuts } from "@/hooks/useBoardShortcuts";
 import { useMemoReorder } from "@/hooks/useMemoReorder";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
 import { defaultBoard, type BoardSnapshot } from "@/lib/board-state";
-import { loadBoardState, replaceBoardState } from "@/lib/browser-db/client";
 import { imageInputAccept } from "@/lib/image-file";
-import { isBoardContentEmpty } from "@/lib/help";
 
 export default function BoardClient() {
     const [currentBoard, setCurrentBoard] = useState(defaultBoard);
-    const [databaseReady, setDatabaseReady] = useState(false);
-    const [databaseError, setDatabaseError] = useState("");
     const boardWidth = currentBoard.width;
     const boardHeight = currentBoard.height;
     const cardLocationRef = useRef<HTMLDivElement | null>(null);
@@ -250,44 +248,9 @@ export default function BoardClient() {
         strokes,
     }), [currentBoard, images, memos, mermaids, strokes, tables]);
 
-    const applySnapshot = useCallback((next: BoardSnapshot) => {
-        setCurrentBoard(next.board);
-        setMemos(next.memos);
-        setImages(next.images);
-        setMermaids(next.mermaids);
-        setTables(next.tables);
-        setStrokes(next.strokes);
-    }, [setImages, setMemos, setMermaids, setStrokes, setTables]);
-
-    useEffect(() => {
-        let active = true;
-        loadBoardState()
-            .then((stored) => {
-                if (!active) return;
-                applySnapshot(stored);
-                setDatabaseReady(true);
-                if (isBoardContentEmpty(stored)) openHelp();
-            })
-            .catch((error: unknown) => {
-                if (!active) return;
-                setDatabaseError(error instanceof Error ? error.message : "Browser SQLite could not be opened.");
-            });
-        return () => {
-            active = false;
-        };
-    }, [applySnapshot, openHelp]);
-
-    useEffect(() => {
-        const handleHelpShortcut = (event: KeyboardEvent) => {
-            const modifierPressed = event.ctrlKey || event.metaKey;
-            if (!modifierPressed || !event.shiftKey || event.key.toLowerCase() !== "h") return;
-            event.preventDefault();
-            openHelp();
-        };
-
-        window.addEventListener("keydown", handleHelpShortcut, true);
-        return () => window.removeEventListener("keydown", handleHelpShortcut, true);
-    }, [openHelp]);
+    useBoardShortcuts({
+        onOpenHelp: openHelp,
+    });
 
     const exportDisabled = isEditing || drawingMode || hasPendingAiCards;
 
@@ -308,16 +271,23 @@ export default function BoardClient() {
         getSnapshot: () => snapshot,
     });
 
-    useEffect(() => {
-        if (!databaseReady || isEditing || drawingMode || hasPendingAiCards || resetting) return;
+    const savePaused = isEditing || drawingMode || hasPendingAiCards || resetting;
 
-        const timeoutId = window.setTimeout(() => {
-            replaceBoardState(snapshot).catch((error: unknown) => {
-                setBoardMessage(error instanceof Error ? error.message : "The board could not be saved.");
-            });
-        }, 150);
-        return () => window.clearTimeout(timeoutId);
-    }, [databaseReady, drawingMode, hasPendingAiCards, isEditing, resetting, snapshot]);
+    const {
+        databaseReady,
+        databaseError,
+    } = useBoardPersistance({
+        snapshot,
+        savePaused,
+        setCurrentBoard,
+        setMemos,
+        setImages,
+        setMermaids,
+        setTables,
+        setStrokes,
+        onEmptyBoard: openHelp,
+        setMessage: setBoardMessage,
+    });
 
     const {
         boardPanning,

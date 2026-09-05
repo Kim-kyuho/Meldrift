@@ -1,10 +1,10 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import {
     AssistantUnavailableError,
-    runAssistant,
     type AssistantMessage,
     type BoardSnapshot,
-} from "@/lib/ai/assistant";
+} from "@meldrift/ai/assistant";
+import { runAssistant } from "@/lib/ai/assistant";
 import { NextRequest, NextResponse } from "next/server";
 
 // 카드 여러 장이면 응답이 20초를 넘어 기본 타임아웃으로는 잘림

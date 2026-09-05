@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./assistant": "./src/assistant.ts"
+    "./assistant": "./src/assistant.ts",
+    "./product": "./src/product.ts"
   },
   "scripts": {
     "test": "vitest run",
