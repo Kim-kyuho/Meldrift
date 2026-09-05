@@ -20,9 +20,9 @@ jobs:
       NEON_CONNECTION_STRING: ${{ secrets.NEON_CONNECTION_STRING }}
       E2E_BOARD_ID: ${{ secrets.E2E_BOARD_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -59,7 +59,7 @@ jobs:
         if: ${{ env.NEON_CONNECTION_STRING == '' }}
         run: echo "::notice::NEON_CONNECTION_STRING이 없어 Plus E2E를 건너뜁니다."
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
