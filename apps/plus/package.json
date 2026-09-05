@@ -48,7 +48,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@next/env": "^16.2.4",
+    "@next/env": "^16.3.4",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
