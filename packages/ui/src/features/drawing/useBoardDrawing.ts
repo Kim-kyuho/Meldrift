@@ -8,7 +8,7 @@ import {
     eraseStrokesAlongPath,
     type DrawingTool,
 } from "@meldrift/core/board-stroke";
-import { noop } from "../internal/noop";
+import { noop } from "../../internal/noop";
 
 export type { DrawingTool };
 

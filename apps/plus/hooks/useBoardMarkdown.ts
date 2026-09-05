@@ -58,12 +58,8 @@ export function useBoardMarkdown(boardId: number) {
         return () => controller.abort();
     }, [boardId]);
 
-    // Mermaid 코드 블록을 기준으로 Markdown을 분리하고, 코드 펜스를 제외한 Mermaid 소스만 캡처하여 렌더링한다.
-    const markdownSections = markdown.split(/```mermaid\s*\r?\n([\s\S]*?)```/g);
-
     return {
         markdown,
-        markdownSections,
         errorMessage,
         loading,
         handleMarkdownDownload,

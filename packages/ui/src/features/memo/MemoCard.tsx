@@ -1,8 +1,8 @@
 import { useRef } from "react";
 import { Rnd } from "react-rnd";
-import { noop } from "../internal/noop";
-import ConfirmDialog from "./ConfirmDialog";
-import { MemoCardData, useMemoCard } from "../hooks/useMemoCard";
+import { noop } from "../../internal/noop";
+import ConfirmDialog from "../../shared/ConfirmDialog";
+import { MemoCardData, useMemoCard } from "./useMemoCard";
 import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
 import MemoEditor from "./MemoEditor";
 import type { MemoEditorHandle } from "./MemoEditor";

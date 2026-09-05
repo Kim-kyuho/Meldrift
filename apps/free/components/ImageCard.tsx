@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Rnd } from "react-rnd";
-import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
+import ImageCardView from "@meldrift/ui/ImageCard";
 import { ImageCardData, useImageCard } from "@/hooks/useImageCard";
-import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
 import { imageBytesToBlob } from "@/lib/image-file";
-import ImageToolBar from "@meldrift/ui/ImageToolBar";
 
 type ImageCardProps = {
     image: ImageCardData;
@@ -28,20 +25,17 @@ type ImageCardProps = {
     onSendToBack: () => void;
 };
 
-// 이미지 카드 컴포넌트는 free와 plus에서 다른 저장구조를 가지기 때문에 패키지를 만들지 않고 각각의 컴포넌트를 생성
-export default function ImageCard(props: ImageCardProps) {
-    const {
-        image,
-        zoom,
-        isEditing,
-        onEditing,
-        onEditingClear,
-        onUpdate,
-        onDelete,
-        onBringToFront,
-        onSendToBack,
-    } = props;
-
+export default function ImageCard({
+    image,
+    zoom,
+    isEditing,
+    onEditing,
+    onEditingClear,
+    onUpdate,
+    onDelete,
+    onBringToFront,
+    onSendToBack,
+}: ImageCardProps) {
     const {
         imageState,
         deleteDialogOpen,
@@ -73,76 +67,34 @@ export default function ImageCard(props: ImageCardProps) {
     }, [image.data, image.mimeType]);
 
     return (
-        <>
-            <Rnd
-                data-editing={isEditing}
-                className={`image-rnd-${image.imageId} select-none ${isEditing ? "card-editing" : ""}`}
-                style={{
-                    zIndex: isEditing ? ACTIVE_CARD_Z : image.z,
-                    WebkitTouchCallout: "none",
-                    WebkitUserSelect: "none",
-                    userSelect: "none",
-                }}
-                default={{
-                    x: image.x,
-                    y: image.y,
-                    width: image.width,
-                    height: image.height,
-                }}
-                position={{
-                    x: imageState.x,
-                    y: imageState.y,
-                }}
-                size={{
-                    width: imageState.width,
-                    height: imageState.height,
-                }}
-                bounds="parent"
-                scale={zoom}
-                minWidth={48}
-                minHeight={48}
-                disableDragging={!isEditing}
-                enableResizing={isEditing}
-                onDragStop={handleDragStop}
-                onResizeStop={handleResizeStop}
-            >
-                <div
-                    className="relative h-full w-full rounded-xl"
-                    onClick={handleImagePress}
-                    onDoubleClick={editImage}
-                    onPointerDown={handleDoubleTap}
-                >
-                    <div className="relative h-full w-full overflow-hidden rounded-xl">
-                        {(image.data || image.url) && (
-                            // Blob URLs and legacy arbitrary URLs cannot use the Next image optimizer.
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                ref={imageElementRef}
-                                src={image.data ? undefined : image.url}
-                                alt={image.label ?? "Board image"}
-                                draggable={false}
-                                className="h-full w-full object-contain"
-                            />
-                        )}
-                    </div>
-                </div>
-            </Rnd>
-
-            {isEditing && (
-                <ImageToolBar
-                    onBringToFront={onBringToFront}
-                    onSendToBack={onSendToBack}
-                    onDelete={openDeleteDialog}
+        <ImageCardView
+            imageId={image.imageId}
+            z={image.z}
+            zoom={zoom}
+            isEditing={isEditing}
+            imageState={imageState}
+            deleteDialogOpen={deleteDialogOpen}
+            onPress={handleImagePress}
+            onEdit={editImage}
+            onDoubleTap={handleDoubleTap}
+            onDragStop={handleDragStop}
+            onResizeStop={handleResizeStop}
+            onBringToFront={onBringToFront}
+            onSendToBack={onSendToBack}
+            onOpenDeleteDialog={openDeleteDialog}
+            onConfirmDelete={confirmDelete}
+            onCloseDeleteDialog={closeDeleteDialog}
+        >
+            {(image.data || image.url) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                    ref={imageElementRef}
+                    src={image.data ? undefined : image.url}
+                    alt={image.label ?? "Board image"}
+                    draggable={false}
+                    className="h-full w-full object-contain"
                 />
             )}
-
-            {deleteDialogOpen && (
-                <ConfirmDialog
-                    message="Delete this image?"
-                    onConfirm={confirmDelete}
-                    onCancel={closeDeleteDialog}
-                />
-            )}
-        </>
+        </ImageCardView>
     );
 }

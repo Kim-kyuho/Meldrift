@@ -44,13 +44,13 @@ describe("useBoardMarkdown", () => {
         vi.unstubAllGlobals();
     });
 
-    it("compiles local board state and separates Mermaid source blocks", () => {
+    it("compiles local board state with Mermaid source blocks", () => {
         const { result } = renderHook(() => useBoardMarkdown(markdownSnapshot()));
         expect(result.current.loading).toBe(false);
         expect(result.current.errorMessage).toBe("");
         expect(result.current.markdown).toContain("# Title");
         expect(result.current.markdown).toContain("```mermaid");
-        expect(result.current.markdownSections).toContain("flowchart LR\nA-->B\n");
+        expect(result.current.markdown).toContain("flowchart LR\nA-->B");
     });
 
     it("compiles overlapping URL images without a server request", () => {

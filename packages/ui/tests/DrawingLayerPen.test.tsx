@@ -1,6 +1,6 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import DrawingLayer from "../src/components/DrawingLayer";
+import DrawingLayer from "../src/features/drawing/DrawingLayer";
 import { defaultPenColor, defaultPenWidth } from "@meldrift/core/board-stroke";
 
 function setup() {

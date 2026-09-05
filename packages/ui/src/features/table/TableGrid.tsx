@@ -2,9 +2,9 @@
 
 import { flexRender } from "@tanstack/react-table";
 import { Plus, Trash2 } from "lucide-react";
-import { useTableEdit } from "../hooks/useTableEdit";
+import { useTableEdit } from "./useTableEdit";
 import { TableSource } from "@meldrift/core/table-card";
-import PressableButton from "./PressableButton";
+import PressableButton from "../../shared/PressableButton";
 
 type TableGridProps = {
     source: TableSource;

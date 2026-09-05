@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eraser, Minus, Palette, Undo2 } from "lucide-react";
 import { penColors, penWidths } from "@meldrift/core/board-stroke";
 import type { DrawingTool } from "@meldrift/core/board-stroke";
-import { CardToolButton, CardToolPortal } from "./CardToolPortal";
+import { CardToolButton, CardToolPortal } from "../../shared/CardToolPortal";
 
 type DrawingToolBarProps = {
     drawingTool: DrawingTool;

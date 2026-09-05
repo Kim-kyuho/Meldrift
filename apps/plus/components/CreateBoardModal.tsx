@@ -4,7 +4,7 @@ import PressableButton from "@meldrift/ui/PressableButton";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useState } from "react";
-import BoardMessage from "./BoardMessage";
+import BoardMessage from "@meldrift/ui/BoardMessage";
 
 type CreateBoardModalProps = {
     ownerId: string | null;
@@ -114,7 +114,7 @@ export default function CreateBoardModal({ ownerId, onClose, onCreated }: Create
                         </select>
                     </label>
                     <BoardMessage
-                        type="error"
+                        variant="inline"
                         message={errorMessage}
                         onDismiss={() => setErrorMessage("")}
                     />

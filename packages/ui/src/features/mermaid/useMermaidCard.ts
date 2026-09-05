@@ -1,7 +1,7 @@
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import type { MermaidCardData } from "@meldrift/core/cards";
-import { noop } from "../internal/noop";
+import { noop } from "../../internal/noop";
 
 export type { MermaidCardData };
 

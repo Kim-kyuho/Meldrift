@@ -23,8 +23,8 @@ import {
     Strikethrough,
     Trash2,
 } from "lucide-react";
-import { useMemoToolBar } from "../hooks/useMemoToolBar";
-import { CardToolButton, CardToolPortal } from "./CardToolPortal";
+import { CardToolButton, CardToolPortal } from "../../shared/CardToolPortal";
+import { useMemoToolBar } from "./useMemoToolBar";
 
 type MemoToolBarProps = {
     onChangeColor: (color: string) => void;

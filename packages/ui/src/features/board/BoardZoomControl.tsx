@@ -2,7 +2,7 @@
 
 import { Dispatch, SetStateAction } from "react";
 import { Minus, Plus } from "lucide-react";
-import PressableButton from "./PressableButton";
+import PressableButton from "../../shared/PressableButton";
 
 type BoardZoomControlProps ={
     boardZoom: number;

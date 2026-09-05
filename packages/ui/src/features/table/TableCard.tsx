@@ -1,11 +1,11 @@
 "use client";
 
 import { Rnd } from "react-rnd";
-import { noop } from "../internal/noop";
+import { noop } from "../../internal/noop";
 import type { TableCardData as BoardTable } from "@meldrift/core/cards";
-import { useTableCard } from "../hooks/useTableCard";
+import { useTableCard } from "./useTableCard";
 import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
-import ConfirmDialog from "./ConfirmDialog";
+import ConfirmDialog from "../../shared/ConfirmDialog";
 import TableGrid from "./TableGrid";
 import TableToolBar from "./TableToolBar";
 

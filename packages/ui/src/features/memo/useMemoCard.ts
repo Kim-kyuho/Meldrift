@@ -1,7 +1,7 @@
 import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import type { MemoCardData } from "@meldrift/core/cards";
-import { noop } from "../internal/noop";
+import { noop } from "../../internal/noop";
 
 export type { MemoCardData };
 

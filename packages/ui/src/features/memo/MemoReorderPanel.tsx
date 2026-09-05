@@ -2,7 +2,7 @@
 
 import { PointerEvent as ReactPointerEvent, RefObject } from "react";
 import { GripVertical, X } from "lucide-react";
-import PressableButton from "./PressableButton";
+import PressableButton from "../../shared/PressableButton";
 import type { MemoCardData as BoardMemo } from "@meldrift/core/cards";
 import { memoPlainText, memoReorderRowHeight, memoReorderVisibleRows } from "@meldrift/core/memo-order";
 

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { EllipsisVertical, Plus } from "lucide-react";
 import { useState } from "react";
 import BoardMenu from "./BoardMenu";
-import BoardMessage from "./BoardMessage";
+import BoardMessage from "@meldrift/ui/BoardMessage";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import CreateBoardModal from "./CreateBoardModal";
@@ -106,7 +106,7 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
             )}
 
             <BoardMessage
-                type="permission"
+                variant="toast"
                 message={boardListMessage}
                 onDismiss={() => setBoardListMessage("")}
             />
