@@ -48,8 +48,16 @@ jobs:
       - name: Run Free E2E tests
         run: npm run test:e2e:free
 
+      # Dependabot PR은 일반 repo secret을 받지 못한다(Dependabot secret만 전달된다).
+      # 그래서 NEON_CONNECTION_STRING이 빈 값이 되고 Plus E2E가 DB 연결에서 실패한다.
+      # secret이 있을 때만 실행하고, 없으면 이유를 남기고 건너뛴다.
       - name: Run Plus E2E tests
+        if: ${{ env.NEON_CONNECTION_STRING != '' }}
         run: npm run test:e2e:plus
+
+      - name: Skip Plus E2E tests
+        if: ${{ env.NEON_CONNECTION_STRING == '' }}
+        run: echo "::notice::NEON_CONNECTION_STRING이 없어 Plus E2E를 건너뜁니다."
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
