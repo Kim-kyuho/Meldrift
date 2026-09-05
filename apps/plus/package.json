@@ -39,7 +39,7 @@
     "drizzle-orm": "^0.45.2",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.11.0",
-    "mermaid": "^11.15.0",
+    "mermaid": "^11.17.2",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
