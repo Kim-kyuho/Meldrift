@@ -25,7 +25,6 @@
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
     "@sqlite.org/sqlite-wasm": "3.50.4-build1",
     "@tanstack/react-table": "^8.21.3",
-    "@tiptap/core": "^3.31.0",
     "@tiptap/extension-hard-break": "^3.31.0",
     "@tiptap/extension-highlight": "^3.31.0",
     "@tiptap/react": "^3.31.0",

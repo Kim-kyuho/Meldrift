@@ -31,7 +31,6 @@
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/extension-hard-break": "^3.31.0",
     "@tiptap/extension-highlight": "^3.31.0",
-    "@tiptap/pm": "^3.23.4",
     "@tiptap/react": "^3.31.0",
     "@tiptap/starter-kit": "^3.31.0",
     "@vercel/analytics": "^2.0.1",

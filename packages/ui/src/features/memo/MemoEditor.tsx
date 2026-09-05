@@ -1,8 +1,7 @@
 "use client";
 
 import { PointerEvent as ReactPointerEvent, useEffect, useImperativeHandle, Ref } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
-import { Extension, markInputRule, markPasteRule } from "@tiptap/core";
+import { EditorContent, useEditor, Extension, markInputRule, markPasteRule } from "@tiptap/react";
 import Highlight from "@tiptap/extension-highlight";
 import HardBreak from "@tiptap/extension-hard-break";
 import StarterKit from "@tiptap/starter-kit";
