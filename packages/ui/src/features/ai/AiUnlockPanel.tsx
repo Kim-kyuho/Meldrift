@@ -2,16 +2,15 @@
 
 import { FormEvent, useState } from "react";
 import { Loader2, Lock, X } from "lucide-react";
-import PressableButton from "@meldrift/ui/PressableButton";
+import PressableButton from "../../shared/PressableButton";
 
-type AiUnlockPanelProps = {
+export type AiUnlockPanelProps = {
     unlocking: boolean;
     errorMessage: string;
     onUnlock: (password: string) => void;
     onClose: () => void;
 };
 
-// 비밀번호 확인은 서버에서만 함 - 여기는 입력만 받음
 export default function AiUnlockPanel({ unlocking, errorMessage, onUnlock, onClose }: AiUnlockPanelProps) {
     const [password, setPassword] = useState("");
 

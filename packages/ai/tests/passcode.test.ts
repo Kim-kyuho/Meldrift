@@ -5,7 +5,7 @@ import {
     isAiPasswordConfigured,
     verifyAiPassword,
     verifyAiSessionToken,
-} from "@/lib/ai/passcode";
+} from "../src/passcode";
 import {
     clearFailures,
     getAttemptKey,
@@ -14,7 +14,7 @@ import {
     maxFailedAttempts,
     recordFailure,
     type AttemptStore,
-} from "@/lib/ai/unlock-throttle";
+} from "../src/unlock-throttle";
 
 // 잠금은 어시스턴트의 유일한 접근 통제이고, 뚫리면 곧 AI 호출 비용으로 돌아온다.
 // 그래서 비밀번호 비교와 토큰 검증은 환경변수를 건드리지 않고 인자로 넣어 직접 검증한다.

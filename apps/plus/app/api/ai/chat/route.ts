@@ -4,6 +4,7 @@ import {
     type AssistantMessage,
     type BoardSnapshot,
 } from "@meldrift/ai/assistant";
+import { aiSessionCookieName, isAiPasswordConfigured, verifyAiSessionToken } from "@meldrift/ai/passcode";
 import { runAssistant } from "@/lib/ai/assistant";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -65,13 +66,20 @@ export async function POST(request: NextRequest) {
 
         const apiKey = process.env.AI_API_KEY;
 
-        if (!apiKey) {
+        if (!apiKey || !isAiPasswordConfigured()) {
             return NextResponse.json(
                 {
                     ok: false,
                     message: "The AI assistant is not configured on this server.",
                 },
                 { status: 503 },
+            );
+        }
+
+        if (!verifyAiSessionToken(request.cookies.get(aiSessionCookieName)?.value)) {
+            return NextResponse.json(
+                { ok: false, locked: true, message: "Enter the assistant password to continue." },
+                { status: 401 },
             );
         }
 

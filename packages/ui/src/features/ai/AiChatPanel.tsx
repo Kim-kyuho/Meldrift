@@ -1,12 +1,16 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Loader2, Send, X } from "lucide-react";
-import GeminiIcon from "@meldrift/ui/GeminiIcon";
-import PressableButton from "@meldrift/ui/PressableButton";
-import type { AiChatMessage } from "@/hooks/useAiAssistant";
+import { Loader2, Lock, Send, X } from "lucide-react";
+import PressableButton from "../../shared/PressableButton";
+import GeminiIcon from "./GeminiIcon";
 
-type AiChatPanelProps = {
+export type AiChatMessage = {
+    role: "user" | "assistant";
+    content: string;
+};
+
+export type AiChatPanelProps = {
     messages: AiChatMessage[];
     sending: boolean;
     saving: boolean;
@@ -14,6 +18,7 @@ type AiChatPanelProps = {
     onSend: (text: string) => void;
     onSave: () => void;
     onDiscard: () => void;
+    onLock: () => void;
     onClose: () => void;
 };
 
@@ -25,6 +30,7 @@ export default function AiChatPanel({
     onSend,
     onSave,
     onDiscard,
+    onLock,
     onClose,
 }: AiChatPanelProps) {
     const [draft, setDraft] = useState("");
@@ -54,6 +60,15 @@ export default function AiChatPanel({
                 <GeminiIcon className="h-4 w-4 shrink-0 text-neutral-900" />
                 <span className="text-sm font-semibold text-neutral-900">AI Assistant</span>
                 <div className="ml-auto flex items-center gap-1">
+                    <PressableButton
+                        className="px-2 py-1"
+                        onClick={onLock}
+                        type="button"
+                        aria-label="Lock AI assistant"
+                        title="Lock the assistant and clear this conversation"
+                    >
+                        <Lock className="h-4 w-4 text-neutral-600" />
+                    </PressableButton>
                     <PressableButton
                         className="px-2 py-1"
                         onClick={onClose}
@@ -100,7 +115,9 @@ export default function AiChatPanel({
 
             {hasPendingCards && (
                 <div className="flex items-center gap-2 border-t border-neutral-200 px-4 py-2">
-                    <span className="text-xs text-neutral-500">You have unsaved changes.</span>
+                    <span className="text-xs text-neutral-500">
+                        The board stops saving until you decide.
+                    </span>
                     <div className="ml-auto flex gap-1">
                         <PressableButton
                             className="px-3 py-1 text-xs font-semibold text-neutral-600"

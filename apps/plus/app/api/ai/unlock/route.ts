@@ -1,4 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
 import {
     aiSessionCookieName,
     createAiSessionToken,
@@ -12,21 +11,32 @@ import {
     maxFailedAttempts,
     recordFailure,
 } from "@meldrift/ai/unlock-throttle";
+import { NextRequest, NextResponse } from "next/server";
+import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
+
 
 const maxPasswordLength = 200;
 
-// Max-Age 없으면 브라우저 닫을 때 같이 사라지는 세션 쿠키가 됨
 const sessionCookie = (token: string) => ({
     name: aiSessionCookieName,
     value: token,
     httpOnly: true,
-    // 개발은 http로 띄우니까 Secure 붙이면 쿠키가 저장 안 됨
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict" as const,
     path: "/",
 });
 
 export async function POST(request: NextRequest) {
+    const currentUser = await getCurrentUserFromRequest(request);
+    const permissionMessage = getCardPermissionMessage(currentUser);
+
+    if (permissionMessage || !currentUser) {
+        return NextResponse.json(
+            { ok: false, message: permissionMessage ?? "Please sign in before editing cards." },
+            { status: 403 },
+        );
+    }
+
     if (!isAiPasswordConfigured() || !process.env.AI_API_KEY) {
         return NextResponse.json(
             { ok: false, message: "The AI assistant is not configured on this server." },

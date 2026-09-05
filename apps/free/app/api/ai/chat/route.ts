@@ -5,7 +5,7 @@ import {
     type BoardSnapshot,
 } from "@meldrift/ai/assistant";
 import { runAssistant } from "@/lib/ai/assistant";
-import { aiSessionCookieName, verifyAiSessionToken } from "@/lib/ai/passcode";
+import { aiSessionCookieName, verifyAiSessionToken } from "@meldrift/ai/passcode";
 
 // 카드 여러 장을 한 번에 만들면 모델 응답이 20초를 넘기도 한다. 기본 타임아웃으로는 잘린다.
 export const maxDuration = 60;
