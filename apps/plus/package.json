@@ -25,7 +25,7 @@
     "@meldrift/ai": "*",
     "@meldrift/core": "*",
     "@meldrift/ui": "*",
-    "@google/genai": "^2.17.1",
+    "@google/genai": "^2.20.0",
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
     "@neondatabase/serverless": "^1.1.0",
     "@tanstack/react-table": "^8.21.3",
