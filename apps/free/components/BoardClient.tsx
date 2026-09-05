@@ -10,7 +10,7 @@ import AiUnlockPanel from "./AiUnlockPanel";
 import MemoCard from "@meldrift/ui/MemoCard";
 import BoardMenu from "./BoardMenu";
 import BoardToolBar from "@meldrift/ui/BoardToolBar";
-import BoardMessage from "./BoardMessage";
+import BoardMessage from "@meldrift/ui/BoardMessage";
 import BoardSearchPanel from "@meldrift/ui/BoardSearchPanel";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
 import BoardMarkdownView from "./BoardMarkdownView";
@@ -502,12 +502,12 @@ export default function BoardClient() {
             />
         )}
         <BoardMessage
-            type="board"
+            variant="toast"
             message={boardMessage}
             onDismiss={() => setBoardMessage("")}
         />
         <BoardMessage
-            type="memo"
+            variant="toast"
             message={memoMessage}
             onDismiss={() => setMemoMessage("")}
         />

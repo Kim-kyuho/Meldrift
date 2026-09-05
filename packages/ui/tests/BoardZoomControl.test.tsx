@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import BoardZoomControl from "../src/components/BoardZoomControl";
+import BoardZoomControl from "../src/features/board/BoardZoomControl";
 
 describe("BoardZoomControl", () => {
     it("blocks selection of the zoom percentage", () => {

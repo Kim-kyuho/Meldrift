@@ -1,28 +1,28 @@
 "use client";
 
 import { BringToFront, SendToBack, Trash2 } from "lucide-react";
-import { CardToolButton, CardToolPortal } from "./CardToolPortal";
+import { CardToolButton, CardToolPortal } from "../../shared/CardToolPortal";
 
-type ImageToolBarProps = {
+type TableToolBarProps = {
     onBringToFront: () => void;
     onSendToBack: () => void;
     onDelete: () => void;
 };
 
-export default function ImageToolBar({
+export default function TableToolBar({
     onBringToFront,
     onSendToBack,
     onDelete,
-}: ImageToolBarProps) {
+}: TableToolBarProps) {
     return (
         <CardToolPortal>
-            <CardToolButton label="Bring image to front" onClick={onBringToFront}>
+            <CardToolButton label="Bring table to front" onClick={onBringToFront}>
                 <BringToFront />
             </CardToolButton>
-            <CardToolButton label="Send image to back" onClick={onSendToBack}>
+            <CardToolButton label="Send table to back" onClick={onSendToBack}>
                 <SendToBack />
             </CardToolButton>
-            <CardToolButton label="Delete image" onClick={onDelete} className="text-rose-600">
+            <CardToolButton label="Delete table" onClick={onDelete} className="text-rose-600">
                 <Trash2 />
             </CardToolButton>
         </CardToolPortal>

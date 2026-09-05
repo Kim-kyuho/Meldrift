@@ -1,6 +1,6 @@
 "use client";
 
-import PressableButton from "./PressableButton";
+import PressableButton from "../../shared/PressableButton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type BoardNavigatorProps = {

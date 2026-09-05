@@ -7,7 +7,7 @@ describe("useBoardMarkdown", () => {
         vi.unstubAllGlobals();
     });
 
-    it("loads markdown and separates Mermaid source blocks", async () => {
+    it("loads markdown from the board API", async () => {
         const markdown = "# Title\n\n```mermaid\nflowchart LR\nA-->B\n```\n\nEnd";
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             ok: true,
@@ -21,11 +21,6 @@ describe("useBoardMarkdown", () => {
             signal: expect.any(AbortSignal),
         }));
         expect(result.current.markdown).toBe(markdown);
-        expect(result.current.markdownSections).toEqual([
-            "# Title\n\n",
-            "flowchart LR\nA-->B\n",
-            "\n\nEnd",
-        ]);
     });
 
     it("uses the server error and handles a rejected request", async () => {

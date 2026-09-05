@@ -1,8 +1,7 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import BoardMenu from "@/components/BoardMenu";
 import AboutModal from "@/components/AboutModal";
-import BoardMessage from "@/components/BoardMessage";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
 import BoardToolBar from "@meldrift/ui/BoardToolBar";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
@@ -262,20 +261,5 @@ describe("BoardToolBar panel controls", () => {
         fireEvent.click(screen.getByRole("button", { name: "Search memos" }));
         expect(setBoardNavigatorOpen).toHaveBeenCalledWith(false);
         expect(setSearchBarOpen).toHaveBeenCalledWith(expect.any(Function));
-    });
-});
-
-describe("BoardMessage", () => {
-    afterEach(() => vi.useRealTimers());
-
-    it("dismisses a visible message after 3.5 seconds", () => {
-        vi.useFakeTimers();
-        const onDismiss = vi.fn();
-        render(<BoardMessage type="board" message="The board could not be saved." onDismiss={onDismiss} />);
-
-        act(() => vi.advanceTimersByTime(3499));
-        expect(onDismiss).not.toHaveBeenCalled();
-        act(() => vi.advanceTimersByTime(1));
-        expect(onDismiss).toHaveBeenCalledOnce();
     });
 });

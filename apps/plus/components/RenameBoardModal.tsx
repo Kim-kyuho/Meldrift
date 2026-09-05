@@ -4,7 +4,7 @@ import PressableButton from "@meldrift/ui/PressableButton";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useState } from "react";
-import BoardMessage from "./BoardMessage";
+import BoardMessage from "@meldrift/ui/BoardMessage";
 
 type RenameBoardModalProps = {
     boardId: number;
@@ -81,7 +81,7 @@ export default function RenameBoardModal({ boardId, title, onClose, onRenamed }:
                     </label>
 
                     <BoardMessage
-                        type="error"
+                        variant="inline"
                         message={errorMessage}
                         onDismiss={() => setErrorMessage("")}
                     />

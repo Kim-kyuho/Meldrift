@@ -19,10 +19,6 @@ type PreviewImageState = {
 export function useBoardMarkdown(snapshot: BoardSnapshot) {
     const compiledDocument = useMemo(() => compileBoardMarkdownDocument(snapshot), [snapshot]);
     const markdown = compiledDocument.markdown;
-    const markdownSections = useMemo(
-        () => markdown.split(/```mermaid\s*\r?\n([\s\S]*?)```/g),
-        [markdown],
-    );
     const [previewState, setPreviewState] = useState<PreviewImageState | null>(null);
     const [downloadError, setDownloadError] = useState("");
     const [downloading, setDownloading] = useState(false);
@@ -100,7 +96,6 @@ export function useBoardMarkdown(snapshot: BoardSnapshot) {
 
     return {
         markdown,
-        markdownSections,
         previewImageUrls,
         errorMessage: previewError || downloadError,
         loading: !previewReady,

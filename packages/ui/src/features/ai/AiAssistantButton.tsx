@@ -1,7 +1,7 @@
 "use client";
 
 import GeminiIcon from "./GeminiIcon";
-import PressableButton from "./PressableButton";
+import PressableButton from "../../shared/PressableButton";
 
 type AiAssistantButtonProps = {
     aiPanelOpen: boolean;

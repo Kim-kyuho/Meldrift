@@ -7,7 +7,7 @@ import {
     strokeToPath,
 } from "@meldrift/core/board-stroke";
 import type { DrawingTool } from "@meldrift/core/board-stroke";
-import { useDrawingPointer } from "../hooks/useDrawingPointer";
+import { useDrawingPointer } from "./useDrawingPointer";
 import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
 import type { PointerEvent as ReactPointerEvent } from "react";
 

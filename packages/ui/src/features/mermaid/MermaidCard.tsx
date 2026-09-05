@@ -3,10 +3,10 @@
 import { lazy, Suspense } from "react";
 import { PenTool } from "lucide-react";
 import { Rnd } from "react-rnd";
-import { noop } from "../internal/noop";
-import { MermaidCardData, useMermaidCard } from "../hooks/useMermaidCard";
-import { useMermaidRenderer } from "../hooks/useMermaidRenderer";
-import ConfirmDialog from "./ConfirmDialog";
+import { noop } from "../../internal/noop";
+import ConfirmDialog from "../../shared/ConfirmDialog";
+import { MermaidCardData, useMermaidCard } from "./useMermaidCard";
+import { useMermaidRenderer } from "./useMermaidRenderer";
 import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
 import {
     detectMermaidDiagramType,
