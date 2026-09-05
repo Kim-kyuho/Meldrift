@@ -23,7 +23,9 @@ export type AiChatMessage = {
 };
 
 export type AiStatus = {
+    configured: boolean;
     available: boolean;
+    unlocked: boolean;
     message: string | null;
 };
 
@@ -151,6 +153,9 @@ export function useAiAssistant({
 }: UseAiAssistantOptions) {
     const [aiPanelOpen, setAiPanelOpen] = useState(false);
     const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
+    const [unlocked, setUnlocked] = useState(false);
+    const [unlocking, setUnlocking] = useState(false);
+    const [unlockError, setUnlockError] = useState("");
     const [messages, setMessages] = useState<AiChatMessage[]>([]);
     const [sending, setSending] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -186,8 +191,14 @@ export function useAiAssistant({
             return null;
         }
 
-        const status: AiStatus = { available: data.available, message: data.message ?? null };
+        const status: AiStatus = {
+            configured: Boolean(data.configured),
+            available: Boolean(data.available),
+            unlocked: Boolean(data.unlocked),
+            message: data.message ?? null,
+        };
         setAiStatus(status);
+        setUnlocked(status.unlocked);
 
         return status;
     }, []);
@@ -279,14 +290,64 @@ export function useAiAssistant({
             return;
         }
 
-        const status = aiStatus ?? (await refreshAiStatus());
+        const status = await refreshAiStatus();
 
         if (!status?.available) {
             setPermissionMessage(status?.message ?? "The AI assistant is unavailable.");
             return;
         }
 
+        setUnlockError("");
         setAiPanelOpen(true);
+    };
+
+    const handleUnlock = async (password: string) => {
+        if (!password || unlocking) {
+            return;
+        }
+
+        setUnlocking(true);
+
+        try {
+            const response = await fetch("/api/ai/unlock", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password }),
+            });
+            const data = await response.json();
+
+            if (!data.ok) {
+                setUnlockError(data.message ?? "The assistant could not be unlocked.");
+                return;
+            }
+
+            setUnlockError("");
+            setUnlocked(true);
+            setAiStatus((current) => current ? { ...current, unlocked: true } : current);
+        } catch (error) {
+            console.error("Error unlocking AI assistant:", error);
+            setUnlockError("The assistant could not be unlocked.");
+        } finally {
+            setUnlocking(false);
+        }
+    };
+
+    const handleLock = async () => {
+        if (hasPendingCards) {
+            setPermissionMessage("Save or discard the assistant's changes first.");
+            return;
+        }
+
+        try {
+            await fetch("/api/ai/unlock", { method: "DELETE" });
+        } catch (error) {
+            console.error("Error locking AI assistant:", error);
+        }
+
+        setUnlocked(false);
+        setAiStatus((current) => current ? { ...current, unlocked: false } : current);
+        setMessages([]);
+        setAiPanelOpen(false);
     };
 
     const getPlanOrigin = (base: BoardCards) => {
@@ -572,7 +633,13 @@ export function useAiAssistant({
             const data = await response.json();
 
             if (!data.ok) {
-                setPermissionMessage(data.message ?? "The AI assistant could not respond.");
+                if (data.locked) {
+                    setUnlocked(false);
+                    setAiStatus((current) => current ? { ...current, unlocked: false } : current);
+                    setUnlockError("The assistant was locked again. Enter the password to continue.");
+                } else {
+                    setPermissionMessage(data.message ?? "The AI assistant could not respond.");
+                }
                 setMessages(nextMessages);
                 return;
             }
@@ -774,12 +841,17 @@ export function useAiAssistant({
     return {
         aiPanelOpen,
         aiStatus,
+        unlocked,
+        unlocking,
+        unlockError,
         messages,
         sending,
         saving,
         hasPendingCards,
         refreshAiStatus,
         handleToggleAiPanel,
+        handleUnlock,
+        handleLock,
         handleSendMessage,
         handleSavePendingCards,
         discardPendingCards,

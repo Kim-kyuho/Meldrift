@@ -7,6 +7,8 @@
     "./fonts.css": "./font/fonts.css",
     "./globals.css": "./styles/globals.css",
     "./AiAssistantButton": "./src/features/ai/AiAssistantButton.tsx",
+    "./AiChatPanel": "./src/features/ai/AiChatPanel.tsx",
+    "./AiUnlockPanel": "./src/features/ai/AiUnlockPanel.tsx",
     "./BoardNavigator": "./src/features/board/BoardNavigator.tsx",
     "./BoardMessage": "./src/shared/BoardMessage.tsx",
     "./BoardMarkdownView": "./src/features/markdown/BoardMarkdownView.tsx",

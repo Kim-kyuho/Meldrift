@@ -1,4 +1,5 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
+import { aiSessionCookieName, isAiPasswordConfigured, verifyAiSessionToken } from "@meldrift/ai/passcode";
 import { NextRequest, NextResponse } from "next/server";
 
 // 채팅을 보내기 전에 버튼 단계에서 막기 위한 용도라 키 값 자체는 다루지 않는다.
@@ -6,12 +7,15 @@ export async function GET(request: NextRequest) {
     try {
         const currentUser = await getCurrentUserFromRequest(request);
         const permissionMessage = getCardPermissionMessage(currentUser);
-        const configured = Boolean(process.env.AI_API_KEY);
+        const configured = Boolean(process.env.AI_API_KEY) && isAiPasswordConfigured();
+        const available = configured && !permissionMessage;
+        const unlocked = available && verifyAiSessionToken(request.cookies.get(aiSessionCookieName)?.value);
 
         return NextResponse.json({
             ok: true,
             configured,
-            available: configured && !permissionMessage,
+            available,
+            unlocked,
             message: !configured
                 ? "The AI assistant is not configured on this server."
                 : permissionMessage,

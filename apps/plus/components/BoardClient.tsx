@@ -14,7 +14,8 @@ import BoardMarkdownView from "./BoardMarkdownView";
 import MemoReorderPanel from "@meldrift/ui/MemoReorderPanel";
 import AboutModal from "./AboutModal";
 import AiAssistantButton from "@meldrift/ui/AiAssistantButton";
-import AiChatPanel from "./AiChatPanel";
+import AiChatPanel from "@meldrift/ui/AiChatPanel";
+import AiUnlockPanel from "@meldrift/ui/AiUnlockPanel";
 import MermaidCard from "@meldrift/ui/MermaidCard";
 import TableCard from "@meldrift/ui/TableCard";
 import DrawingLayer from "@meldrift/ui/DrawingLayer";
@@ -266,11 +267,16 @@ export default function BoardClient(
 
     const {
         aiPanelOpen,
+        unlocked: aiUnlocked,
+        unlocking: aiUnlocking,
+        unlockError: aiUnlockError,
         messages: aiMessages,
         sending: aiSending,
         saving: aiSaving,
         hasPendingCards: hasPendingAiCards,
         handleToggleAiPanel,
+        handleUnlock: handleAiUnlock,
+        handleLock: handleAiLock,
         handleSendMessage,
         handleSavePendingCards,
         discardPendingCards,
@@ -460,7 +466,7 @@ export default function BoardClient(
             aiPanelOpen={aiPanelOpen}
             onToggle={handleToggleAiPanel}
         />
-        {aiPanelOpen && (
+        {aiPanelOpen && (aiUnlocked ? (
             <AiChatPanel
                 messages={aiMessages}
                 sending={aiSending}
@@ -469,9 +475,17 @@ export default function BoardClient(
                 onSend={handleSendMessage}
                 onSave={handleSavePendingCards}
                 onDiscard={discardPendingCards}
+                onLock={handleAiLock}
                 onClose={handleToggleAiPanel}
             />
-        )}
+        ) : (
+            <AiUnlockPanel
+                unlocking={aiUnlocking}
+                errorMessage={aiUnlockError}
+                onUnlock={handleAiUnlock}
+                onClose={handleToggleAiPanel}
+            />
+        ))}
         <BoardMessage
             variant="toast"
             message={permissionMessage}

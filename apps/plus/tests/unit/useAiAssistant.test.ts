@@ -233,3 +233,50 @@ describe("useAiAssistant edit undo", () => {
         expect(store.memos[0].content).toBe("<p>original</p>");
     });
 });
+
+describe("useAiAssistant lock", () => {
+    it("unlocks and locks the assistant", async () => {
+        const { options } = createHarness([]);
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({ json: vi.fn().mockResolvedValue({ ok: true }) })
+            .mockResolvedValueOnce({ json: vi.fn().mockResolvedValue({ ok: true }) });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const { result } = renderHook(() => useAiAssistant(options));
+
+        await act(async () => {
+            await result.current.handleUnlock("secret");
+        });
+
+        expect(result.current.unlocked).toBe(true);
+
+        await act(async () => {
+            await result.current.handleLock();
+        });
+
+        expect(result.current.unlocked).toBe(false);
+        expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/ai/unlock", { method: "DELETE" });
+    });
+
+    it("returns to the locked state when the chat session expires", async () => {
+        const { options } = createHarness([]);
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({ json: vi.fn().mockResolvedValue({ ok: true }) })
+            .mockResolvedValueOnce({
+                json: vi.fn().mockResolvedValue({ ok: false, locked: true, message: "locked" }),
+            });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const { result } = renderHook(() => useAiAssistant(options));
+
+        await act(async () => {
+            await result.current.handleUnlock("secret");
+            await result.current.handleSendMessage("Create a memo");
+        });
+
+        expect(result.current.unlocked).toBe(false);
+        expect(result.current.unlockError).toMatch(/locked again/);
+    });
+});

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { aiSessionCookieName, isAiPasswordConfigured, verifyAiSessionToken } from "@/lib/ai/passcode";
+import { aiSessionCookieName, isAiPasswordConfigured, verifyAiSessionToken } from "@meldrift/ai/passcode";
 
 // 잠금 쿠키가 HttpOnly라 브라우저 JS가 못 읽음 - 잠금 상태는 이 경로로 확인
 export async function GET(request: NextRequest) {
