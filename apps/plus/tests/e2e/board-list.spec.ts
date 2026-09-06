@@ -9,7 +9,16 @@ test.describe("보드 목록", () => {
 
     test("기본 목록 UI를 표시한다", async ({ page }) => {
         await expect(page).toHaveTitle(/Meldrift/i);
-        await expect(page.getByRole("link", { name: "Meldrift home" })).toBeVisible();
+        const homeLink = page.getByRole("link", { name: "Meldrift home" });
+        await expect(homeLink).toBeVisible();
+        await expect(page).toHaveURL(/\/plus\/?$/);
+        const logoImages = homeLink.locator("img");
+        await expect(logoImages).toHaveCount(2);
+        for (const image of await logoImages.all()) {
+            await expect.poll(() => image.evaluate((element: HTMLImageElement) =>
+                element.complete && element.naturalWidth > 0
+            ), { message: "Meldrift logo must load successfully" }).toBe(true);
+        }
         await expect(page.getByRole("button", { name: "New Board" })).toBeVisible();
     });
 
