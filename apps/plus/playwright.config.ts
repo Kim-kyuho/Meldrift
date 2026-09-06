@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 // PLAYWRIGHT_BASE_URL을 지정하면 로컬 서버를 새로 띄우지 않고 해당 환경을 검사한다.
 // 예: PLAYWRIGHT_BASE_URL=https://meldrift.vercel.app npm run test:e2e
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3101";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3102";
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 
 export default defineConfig({
@@ -60,16 +60,24 @@ export default defineConfig({
     ],
 
     // 외부 URL이 없을 때만 Next 개발 서버를 실행한다.
-    // 이미 3000 포트 서버가 있다면 로컬에서는 해당 서버를 재사용한다.
+    // Free의 /plus 및 /api rewrite를 거쳐 실제 멀티존 경로를 검증한다.
     webServer: usesExternalServer
         ? undefined
-        : {
+        : [{
             command: "npm run dev -- --hostname 0.0.0.0 --port 3101",
-            url: baseURL,
+            url: "http://localhost:3101/plus",
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
             env: {
-                PLUS_STANDALONE: "true",
+                PLUS_STANDALONE: "false",
             },
-        },
+        }, {
+            command: "npm run dev --workspace=meldrift-free -- --hostname 0.0.0.0 --port 3102",
+            url: `${baseURL}/plus`,
+            reuseExistingServer: !process.env.CI,
+            timeout: 120_000,
+            env: {
+                PLUS_ORIGIN: "http://localhost:3101",
+            },
+        }],
 });

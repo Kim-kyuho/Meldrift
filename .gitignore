@@ -54,3 +54,10 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Agent instruction files. `next dev` rewrites these whenever it detects an AI
+# coding agent, and the block it writes has nothing project-specific in it.
+# The regenerated copies stay usable locally; they just never enter git.
+# Use `git add -f` if a hand-written one is ever worth tracking.
+AGENTS.md
+CLAUDE.md

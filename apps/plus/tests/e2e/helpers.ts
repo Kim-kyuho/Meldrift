@@ -3,14 +3,23 @@ import { expect, Page } from "@playwright/test";
 // Meldrift의 client hydration이 끝나면 useBoardAuth가 /api/me를 요청한다.
 // 화면이 보인다는 조건만으로는 React event handler가 연결됐다고 보장할 수 없으므로
 // 사용자 입력이 있는 테스트는 이 응답까지 기다린다.
-export async function gotoHydratedPage(page: Page, path: string) {
-    const currentUserResponse = page.waitForResponse((response) => {
-        const responseUrl = new URL(response.url());
-        return responseUrl.pathname === "/api/me" && response.request().method() === "GET";
-    });
+async function navigateAndWaitForUser(page: Page, navigate: () => Promise<unknown>) {
+    const [response] = await Promise.all([
+        // 첫 컴파일을 포함한 화면 이동은 actionTimeout 대신 테스트 전체 제한 시간 안에서 기다린다.
+        page.waitForResponse((response) => {
+            const responseUrl = new URL(response.url());
+            return responseUrl.pathname === "/api/me" && response.request().method() === "GET";
+        }, { timeout: 0 }),
+        navigate(),
+    ]);
 
-    await page.goto(path);
-    await currentUserResponse;
+    expect(response.ok(), `/api/me returned ${response.status()}`).toBe(true);
+    expect(await response.json()).toHaveProperty("user");
+}
+
+export async function gotoHydratedPage(page: Page, path: string) {
+    const plusPath = path === "/" ? "/plus" : `/plus${path}`;
+    await navigateAndWaitForUser(page, () => page.goto(plusPath));
 }
 
 // 테스트 전용 보드 ID가 있으면 그것을 사용하고, 없으면 목록의 첫 번째 보드로 이동한다.
@@ -25,7 +34,7 @@ export async function openTestBoard(page: Page) {
     }
 
     await gotoHydratedPage(page, "/");
-    const firstBoardLink = page.locator('a[href^="/boards/"]').first();
+    const firstBoardLink = page.locator('a[href^="/plus/boards/"]').first();
 
     if (await firstBoardLink.count() === 0) {
         if (process.env.CI) {
@@ -35,13 +44,7 @@ export async function openTestBoard(page: Page) {
         return false;
     }
 
-    const currentUserResponse = page.waitForResponse((response) => {
-        const responseUrl = new URL(response.url());
-        return responseUrl.pathname === "/api/me" && response.request().method() === "GET";
-    });
-
-    await firstBoardLink.click();
-    await currentUserResponse;
+    await navigateAndWaitForUser(page, () => firstBoardLink.click());
     await expect(page.locator(".board-scroll-layer")).toBeVisible();
     return true;
 }
