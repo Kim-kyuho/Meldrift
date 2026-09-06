@@ -15,8 +15,6 @@ type PendingPinchFrame = {
     zoom: number;
     scrollLeft: number;
     scrollTop: number;
-    boardWidth: number;
-    boardHeight: number;
 };
 
 type UseBoardPinchZoomOptions = {
@@ -65,24 +63,28 @@ export function useBoardPinchZoom({
 
         const boardElement = boardScrollElement.querySelector<HTMLElement>(".meldrift-board");
         const boardSizeElement = boardScrollElement.querySelector<HTMLElement>(".board-size-layer");
+        let previousOverflow: string | null = null;
+
+        const restoreOverflow = () => {
+            if (previousOverflow !== null) {
+                boardScrollElement.style.overflow = previousOverflow;
+                previousOverflow = null;
+            }
+        };
 
         const applyPendingFrame = () => {
             animationFrameRef.current = null;
 
             const pending = pendingFrameRef.current;
-            if (!pending || !boardElement) {
+            const pinch = pinchRef.current;
+            if (!pending || !pinch || !boardElement) {
                 return;
             }
 
-            boardElement.style.transform = `scale(${pending.zoom})`;
-
-            if (boardSizeElement) {
-                boardSizeElement.style.width = `${pending.boardWidth * pending.zoom}px`;
-                boardSizeElement.style.height = `${pending.boardHeight * pending.zoom}px`;
-            }
-
-            boardScrollElement.scrollLeft = pending.scrollLeft;
-            boardScrollElement.scrollTop = pending.scrollTop;
+            const translateX = pinch.scrollLeft - pending.scrollLeft;
+            const translateY = pinch.scrollTop - pending.scrollTop;
+            boardElement.style.transform =
+                `translate(${translateX}px, ${translateY}px) scale(${pending.zoom})`;
         };
 
         const endPinch = () => {
@@ -93,10 +95,23 @@ export function useBoardPinchZoom({
 
             if (animationFrameRef.current !== null) {
                 window.cancelAnimationFrame(animationFrameRef.current);
-                applyPendingFrame();
+                animationFrameRef.current = null;
             }
 
-            const finalZoom = pendingFrameRef.current?.zoom ?? pinch.zoom;
+            const pending = pendingFrameRef.current;
+            const finalZoom = pending?.zoom ?? pinch.zoom;
+
+            if (boardSizeElement) {
+                boardSizeElement.style.width = `${pinch.boardWidth * finalZoom}px`;
+                boardSizeElement.style.height = `${pinch.boardHeight * finalZoom}px`;
+            }
+            if (boardElement) {
+                boardElement.style.transform = `scale(${finalZoom})`;
+                boardElement.style.willChange = "";
+            }
+            boardScrollElement.scrollLeft = pending?.scrollLeft ?? pinch.scrollLeft;
+            boardScrollElement.scrollTop = pending?.scrollTop ?? pinch.scrollTop;
+            restoreOverflow();
 
             pinchRef.current = null;
             pendingFrameRef.current = null;
@@ -105,10 +120,6 @@ export function useBoardPinchZoom({
                 boardZoomRef.current = finalZoom;
                 setBoardZoom(finalZoom);
             }
-
-            if (boardElement) {
-                boardElement.style.willChange = "";
-            }
         };
 
         const handleTouchStart = (event: TouchEvent) => {
@@ -116,6 +127,15 @@ export function useBoardPinchZoom({
                 endPinch();
                 return;
             }
+            if (!boardElement || !boardSizeElement || pinchRef.current) {
+                return;
+            }
+
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+            previousOverflow = boardScrollElement.style.overflow;
+            boardScrollElement.style.overflow = "hidden";
 
             const rect = boardScrollElement.getBoundingClientRect();
             const midpoint = touchMidpoint(event.touches);
@@ -160,8 +180,6 @@ export function useBoardPinchZoom({
                 zoom: nextZoom,
                 scrollLeft: boardX * nextZoom - pinch.offsetX,
                 scrollTop: boardY * nextZoom - pinch.offsetY,
-                boardWidth: pinch.boardWidth,
-                boardHeight: pinch.boardHeight,
             };
 
             if (animationFrameRef.current === null) {
@@ -178,7 +196,7 @@ export function useBoardPinchZoom({
         boardScrollElement.addEventListener("touchstart", handleTouchStart, { passive: false });
         boardScrollElement.addEventListener("touchmove", handleTouchMove, { passive: false });
         boardScrollElement.addEventListener("touchend", handleTouchEnd);
-        boardScrollElement.addEventListener("touchcancel", handleTouchEnd);
+        boardScrollElement.addEventListener("touchcancel", endPinch);
 
         return () => {
             if (animationFrameRef.current !== null) {
@@ -187,16 +205,22 @@ export function useBoardPinchZoom({
             }
 
             pendingFrameRef.current = null;
-            pinchRef.current = null;
 
             if (boardElement) {
+                if (pinchRef.current) {
+                    boardElement.style.transform = `scale(${boardZoomRef.current})`;
+                    boardScrollElement.scrollLeft = pinchRef.current.scrollLeft;
+                    boardScrollElement.scrollTop = pinchRef.current.scrollTop;
+                }
                 boardElement.style.willChange = "";
             }
+            pinchRef.current = null;
+            restoreOverflow();
 
             boardScrollElement.removeEventListener("touchstart", handleTouchStart);
             boardScrollElement.removeEventListener("touchmove", handleTouchMove);
             boardScrollElement.removeEventListener("touchend", handleTouchEnd);
-            boardScrollElement.removeEventListener("touchcancel", handleTouchEnd);
+            boardScrollElement.removeEventListener("touchcancel", endPinch);
         };
     }, [boardScrollRef, enabled, maxZoom, minZoom, setBoardZoom]);
 }
