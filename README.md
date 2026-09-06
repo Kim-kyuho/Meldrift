@@ -1,4 +1,4 @@
-# Meldrift v1.1 Beta
+# Meldrift v1.2 Beta
 
 Meldrift is a personal project for organizing ideas on a visual board.
 
@@ -17,9 +17,12 @@ Ideas do not always begin in a clear order. Meldrift allows memos, images, table
 - Move, resize, and change the layer order of cards.
 - Draw with a mouse, touch input, or Apple Pencil.
 - Search memos and navigate through them in order.
+- [New] Reorder memos by dragging, which sets both the navigation sequence and the Markdown output order.
 - Zoom and pan across the board.
+- [New] Pinch to zoom on touch devices.
 - Compile board contents into Markdown and download the result.
 - Use an AI assistant to create, edit, delete, and arrange cards after reviewing its proposed changes.
+
 
 ## Structure
 
@@ -34,20 +37,5 @@ Meldrift is an npm workspace monorepo.
 The Plus edition defines the primary feature set and documentation. The Free edition provides a lightweight version without external database or image-storage services. Whatever differs between the editions — image storage, board persistence, edition-specific assistant wording — stays inside each app.
 
 ## Development
-
-```bash
-npm install
-npm run dev
-```
-
-- Free: `http://localhost:3000`
-- Plus through the Free zone: `http://localhost:3000/plus`
-- Plus directly: `http://localhost:3001/plus`
-
-Docker development uses the same routes:
-
-```bash
-docker compose up --build
-```
 
 Meldrift is currently under development.
