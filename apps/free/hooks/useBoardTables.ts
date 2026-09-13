@@ -9,6 +9,7 @@ type UseBoardTablesOptions = {
     boardId: number;
     boardZoom: number;
     cardLocationRef: RefObject<HTMLDivElement | null>;
+    getTopmostZ?: () => number;
 };
 
 export function useBoardTables({
@@ -16,6 +17,7 @@ export function useBoardTables({
     boardId,
     boardZoom,
     cardLocationRef,
+    getTopmostZ,
 }: UseBoardTablesOptions) {
     const [tables, setTables] = useState<BoardTable[]>(initialTables);
     const [editingTableId, setEditingTableId] = useState<number | null>(null);
@@ -30,13 +32,14 @@ export function useBoardTables({
         const y = locationElement
             ? Math.max(0, (locationElement.scrollTop + locationElement.clientHeight / 2) / boardZoom - height / 2)
             : 0;
+        const z = getTopmostZ ? getTopmostZ() : 1;
         const tempTable: BoardTable = {
             id: -Date.now(),
             boardId,
             source: structuredClone(defaultTableSource),
             x: Math.round(x),
             y: Math.round(y),
-            z: 1,
+            z,
             width,
             height,
         };
@@ -53,7 +56,7 @@ export function useBoardTables({
     };
 
     const handleUpdateTable = async (table: BoardTable) => {
-        setTables((prev) => prev.map((item) => item.id === table.id ? table : item));
+        setTables((prev) => prev.map((item) => item.id === table.id ? { ...table, z: item.z } : item));
     };
 
     const handleDeleteTable = async (id: number) => {

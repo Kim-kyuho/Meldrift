@@ -38,6 +38,7 @@ type MemoToolBarProps = {
     onBlockQuote: () => void;
     onBringToFront: () => void;
     onSendToBack: () => void;
+    layerDisabled?: boolean;
     onDelete: () => void;
 };
 
@@ -62,6 +63,7 @@ export default function MemoToolBar({
     onBlockQuote,
     onBringToFront,
     onSendToBack,
+    layerDisabled = false,
     onDelete,
 }: MemoToolBarProps) {
     const {
@@ -110,10 +112,10 @@ export default function MemoToolBar({
                         <CardToolButton label="Block formatting" onClick={openBlockTools}>
                             <MessageSquareQuote />
                         </CardToolButton>
-                        <CardToolButton label="Bring memo to front" onClick={onBringToFront}>
+                        <CardToolButton label="Bring memo to front" onClick={onBringToFront} disabled={layerDisabled}>
                             <BringToFront />
                         </CardToolButton>
-                        <CardToolButton label="Send memo to back" onClick={onSendToBack}>
+                        <CardToolButton label="Send memo to back" onClick={onSendToBack} disabled={layerDisabled}>
                             <SendToBack />
                         </CardToolButton>
                         <CardToolButton label="Delete memo" onClick={onDelete} className="text-rose-600">

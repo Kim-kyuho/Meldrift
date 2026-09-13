@@ -30,7 +30,6 @@ type ImageCardProps = {
         fileName: string | null,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => void;

@@ -63,7 +63,7 @@ describe("card hooks", () => {
                 dispatchBoardPress("pointerdown");
                 dispatchBoardPress("pointerup");
             });
-            expect(onUpdate).toHaveBeenCalledWith(1, 5, "updated", 32, 42, 3, 300, 200, "#fffadc");
+            expect(onUpdate).toHaveBeenCalledWith(1, 5, "updated", 32, 42, 300, 200, "#fffadc");
             expect(onEditingClear).toHaveBeenCalledOnce();
         });
 
@@ -96,7 +96,7 @@ describe("card hooks", () => {
             act(() => result.current.handleDragStop({} as never, { x: 50.6, y: 60.4 } as never));
             act(() => dispatchBoardPress("pointerup"));
             act(() => vi.runAllTimers());
-            expect(onUpdate).toHaveBeenCalledWith(2, 5, 51, 60, 4, 400, 300);
+            expect(onUpdate).toHaveBeenCalledWith(2, 5, 51, 60, 400, 300);
             expect(onEditingClear).toHaveBeenCalledOnce();
         });
 

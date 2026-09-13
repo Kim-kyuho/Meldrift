@@ -74,6 +74,17 @@ describe("board card collection hooks", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it("uses getTopmostZ when creating a temporary memo", () => {
+        const getTopmostZ = vi.fn().mockReturnValue(99);
+        const { result } = renderHook(() => useBoardMemos({
+            initialMemos: [memo], boardId: 5, boardZoom: 2,
+            cardLocationRef: locationRef, getTopmostZ,
+        }));
+        act(() => result.current.handleCreateTempMemo());
+        expect(getTopmostZ).toHaveBeenCalledOnce();
+        expect(result.current.memos[1].z).toBe(99);
+    });
+
     it("creates Mermaid and table drafts in the visible center", () => {
         const mermaids = renderHook(() => useBoardMermaids({
             initialMermaids: [mermaid], boardId: 5, boardZoom: 2,
@@ -88,6 +99,23 @@ describe("board card collection hooks", () => {
         act(() => tables.result.current.handleCreateTempTable());
         expect(mermaids.result.current.mermaids[1]).toMatchObject({ id: -1000, x: 160, y: 70 });
         expect(tables.result.current.tables[1]).toMatchObject({ id: -1000, x: 120, y: 70 });
+    });
+
+    it("uses getTopmostZ when creating Mermaid and table drafts", () => {
+        const getTopmostZ = vi.fn().mockReturnValue(99);
+        const mermaids = renderHook(() => useBoardMermaids({
+            initialMermaids: [mermaid], boardId: 5, boardZoom: 2,
+            cardLocationRef: locationRef, getTopmostZ,
+        }));
+        const tables = renderHook(() => useBoardTables({
+            initialTables: [table], boardId: 5, boardZoom: 2,
+            cardLocationRef: locationRef, getTopmostZ,
+        }));
+
+        act(() => mermaids.result.current.handleCreateTempMermaid());
+        act(() => tables.result.current.handleCreateTempTable());
+        expect(mermaids.result.current.mermaids[1].z).toBe(99);
+        expect(tables.result.current.tables[1].z).toBe(99);
     });
 
     it("creates an image card from compressed local bytes", async () => {
@@ -127,9 +155,44 @@ describe("board card collection hooks", () => {
             setMessage: vi.fn(),
         }));
 
-        await act(async () => result.current.handleUpdateImage(2, 5, 1, 2, 3, 4, 5));
-        expect(result.current.images[0]).toMatchObject({ url: image.url, label: image.label, z: 3 });
+        await act(async () => result.current.handleUpdateImage(2, 5, 1, 2, 4, 5));
+        expect(result.current.images[0]).toMatchObject({ url: image.url, label: image.label, z: 2 });
         await act(async () => result.current.handleDeleteImage(2));
         expect(result.current.images).toEqual([]);
+    });
+
+    it("handles dropped image files and adds images at drop location", async () => {
+        const { result } = renderHook(() => useBoardImages({
+            initialImages: [], boardId: 5, boardZoom: 2,
+            cardLocationRef: locationRef,
+            setMessage: vi.fn(),
+        }));
+
+        const file = new File(["image"], "dropped.png", { type: "image/png" });
+        await act(async () => {
+            await result.current.handleDropImageFiles([file], { x: 300, y: 200 });
+        });
+
+        expect(result.current.images.length).toBe(1);
+        expect(result.current.images[0].x).toBe(100);
+        expect(result.current.images[0].y).toBe(50);
+    });
+
+    it("uses getTopmostZ when uploading/dropping images", async () => {
+        const getTopmostZ = vi.fn().mockReturnValue(99);
+        const { result } = renderHook(() => useBoardImages({
+            initialImages: [], boardId: 5, boardZoom: 2,
+            cardLocationRef: locationRef,
+            setMessage: vi.fn(),
+            getTopmostZ,
+        }));
+
+        const file = new File(["image"], "dropped.png", { type: "image/png" });
+        await act(async () => {
+            await result.current.handleDropImageFiles([file], { x: 300, y: 200 });
+        });
+
+        expect(getTopmostZ).toHaveBeenCalled();
+        expect(result.current.images[0].z).toBe(99);
     });
 });

@@ -32,7 +32,6 @@ type UseImageCardOptions = {
         boardId: number,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => void;
@@ -66,14 +65,12 @@ export function useImageCard({
             image.boardId,
             Math.round(latestImageState.x),
             Math.round(latestImageState.y),
-            image.z,
             Math.round(latestImageState.width),
             Math.round(latestImageState.height),
         );
     }, [
         image.boardId,
         image.imageId,
-        image.z,
         onUpdate,
     ]);
 

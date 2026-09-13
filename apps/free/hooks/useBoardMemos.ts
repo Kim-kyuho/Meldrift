@@ -9,6 +9,7 @@ type UseBoardMemosOptions = {
     boardId: number;
     boardZoom: number;
     cardLocationRef: RefObject<HTMLDivElement | null>;
+    getTopmostZ?: () => number;
 };
 
 export function useBoardMemos({
@@ -16,6 +17,7 @@ export function useBoardMemos({
     boardId,
     boardZoom,
     cardLocationRef,
+    getTopmostZ,
 }: UseBoardMemosOptions) {
     const [memos, setMemos] = useState(initialMemos);
     const [editingMemoId, setEditingMemoId] = useState<number | null>(null);
@@ -34,13 +36,14 @@ export function useBoardMemos({
 
     const handleCreateTempMemo = () => {
         const { x, y } = getMemoAutoLocation();
+        const z = getTopmostZ ? getTopmostZ() : 1;
         const tempMemo: BoardMemo = {
             id: -Date.now(),
             boardId,
             content: "",
             x: Math.round(x),
             y: Math.round(y),
-            z: 1,
+            z,
             width: 300,
             height: 200,
             color: "#fffadc",
@@ -59,10 +62,10 @@ export function useBoardMemos({
         });
     };
 
-    const handleUpdateMemo = async (id: number, boardId: number, content: string, x: number, y: number, z: number, width: number, height: number, color: string) => {
+    const handleUpdateMemo = async (id: number, boardId: number, content: string, x: number, y: number, width: number, height: number, color: string) => {
         setMemos((prev) =>
             prev.map((memo) =>
-                memo.id === id ? { ...memo, content, x, y, z, width, height, color } : memo
+                memo.id === id ? { ...memo, content, x, y, width, height, color } : memo
             )
         );
     };

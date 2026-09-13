@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageCard from "./ImageCard";
 import AboutModal from "./AboutModal";
 import HelpModal from "./HelpModal";
@@ -36,7 +36,7 @@ import { useBoardPersistance } from "@/hooks/useBoardPersistance";
 import { useBoardShortcuts } from "@/hooks/useBoardShortcuts";
 import { useMemoReorder } from "@/hooks/useMemoReorder";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
-import { defaultBoard, type BoardSnapshot } from "@/lib/board-state";
+import { defaultBoard, type BoardSnapshot, type BoardImage, type BoardMemo, type BoardMermaid, type BoardTable } from "@/lib/board-state";
 import { imageInputAccept } from "@/lib/image-file";
 
 export default function BoardClient() {
@@ -63,6 +63,21 @@ export default function BoardClient() {
         setBoardZoom,
     } = useBoardZoom();
 
+    const imagesRef = useRef<BoardImage[]>([]);
+    const memosRef = useRef<BoardMemo[]>([]);
+    const mermaidsRef = useRef<BoardMermaid[]>([]);
+    const tablesRef = useRef<BoardTable[]>([]);
+
+    const getTopmostZ = useCallback(() => {
+        const allZ = [
+            ...memosRef.current.map((m) => m.z),
+            ...imagesRef.current.map((i) => i.z),
+            ...mermaidsRef.current.map((m) => m.z),
+            ...tablesRef.current.map((t) => t.z),
+        ];
+        return allZ.length > 0 ? Math.max(...allZ) + 1 : 1;
+    }, []);
+
     const {
         imageInputRef,
         images,
@@ -71,6 +86,7 @@ export default function BoardClient() {
         setEditingImageId,
         handleImageUploadClick,
         handleUploadImage,
+        handleDropImageFiles,
         handleUpdateImage,
         handleDeleteImage,
     } = useBoardImages({
@@ -79,6 +95,7 @@ export default function BoardClient() {
         boardZoom,
         cardLocationRef,
         setMessage: setBoardMessage,
+        getTopmostZ,
     });
 
     const {
@@ -95,6 +112,7 @@ export default function BoardClient() {
         boardId: currentBoard.boardId,
         boardZoom,
         cardLocationRef,
+        getTopmostZ,
     });
 
     const {
@@ -155,6 +173,7 @@ export default function BoardClient() {
         boardId: currentBoard.boardId,
         boardZoom,
         cardLocationRef,
+        getTopmostZ,
     });
 
     const {
@@ -171,7 +190,15 @@ export default function BoardClient() {
         boardId: currentBoard.boardId,
         boardZoom,
         cardLocationRef,
+        getTopmostZ,
     });
+
+    useEffect(() => {
+        imagesRef.current = images;
+        memosRef.current = memos;
+        mermaidsRef.current = mermaids;
+        tablesRef.current = tables;
+    }, [images, memos, mermaids, tables]);
 
     const {
         strokes,
@@ -298,6 +325,52 @@ export default function BoardClient() {
         cardEditing: isEditing,
         boardScrollRef: cardLocationRef,
     });
+
+    const [isDraggingOverBoard, setIsDraggingOverBoard] = useState(false);
+    const dragCounterRef = useRef(0);
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        dragCounterRef.current += 1;
+        if (e.dataTransfer.types.includes("Files")) {
+            setIsDraggingOverBoard(true);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+        if (dragCounterRef.current === 0) {
+            setIsDraggingOverBoard(false);
+        }
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        dragCounterRef.current = 0;
+        setIsDraggingOverBoard(false);
+
+        const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
+            file.type.startsWith("image/"),
+        );
+        if (droppedFiles.length === 0) return;
+
+        const container = cardLocationRef.current;
+        let dropCoords: { x: number; y: number } | undefined;
+        if (container) {
+            const rect = container.getBoundingClientRect();
+            const dropX = (container.scrollLeft + (e.clientX - rect.left)) / boardZoom;
+            const dropY = (container.scrollTop + (e.clientY - rect.top)) / boardZoom;
+            dropCoords = { x: dropX, y: dropY };
+        }
+
+        await handleDropImageFiles(droppedFiles, dropCoords);
+    };
 
     useBoardPinchZoom({
         boardScrollRef: cardLocationRef,
@@ -493,18 +566,29 @@ export default function BoardClient() {
         />
     
          <main
-            className="h-screen w-screen select-none bg-neutral-200"
+            className="h-screen w-screen select-none bg-neutral-200 relative"
             onClick={()=>{
                 setBoardMessage("");
                 setMemoMessage("");
             }}
         >
+            {isDraggingOverBoard && (
+                <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-indigo-500/10 backdrop-blur-[1px] border-4 border-dashed border-indigo-500/60 m-3 rounded-2xl transition-all">
+                    <div className="flex items-center gap-2 rounded-xl bg-white/95 px-5 py-3 text-base font-semibold text-indigo-700 shadow-xl border border-indigo-100">
+                        <span>Drop image here to add to board</span>
+                    </div>
+                </div>
+            )}
             <div
                 ref={cardLocationRef}
                 className="board-scroll-layer h-full w-full overflow-auto"
                 onPointerDown={handleBoardPanStart}
                 onPointerMove={handleBoardPanMove}
                 onPointerUp={handleBoardPanEnd}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
             >
                 <div
                     className="board-size-layer"

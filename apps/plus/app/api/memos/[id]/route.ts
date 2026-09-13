@@ -36,7 +36,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         if (body.content !== undefined) updates.content = body.content;
         if (body.x !== undefined) updates.x = body.x;
         if (body.y !== undefined) updates.y = body.y;
-        if (body.z !== undefined) updates.z = body.z;
         if (body.width !== undefined) updates.width = body.width;
         if (body.height !== undefined) updates.height = body.height;
         if (body.color !== undefined) updates.color = body.color;

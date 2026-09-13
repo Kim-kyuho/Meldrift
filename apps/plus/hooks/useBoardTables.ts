@@ -13,6 +13,7 @@ type UseBoardTablesOptions = {
     showPermissionMessage: () => void;
     setPermissionMessage: (message: string) => void;
     onPreviewUpdate: () => void;
+    getTopmostZ?: () => number;
 };
 
 export function useBoardTables({
@@ -24,6 +25,7 @@ export function useBoardTables({
     showPermissionMessage,
     setPermissionMessage,
     onPreviewUpdate,
+    getTopmostZ,
 }: UseBoardTablesOptions) {
     const [tables, setTables] = useState<BoardTable[]>(initialTables);
     const [editingTableId, setEditingTableId] = useState<number | null>(null);
@@ -43,13 +45,14 @@ export function useBoardTables({
         const y = locationElement
             ? Math.max(0, (locationElement.scrollTop + locationElement.clientHeight / 2) / boardZoom - height / 2)
             : 0;
+        const z = getTopmostZ ? getTopmostZ() : 1;
         const tempTable: BoardTable = {
             id: -Date.now(),
             boardId,
             source: structuredClone(defaultTableSource),
             x: Math.round(x),
             y: Math.round(y),
-            z: 1,
+            z,
             width,
             height,
         };
@@ -101,7 +104,7 @@ export function useBoardTables({
             return;
         }
 
-        setTables((prev) => prev.map((item) => item.id === table.id ? table : item));
+        setTables((prev) => prev.map((item) => item.id === table.id ? { ...table, z: item.z } : item));
         onPreviewUpdate();
     };
 

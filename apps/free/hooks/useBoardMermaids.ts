@@ -8,6 +8,7 @@ type UseBoardMermaidsOptions = {
     boardId: number;
     boardZoom: number;
     cardLocationRef: RefObject<HTMLDivElement | null>;
+    getTopmostZ?: () => number;
 };
 
 type BoardPoint = {
@@ -23,6 +24,7 @@ export function useBoardMermaids({
     boardId,
     boardZoom,
     cardLocationRef,
+    getTopmostZ,
 }: UseBoardMermaidsOptions) {
     const [mermaids, setMermaids] = useState<BoardMermaid[]>(initialMermaids);
     const [editingMermaidId, setEditingMermaidId] = useState<number | null>(null);
@@ -41,13 +43,14 @@ export function useBoardMermaids({
 
     const handleCreateTempMermaid = () => {
         const { x, y } = getMermaidAutoLocation();
+        const z = getTopmostZ ? getTopmostZ() : 1;
         const tempMermaid: BoardMermaid = {
             id: -Date.now(),
             boardId,
             source: defaultMermaidSource,
             x: Math.round(x),
             y: Math.round(y),
-            z: 1,
+            z,
             width: 480,
             height: 360,
         };
@@ -80,14 +83,13 @@ export function useBoardMermaids({
         source: string,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => {
         setMermaids((prev) =>
             prev.map((mermaid) =>
                 mermaid.id === id
-                    ? { ...mermaid, boardId, source, x, y, z, width, height }
+                    ? { ...mermaid, boardId, source, x, y, width, height }
                     : mermaid
             )
         );

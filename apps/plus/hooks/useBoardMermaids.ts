@@ -12,6 +12,7 @@ type UseBoardMermaidsOptions = {
     showPermissionMessage: () => void;
     setPermissionMessage: (message: string) => void;
     onPreviewUpdate: () => void;
+    getTopmostZ?: () => number;
 };
 
 type BoardPoint = {
@@ -31,6 +32,7 @@ export function useBoardMermaids({
     showPermissionMessage,
     setPermissionMessage,
     onPreviewUpdate,
+    getTopmostZ,
 }: UseBoardMermaidsOptions) {
     const [mermaids, setMermaids] = useState<BoardMermaid[]>(initialMermaids);
     const [editingMermaidId, setEditingMermaidId] = useState<number | null>(null);
@@ -54,13 +56,14 @@ export function useBoardMermaids({
         }
 
         const { x, y } = getMermaidAutoLocation();
+        const z = getTopmostZ ? getTopmostZ() : 1;
         const tempMermaid: BoardMermaid = {
             id: -Date.now(),
             boardId,
             source: defaultMermaidSource,
             x: Math.round(x),
             y: Math.round(y),
-            z: 1,
+            z,
             width: 480,
             height: 360,
         };
@@ -118,7 +121,6 @@ export function useBoardMermaids({
         source: string,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => {
@@ -127,7 +129,7 @@ export function useBoardMermaids({
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ boardId, source, x, y, z, width, height }),
+            body: JSON.stringify({ boardId, source, x, y, width, height }),
         });
         const data = await response.json();
 
@@ -139,7 +141,7 @@ export function useBoardMermaids({
         setMermaids((prev) =>
             prev.map((mermaid) =>
                 mermaid.id === id
-                    ? { ...mermaid, boardId, source, x, y, z, width, height }
+                    ? { ...mermaid, boardId, source, x, y, width, height }
                     : mermaid
             )
         );
