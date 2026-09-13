@@ -19,8 +19,10 @@ import MermaidCard from "@meldrift/ui/MermaidCard";
 import TableCard from "@meldrift/ui/TableCard";
 import DrawingLayer from "@meldrift/ui/DrawingLayer";
 import DrawingToolBar from "@meldrift/ui/DrawingToolBar";
+import BoardImageDropOverlay from "@meldrift/ui/BoardImageDropOverlay";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import { useBoardDrawing } from "@meldrift/ui/useBoardDrawing";
+import { useBoardImageDrop } from "@meldrift/ui/useBoardImageDrop";
 import { useCardLayer } from "@/hooks/useCardLayer";
 import { useBoardImages } from "@/hooks/useBoardImages";
 import { useBoardMermaids } from "@/hooks/useBoardMermaids";
@@ -326,51 +328,17 @@ export default function BoardClient() {
         boardScrollRef: cardLocationRef,
     });
 
-    const [isDraggingOverBoard, setIsDraggingOverBoard] = useState(false);
-    const dragCounterRef = useRef(0);
-
-    const handleDragEnter = (e: React.DragEvent) => {
-        e.preventDefault();
-        dragCounterRef.current += 1;
-        if (e.dataTransfer.types.includes("Files")) {
-            setIsDraggingOverBoard(true);
-        }
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
-        if (dragCounterRef.current === 0) {
-            setIsDraggingOverBoard(false);
-        }
-    };
-
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        dragCounterRef.current = 0;
-        setIsDraggingOverBoard(false);
-
-        const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
-            file.type.startsWith("image/"),
-        );
-        if (droppedFiles.length === 0) return;
-
-        const container = cardLocationRef.current;
-        let dropCoords: { x: number; y: number } | undefined;
-        if (container) {
-            const rect = container.getBoundingClientRect();
-            const dropX = (container.scrollLeft + (e.clientX - rect.left)) / boardZoom;
-            const dropY = (container.scrollTop + (e.clientY - rect.top)) / boardZoom;
-            dropCoords = { x: dropX, y: dropY };
-        }
-
-        await handleDropImageFiles(droppedFiles, dropCoords);
-    };
+    const {
+        isDraggingOverBoard,
+        handleDragEnter,
+        handleDragOver,
+        handleDragLeave,
+        handleDrop,
+    } = useBoardImageDrop({
+        boardScrollRef: cardLocationRef,
+        boardZoom,
+        onDropImages: handleDropImageFiles,
+    });
 
     useBoardPinchZoom({
         boardScrollRef: cardLocationRef,
@@ -572,13 +540,7 @@ export default function BoardClient() {
                 setMemoMessage("");
             }}
         >
-            {isDraggingOverBoard && (
-                <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-indigo-500/10 backdrop-blur-[1px] border-4 border-dashed border-indigo-500/60 m-3 rounded-2xl transition-all">
-                    <div className="flex items-center gap-2 rounded-xl bg-white/95 px-5 py-3 text-base font-semibold text-indigo-700 shadow-xl border border-indigo-100">
-                        <span>Drop image here to add to board</span>
-                    </div>
-                </div>
-            )}
+            <BoardImageDropOverlay isDragging={isDraggingOverBoard} />
             <div
                 ref={cardLocationRef}
                 className="board-scroll-layer h-full w-full overflow-auto"
