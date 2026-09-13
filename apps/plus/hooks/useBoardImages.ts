@@ -43,8 +43,28 @@ type UseBoardImagesOptions = {
     onPreviewUpdate: () => void;
     getTopmostZ?: () => number;
 };
+function fitImageDisplaySize(width: number, height: number) {
+    const maxWidth = 400;
+    const maxHeight = 300;
+    const scale = Math.min(
+        maxWidth / (width || 400),
+        maxHeight / (height || 300),
+        1
+    );
+    return {
+        width: Math.max(1, Math.round((width || 400) * scale)),
+        height: Math.max(1, Math.round((height || 300) * scale)),
+    };
+}
+
+type CompressedImageResult = {
+    file: File;
+    width: number;
+    height: number;
+};
+
 // 업로드가 FUNCTION_PAYLOAD_TOO_LARGE로 막히지 않게 클라이언트에서 미리 줄인다.
-async function compressImage(file: File) {
+async function compressImage(file: File): Promise<CompressedImageResult> {
     if (!isSupportedImageMimeType(file.type)) {
         throw new Error("Only JPEG, PNG, and WebP images are supported.");
     }
@@ -76,8 +96,8 @@ async function compressImage(file: File) {
         );
 
         const canvas = document.createElement("canvas");
-        let width = Math.round(image.width * scale);
-        let height = Math.round(image.height * scale);
+        let width = Math.round(imgWidth * scale);
+        let height = Math.round(imgHeight * scale);
         let blob: Blob;
 
         do {
@@ -108,14 +128,24 @@ async function compressImage(file: File) {
 
         URL.revokeObjectURL(imageUrl);
 
-        return new File(
+        const compressedFile = new File(
             [blob],
             file.name.replace(/\.[^.]+$/, ".png"),
             { type: "image/png" }
         );
+        const displaySize = fitImageDisplaySize(imgWidth, imgHeight);
+
+        return {
+            file: compressedFile,
+            ...displaySize,
+        };
     } catch (error) {
         console.error("Error compressing image:", error);
-        return file;
+        return {
+            file,
+            width: 400,
+            height: 300,
+        };
     }
 }
 
@@ -142,39 +172,6 @@ export function useBoardImages({
         imageInputRef.current?.click();
     };
 
-    const getImageDisplaySize = (file: File) =>
-        new Promise<{ width: number; height: number }>((resolve) => {
-            if (!isSupportedImageMimeType(file.type)) {
-                resolve({ width: 400, height: 300 });
-                return;
-            }
-            const imageUrl = URL.createObjectURL(file);
-            const image = document.createElement("img");
-
-            image.onload = () => {
-                const maxWidth = 400;
-                const maxHeight = 300;
-                const scale = Math.min(
-                    maxWidth / image.naturalWidth,
-                    maxHeight / image.naturalHeight,
-                    1
-                );
-
-                URL.revokeObjectURL(imageUrl);
-                resolve({
-                    width: Math.round(image.naturalWidth * scale),
-                    height: Math.round(image.naturalHeight * scale),
-                });
-            };
-
-            image.onerror = () => {
-                URL.revokeObjectURL(imageUrl);
-                resolve({ width: 400, height: 300 });
-            };
-
-            image.src = imageUrl;
-        });
-
     const getImageAutoLocation = (): BoardPoint => {
         const locationElement = cardLocationRef.current;
         if (!locationElement) {
@@ -196,9 +193,8 @@ export function useBoardImages({
             setPermissionMessage("Only JPEG, PNG, and WebP images are supported.");
             return;
         }
-        const compressedFile = await compressImage(file);
+        const { file: compressedFile, width, height } = await compressImage(file);
         const autoLocation = getImageAutoLocation();
-        const { width, height } = await getImageDisplaySize(compressedFile);
         let x = targetCoords ? targetCoords.x - width / 2 + offsetIndex * 24 : autoLocation.x;
         let y = targetCoords ? targetCoords.y - height / 2 + offsetIndex * 24 : autoLocation.y;
         x = Math.max(0, x);
