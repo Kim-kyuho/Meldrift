@@ -66,12 +66,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             }
             updates.y = body.y;
         }
-        if (body.z !== undefined) {
-            if (!Number.isInteger(body.z)) {
-                return NextResponse.json({ ok: false, message: "Invalid z index." }, { status: 400 });
-            }
-            updates.z = body.z;
-        }
         if (body.width !== undefined) {
             if (!Number.isInteger(body.width) || body.width <= 0) {
                 return NextResponse.json({ ok: false, message: "Invalid table width." }, { status: 400 });

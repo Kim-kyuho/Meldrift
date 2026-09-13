@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageCard from "./ImageCard";
 import AboutModal from "./AboutModal";
 import HelpModal from "./HelpModal";
@@ -19,8 +19,10 @@ import MermaidCard from "@meldrift/ui/MermaidCard";
 import TableCard from "@meldrift/ui/TableCard";
 import DrawingLayer from "@meldrift/ui/DrawingLayer";
 import DrawingToolBar from "@meldrift/ui/DrawingToolBar";
+import BoardImageDropOverlay from "@meldrift/ui/BoardImageDropOverlay";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import { useBoardDrawing } from "@meldrift/ui/useBoardDrawing";
+import { useBoardImageDrop } from "@meldrift/ui/useBoardImageDrop";
 import { useCardLayer } from "@/hooks/useCardLayer";
 import { useBoardImages } from "@/hooks/useBoardImages";
 import { useBoardMermaids } from "@/hooks/useBoardMermaids";
@@ -36,7 +38,7 @@ import { useBoardPersistance } from "@/hooks/useBoardPersistance";
 import { useBoardShortcuts } from "@/hooks/useBoardShortcuts";
 import { useMemoReorder } from "@/hooks/useMemoReorder";
 import { useAiAssistant } from "@/hooks/useAiAssistant";
-import { defaultBoard, type BoardSnapshot } from "@/lib/board-state";
+import { defaultBoard, type BoardSnapshot, type BoardImage, type BoardMemo, type BoardMermaid, type BoardTable } from "@/lib/board-state";
 import { imageInputAccept } from "@/lib/image-file";
 
 export default function BoardClient() {
@@ -63,6 +65,21 @@ export default function BoardClient() {
         setBoardZoom,
     } = useBoardZoom();
 
+    const imagesRef = useRef<BoardImage[]>([]);
+    const memosRef = useRef<BoardMemo[]>([]);
+    const mermaidsRef = useRef<BoardMermaid[]>([]);
+    const tablesRef = useRef<BoardTable[]>([]);
+
+    const getTopmostZ = useCallback(() => {
+        const allZ = [
+            ...memosRef.current.map((m) => m.z),
+            ...imagesRef.current.map((i) => i.z),
+            ...mermaidsRef.current.map((m) => m.z),
+            ...tablesRef.current.map((t) => t.z),
+        ];
+        return allZ.length > 0 ? Math.max(...allZ) + 1 : 1;
+    }, []);
+
     const {
         imageInputRef,
         images,
@@ -71,6 +88,7 @@ export default function BoardClient() {
         setEditingImageId,
         handleImageUploadClick,
         handleUploadImage,
+        handleDropImageFiles,
         handleUpdateImage,
         handleDeleteImage,
     } = useBoardImages({
@@ -79,6 +97,7 @@ export default function BoardClient() {
         boardZoom,
         cardLocationRef,
         setMessage: setBoardMessage,
+        getTopmostZ,
     });
 
     const {
@@ -95,6 +114,7 @@ export default function BoardClient() {
         boardId: currentBoard.boardId,
         boardZoom,
         cardLocationRef,
+        getTopmostZ,
     });
 
     const {
@@ -155,6 +175,7 @@ export default function BoardClient() {
         boardId: currentBoard.boardId,
         boardZoom,
         cardLocationRef,
+        getTopmostZ,
     });
 
     const {
@@ -171,7 +192,15 @@ export default function BoardClient() {
         boardId: currentBoard.boardId,
         boardZoom,
         cardLocationRef,
+        getTopmostZ,
     });
+
+    useEffect(() => {
+        imagesRef.current = images;
+        memosRef.current = memos;
+        mermaidsRef.current = mermaids;
+        tablesRef.current = tables;
+    }, [images, memos, mermaids, tables]);
 
     const {
         strokes,
@@ -297,6 +326,18 @@ export default function BoardClient() {
     } = useBoardScroll({
         cardEditing: isEditing,
         boardScrollRef: cardLocationRef,
+    });
+
+    const {
+        isDraggingOverBoard,
+        handleDragEnter,
+        handleDragOver,
+        handleDragLeave,
+        handleDrop,
+    } = useBoardImageDrop({
+        boardScrollRef: cardLocationRef,
+        boardZoom,
+        onDropImages: handleDropImageFiles,
     });
 
     useBoardPinchZoom({
@@ -493,18 +534,23 @@ export default function BoardClient() {
         />
     
          <main
-            className="h-screen w-screen select-none bg-neutral-200"
+            className="h-screen w-screen select-none bg-neutral-200 relative"
             onClick={()=>{
                 setBoardMessage("");
                 setMemoMessage("");
             }}
         >
+            <BoardImageDropOverlay isDragging={isDraggingOverBoard} />
             <div
                 ref={cardLocationRef}
                 className="board-scroll-layer h-full w-full overflow-auto"
                 onPointerDown={handleBoardPanStart}
                 onPointerMove={handleBoardPanMove}
                 onPointerUp={handleBoardPanEnd}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
             >
                 <div
                     className="board-size-layer"

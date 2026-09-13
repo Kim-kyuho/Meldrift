@@ -10,6 +10,7 @@ type UseBoardImagesOptions = {
     boardZoom: number;
     cardLocationRef: RefObject<HTMLDivElement | null>;
     setMessage: (message: string) => void;
+    getTopmostZ?: () => number;
 };
 
 export function useBoardImages({
@@ -18,6 +19,7 @@ export function useBoardImages({
     boardZoom,
     cardLocationRef,
     setMessage,
+    getTopmostZ,
 }: UseBoardImagesOptions) {
     const imageInputRef = useRef<HTMLInputElement | null>(null);
     const [images, setImages] = useState(initialImages);
@@ -28,28 +30,30 @@ export function useBoardImages({
         if (!uploadingImage) imageInputRef.current?.click();
     };
 
-    const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        event.target.value = "";
-        if (!file || uploadingImage) return;
+    const handleUploadImageFile = async (file: File, targetCoords?: { x: number; y: number }, offsetIndex = 0) => {
+        if (uploadingImage) return;
 
         setUploadingImage(true);
         setMessage("");
         try {
             const prepared = await prepareImageFile(file);
             const locationElement = cardLocationRef.current;
-            const x = locationElement
+            const autoX = locationElement
                 ? Math.max(
                     0,
                     (locationElement.scrollLeft + locationElement.clientWidth / 2) / boardZoom - prepared.width / 2,
                 )
                 : 0;
-            const y = locationElement
+            const autoY = locationElement
                 ? Math.max(
                     0,
                     (locationElement.scrollTop + locationElement.clientHeight / 2) / boardZoom - prepared.height / 2,
                 )
                 : 0;
+            const x = targetCoords ? Math.max(0, targetCoords.x - prepared.width / 2 + offsetIndex * 24) : autoX;
+            const y = targetCoords ? Math.max(0, targetCoords.y - prepared.height / 2 + offsetIndex * 24) : autoY;
+
+            const baseZ = getTopmostZ ? getTopmostZ() : 1;
             const imageId = nextPositiveId(images.map((image) => image.imageId));
             const image: BoardImage = {
                 imageId,
@@ -60,7 +64,7 @@ export function useBoardImages({
                 label: prepared.label,
                 x: Math.round(x),
                 y: Math.round(y),
-                z: 1,
+                z: baseZ + offsetIndex,
                 width: prepared.width,
                 height: prepared.height,
             };
@@ -74,17 +78,29 @@ export function useBoardImages({
         }
     };
 
+    const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file || uploadingImage) return;
+        await handleUploadImageFile(file);
+    };
+
+    const handleDropImageFiles = async (files: File[], targetCoords?: { x: number; y: number }) => {
+        for (let i = 0; i < files.length; i++) {
+            await handleUploadImageFile(files[i], targetCoords, i);
+        }
+    };
+
     const handleUpdateImage = async (
         imageId: number,
         boardId: number,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => {
         setImages((previous) => previous.map((image) => image.imageId === imageId
-            ? { ...image, boardId, x, y, z, width, height }
+            ? { ...image, boardId, x, y, width, height }
             : image));
     };
 
@@ -102,6 +118,8 @@ export function useBoardImages({
         uploadingImage,
         handleImageUploadClick,
         handleUploadImage,
+        handleUploadImageFile,
+        handleDropImageFiles,
         handleUpdateImage,
         handleDeleteImage,
     };

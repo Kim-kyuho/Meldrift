@@ -1,4 +1,17 @@
 import { ChangeEvent, RefObject, useRef, useState } from "react";
+import {
+    imageInputAccept,
+    isSupportedImageMimeType,
+    supportedImageMimeTypes,
+    type SupportedImageMimeType,
+} from "@/lib/image";
+
+export {
+    imageInputAccept,
+    isSupportedImageMimeType,
+    supportedImageMimeTypes,
+    type SupportedImageMimeType,
+};
 
 export type BoardImage = {
     imageId: number;
@@ -28,30 +41,63 @@ type UseBoardImagesOptions = {
     showPermissionMessage: () => void;
     setPermissionMessage: (message: string) => void;
     onPreviewUpdate: () => void;
+    getTopmostZ?: () => number;
 };
+function fitImageDisplaySize(width: number, height: number) {
+    const maxWidth = 400;
+    const maxHeight = 300;
+    const scale = Math.min(
+        maxWidth / (width || 400),
+        maxHeight / (height || 300),
+        1
+    );
+    return {
+        width: Math.max(1, Math.round((width || 400) * scale)),
+        height: Math.max(1, Math.round((height || 300) * scale)),
+    };
+}
+
+type CompressedImageResult = {
+    file: File;
+    width: number;
+    height: number;
+};
+
 // 업로드가 FUNCTION_PAYLOAD_TOO_LARGE로 막히지 않게 클라이언트에서 미리 줄인다.
-async function compressImage(file: File) {
+async function compressImage(file: File): Promise<CompressedImageResult> {
+    if (!isSupportedImageMimeType(file.type)) {
+        throw new Error("Only JPEG, PNG, and WebP images are supported.");
+    }
     try {
         const maxFileSize = 4 * 1024 * 1024;
         const image = new Image();
         const imageUrl = URL.createObjectURL(file);
 
         await new Promise<void>((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = reject;
+            const timer = setTimeout(() => resolve(), 1000);
+            image.onload = () => {
+                clearTimeout(timer);
+                resolve();
+            };
+            image.onerror = (err) => {
+                clearTimeout(timer);
+                reject(err);
+            };
             image.src = imageUrl;
         });
 
         const maxSize = 2000;
+        const imgWidth = image.width || 400;
+        const imgHeight = image.height || 300;
         const scale = Math.min(
-            maxSize / image.width,
-            maxSize / image.height,
+            maxSize / imgWidth,
+            maxSize / imgHeight,
             1
         );
 
         const canvas = document.createElement("canvas");
-        let width = Math.round(image.width * scale);
-        let height = Math.round(image.height * scale);
+        let width = Math.round(imgWidth * scale);
+        let height = Math.round(imgHeight * scale);
         let blob: Blob;
 
         do {
@@ -82,14 +128,24 @@ async function compressImage(file: File) {
 
         URL.revokeObjectURL(imageUrl);
 
-        return new File(
+        const compressedFile = new File(
             [blob],
             file.name.replace(/\.[^.]+$/, ".png"),
             { type: "image/png" }
         );
-    }   catch (error) { 
+        const displaySize = fitImageDisplaySize(imgWidth, imgHeight);
+
+        return {
+            file: compressedFile,
+            ...displaySize,
+        };
+    } catch (error) {
         console.error("Error compressing image:", error);
-        return file;
+        return {
+            file,
+            width: 400,
+            height: 300,
+        };
     }
 }
 
@@ -102,6 +158,7 @@ export function useBoardImages({
     showPermissionMessage,
     setPermissionMessage,
     onPreviewUpdate,
+    getTopmostZ,
 }: UseBoardImagesOptions) {
     const imageInputRef = useRef<HTMLInputElement | null>(null);
     const [images, setImages] = useState(initialImages);
@@ -115,35 +172,6 @@ export function useBoardImages({
         imageInputRef.current?.click();
     };
 
-    const getImageDisplaySize = (file: File) =>
-        new Promise<{ width: number; height: number }>((resolve) => {
-            const imageUrl = URL.createObjectURL(file);
-            const image = document.createElement("img");
-
-            image.onload = () => {
-                const maxWidth = 400;
-                const maxHeight = 300;
-                const scale = Math.min(
-                    maxWidth / image.naturalWidth,
-                    maxHeight / image.naturalHeight,
-                    1
-                );
-
-                URL.revokeObjectURL(imageUrl);
-                resolve({
-                    width: Math.round(image.naturalWidth * scale),
-                    height: Math.round(image.naturalHeight * scale),
-                });
-            };
-
-            image.onerror = () => {
-                URL.revokeObjectURL(imageUrl);
-                resolve({ width: 400, height: 300 });
-            };
-
-            image.src = imageUrl;
-        });
-
     const getImageAutoLocation = (): BoardPoint => {
         const locationElement = cardLocationRef.current;
         if (!locationElement) {
@@ -156,23 +184,26 @@ export function useBoardImages({
         };
     };
 
-    const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        event.target.value = "";
-
-        if (!file) {
-            return;
-        }
+    const handleUploadImageFile = async (file: File, targetCoords?: { x: number; y: number }, offsetIndex = 0) => {
         if (!canEditCard) {
             showPermissionMessage();
             return;
         }
-        const compressedFile = await compressImage(file);
-        const { x, y } = getImageAutoLocation();
-        const { width, height } = await getImageDisplaySize(compressedFile);
+        if (!isSupportedImageMimeType(file.type)) {
+            setPermissionMessage("Only JPEG, PNG, and WebP images are supported.");
+            return;
+        }
+        const { file: compressedFile, width, height } = await compressImage(file);
+        const autoLocation = getImageAutoLocation();
+        let x = targetCoords ? targetCoords.x - width / 2 + offsetIndex * 24 : autoLocation.x;
+        let y = targetCoords ? targetCoords.y - height / 2 + offsetIndex * 24 : autoLocation.y;
+        x = Math.max(0, x);
+        y = Math.max(0, y);
+
+        const baseZ = getTopmostZ ? getTopmostZ() : 1;
         const tempImageUrl = URL.createObjectURL(compressedFile);
         const tempImage: BoardImage = {
-            imageId: -Date.now(),
+            imageId: -Date.now() - offsetIndex,
             boardId,
             publicId: "",
             secureUrl: tempImageUrl,
@@ -180,13 +211,33 @@ export function useBoardImages({
             file: compressedFile,
             x: Math.round(x),
             y: Math.round(y),
-            z: 1,
+            z: baseZ + offsetIndex,
             width,
             height,
         };
 
         setImages((prev) => [...prev, tempImage]);
         setEditingImageId(tempImage.imageId);
+    };
+
+    const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+
+        if (!file) {
+            return;
+        }
+        if (!isSupportedImageMimeType(file.type)) {
+            setPermissionMessage("Only JPEG, PNG, and WebP images are supported.");
+            return;
+        }
+        await handleUploadImageFile(file);
+    };
+
+    const handleDropImageFiles = async (files: File[], targetCoords?: { x: number; y: number }) => {
+        for (let i = 0; i < files.length; i++) {
+            await handleUploadImageFile(files[i], targetCoords, i);
+        }
     };
 
     const handleInsertImage = async (tempId: number, file: File, boardId: number, x: number, y: number, z: number, width: number, height: number) => {
@@ -224,13 +275,13 @@ export function useBoardImages({
         onPreviewUpdate();
     };
 
-    const handleUpdateImage = async (imageId: number, boardId: number, publicId: string, secureUrl: string, fileName: string | null, x: number, y: number, z: number, width: number, height: number) => {
+    const handleUpdateImage = async (imageId: number, boardId: number, publicId: string, secureUrl: string, fileName: string | null, x: number, y: number, width: number, height: number) => {
         const response = await fetch(`/api/images/${imageId}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ boardId, publicId, secureUrl, fileName, x, y, z, width, height }),
+            body: JSON.stringify({ boardId, publicId, secureUrl, fileName, x, y, width, height }),
         });
         const data = await response.json();
 
@@ -241,7 +292,7 @@ export function useBoardImages({
 
         setImages((prev) =>
             prev.map((image) =>
-                image.imageId === imageId ? { ...image, boardId, publicId, secureUrl, fileName, x, y, z, width, height } : image
+                image.imageId === imageId ? { ...image, boardId, publicId, secureUrl, fileName, x, y, width, height } : image
             )
         );
         onPreviewUpdate();
@@ -281,6 +332,8 @@ export function useBoardImages({
         setEditingImageId,
         handleImageUploadClick,
         handleUploadImage,
+        handleUploadImageFile,
+        handleDropImageFiles,
         handleInsertImage,
         handleUpdateImage,
         handleDeleteImage,

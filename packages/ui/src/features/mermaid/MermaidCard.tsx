@@ -35,7 +35,6 @@ type MermaidCardProps = {
         source: string,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => void;
@@ -209,6 +208,7 @@ export default function MermaidCard({
                 <MermaidToolBar
                     onBringToFront={onBringToFront}
                     onSendToBack={onSendToBack}
+                    layerDisabled={mermaid.id < 0}
                     onDelete={openDeleteDialog}
                 />
             )}

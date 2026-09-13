@@ -1,6 +1,7 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
 import { db_images } from "@/lib/db/schema";
+import { isSupportedImageMimeType } from "@/lib/image";
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse } from "cloudinary";
 import { NextRequest, NextResponse } from "next/server";
@@ -26,6 +27,16 @@ export async function POST(request: NextRequest) {
                 {
                     ok: false,
                     message: "Image file is required.",
+                },
+                { status: 400 },
+            );
+        }
+
+        if (!isSupportedImageMimeType(file.type)) {
+            return NextResponse.json(
+                {
+                    ok: false,
+                    message: "Only JPEG, PNG, and WebP images are supported.",
                 },
                 { status: 400 },
             );

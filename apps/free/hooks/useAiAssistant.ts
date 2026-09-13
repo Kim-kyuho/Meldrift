@@ -94,11 +94,11 @@ type UseAiAssistantOptions = {
     onInsertTable: (table: BoardTable) => Promise<void>;
     onUpdateMemo: (
         id: number, boardId: number, content: string,
-        x: number, y: number, z: number, width: number, height: number, color: string,
+        x: number, y: number, width: number, height: number, color: string,
     ) => Promise<void>;
     onUpdateMermaid: (
         id: number, boardId: number, source: string,
-        x: number, y: number, z: number, width: number, height: number,
+        x: number, y: number, width: number, height: number,
     ) => Promise<void>;
     onUpdateTable: (table: BoardTable) => Promise<void>;
     onDeleteMemo: (id: number) => Promise<void>;
@@ -345,13 +345,21 @@ export function useAiAssistant({
         const nextTempId = () => idBase + idOffset++;
         const orderBase = nextMemoOrder(base.memos);
 
+        const allExistingZ = [
+            ...base.memos.map((m) => m.z),
+            ...base.images.map((i) => i.z),
+            ...base.mermaids.map((m) => m.z),
+            ...base.tables.map((t) => t.z),
+        ];
+        let currentZ = allExistingZ.length > 0 ? Math.max(...allExistingZ) + 1 : 1;
+
         const newMemos: BoardMemo[] = planned.memos.map((memo, index) => ({
             id: nextTempId(),
             boardId,
             content: memo.content,
             x: memo.x,
             y: memo.y,
-            z: 1,
+            z: currentZ++,
             width: memo.width,
             height: memo.height,
             color: memo.color,
@@ -363,7 +371,7 @@ export function useAiAssistant({
             source: mermaid.source,
             x: mermaid.x,
             y: mermaid.y,
-            z: 1,
+            z: currentZ++,
             width: mermaid.width,
             height: mermaid.height,
         }));
@@ -373,7 +381,7 @@ export function useAiAssistant({
             source: table.source,
             x: table.x,
             y: table.y,
-            z: 1,
+            z: currentZ++,
             width: table.width,
             height: table.height,
         }));
@@ -730,7 +738,7 @@ export function useAiAssistant({
                 }
                 await onUpdateMemo(
                     memo.id, memo.boardId, memo.content,
-                    memo.x, memo.y, memo.z, memo.width, memo.height, memo.color,
+                    memo.x, memo.y, memo.width, memo.height, memo.color,
                 );
             }
 
@@ -741,7 +749,7 @@ export function useAiAssistant({
                 }
                 await onUpdateMermaid(
                     mermaid.id, mermaid.boardId, mermaid.source,
-                    mermaid.x, mermaid.y, mermaid.z, mermaid.width, mermaid.height,
+                    mermaid.x, mermaid.y, mermaid.width, mermaid.height,
                 );
             }
 
@@ -773,7 +781,7 @@ export function useAiAssistant({
                 }
                 await onUpdateMemo(
                     memo.id, memo.boardId, memo.content,
-                    move.x, move.y, memo.z, memo.width, memo.height, memo.color,
+                    move.x, move.y, memo.width, memo.height, memo.color,
                 );
             }
 
@@ -784,7 +792,7 @@ export function useAiAssistant({
                 }
                 await onUpdateMermaid(
                     mermaid.id, mermaid.boardId, mermaid.source,
-                    move.x, move.y, mermaid.z, mermaid.width, mermaid.height,
+                    move.x, move.y, mermaid.width, mermaid.height,
                 );
             }
 

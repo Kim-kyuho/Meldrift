@@ -37,7 +37,6 @@ type MemoCardProps = {
         content: string,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
         color: string
@@ -197,6 +196,7 @@ export default function MemoCard(props: MemoCardProps) {
                     onBlockQuote={() => memoEditorRef.current?.toggleBlockQuote()}
                     onBringToFront={onBringToFront}
                     onSendToBack={onSendToBack}
+                    layerDisabled={memo.id < 0}
                     onDelete={openDeleteDialog}
                 />
             )}

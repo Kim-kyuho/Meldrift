@@ -16,7 +16,6 @@ type ImageCardProps = {
         boardId: number,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
     ) => void;

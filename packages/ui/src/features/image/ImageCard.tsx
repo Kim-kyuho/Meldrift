@@ -35,6 +35,7 @@ type ImageCardViewProps = {
     onResizeStop: RndResizeCallback;
     onBringToFront: () => void;
     onSendToBack: () => void;
+    layerDisabled?: boolean;
     onOpenDeleteDialog: () => void;
     onConfirmDelete: () => void;
     onCloseDeleteDialog: () => void;
@@ -55,6 +56,7 @@ export default function ImageCardView({
     onResizeStop,
     onBringToFront,
     onSendToBack,
+    layerDisabled,
     onOpenDeleteDialog,
     onConfirmDelete,
     onCloseDeleteDialog,
@@ -110,6 +112,7 @@ export default function ImageCardView({
                 <ImageToolBar
                     onBringToFront={onBringToFront}
                     onSendToBack={onSendToBack}
+                    layerDisabled={layerDisabled ?? (imageId < 0)}
                     onDelete={onOpenDeleteDialog}
                 />
             )}

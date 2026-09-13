@@ -67,6 +67,18 @@ describe("board card collection hooks", () => {
             expect(result.current.editingMemoId).toBe(-1000);
         });
 
+        it("uses getTopmostZ when creating a temporary memo", () => {
+            const getTopmostZ = vi.fn().mockReturnValue(42);
+            const { result } = renderHook(() => useBoardMemos({
+                initialMemos: [memo], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                onPreviewUpdate: vi.fn(), getTopmostZ,
+            }));
+            act(() => result.current.handleCreateTempMemo());
+            expect(getTopmostZ).toHaveBeenCalledOnce();
+            expect(result.current.memos[1].z).toBe(42);
+        });
+
         it("blocks temporary creation without permission", () => {
             const { result, showPermissionMessage } = setup(false);
             act(() => result.current.handleCreateTempMemo());
@@ -86,8 +98,8 @@ describe("board card collection hooks", () => {
             await act(async () => result.current.handleInsertMemo(-1000, 5, "created", 1, 2, 3, 300, 200, "#fff"));
             expect(result.current.memos.some((item) => item.id === 10)).toBe(true);
 
-            await act(async () => result.current.handleUpdateMemo(10, 5, "updated", 4, 5, 6, 320, 220, "#000"));
-            expect(result.current.memos.find((item) => item.id === 10)).toMatchObject({ content: "updated", z: 6 });
+            await act(async () => result.current.handleUpdateMemo(10, 5, "updated", 4, 5, 320, 220, "#000"));
+            expect(result.current.memos.find((item) => item.id === 10)).toMatchObject({ content: "updated", z: 1 });
             expect(onPreviewUpdate).toHaveBeenCalledTimes(2);
 
             await act(async () => result.current.handleDeleteMemo(10));
@@ -120,6 +132,18 @@ describe("board card collection hooks", () => {
             expect(result.current.editingMermaidId).toBe(-1000);
         });
 
+        it("uses getTopmostZ when creating a temporary Mermaid card", () => {
+            const getTopmostZ = vi.fn().mockReturnValue(42);
+            const { result } = renderHook(() => useBoardMermaids({
+                initialMermaids: [mermaid], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                onPreviewUpdate: vi.fn(), getTopmostZ,
+            }));
+            act(() => result.current.handleCreateTempMermaid());
+            expect(getTopmostZ).toHaveBeenCalledOnce();
+            expect(result.current.mermaids[1].z).toBe(42);
+        });
+
         it("maps the API shape when inserting and handles persisted deletion", async () => {
             const apiMermaid = { mermaidId: 30, boardId: 5, source: "A-->B", x: 1, y: 2, z: 3, width: 4, height: 5 };
             vi.stubGlobal("fetch", vi.fn()
@@ -147,6 +171,18 @@ describe("board card collection hooks", () => {
             expect(result.current.tables[1]).toMatchObject({ id: -1000, x: 120, y: 70, width: 560, height: 360 });
             expect(result.current.tables[1].source).not.toBe(table.source);
             expect(result.current.editingTableId).toBe(-1000);
+        });
+
+        it("uses getTopmostZ when creating a temporary Table", () => {
+            const getTopmostZ = vi.fn().mockReturnValue(42);
+            const { result } = renderHook(() => useBoardTables({
+                initialTables: [table], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                onPreviewUpdate: vi.fn(), getTopmostZ,
+            }));
+            act(() => result.current.handleCreateTempTable());
+            expect(getTopmostZ).toHaveBeenCalledOnce();
+            expect(result.current.tables[1].z).toBe(42);
         });
 
         it("inserts, updates, and deletes tables", async () => {
@@ -199,10 +235,117 @@ describe("board card collection hooks", () => {
                 canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
                 onPreviewUpdate: vi.fn(),
             }));
-            await act(async () => result.current.handleUpdateImage(2, 5, "new-public", "new-url", "new.png", 1, 2, 3, 4, 5));
-            expect(result.current.images[0]).toMatchObject({ publicId: "new-public", z: 3, width: 4 });
+            await act(async () => result.current.handleUpdateImage(2, 5, "new-public", "new-url", "new.png", 1, 2, 4, 5));
+            expect(result.current.images[0]).toMatchObject({ publicId: "new-public", z: 2, width: 4 });
             await act(async () => result.current.handleDeleteImage(2));
             expect(result.current.images).toEqual([]);
+        });
+
+        it("handles dropped image files and adds temporary images", async () => {
+            const originalCreateElement = document.createElement.bind(document);
+            vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+                const el = originalCreateElement(tagName);
+                if (tagName.toLowerCase() === "img") {
+                    setTimeout(() => el.dispatchEvent(new Event("load")), 0);
+                }
+                return el;
+            });
+            const originalImage = window.Image;
+            // @ts-expect-error mock Image
+            window.Image = class {
+                onload: (() => void) | null = null;
+                width = 400;
+                height = 300;
+                set src(_: string) {
+                    setTimeout(() => this.onload?.(), 0);
+                }
+            };
+
+            try {
+                const { result } = renderHook(() => useBoardImages({
+                    initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                    canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                    onPreviewUpdate: vi.fn(),
+                }));
+                const file = new File(["test-content"], "dropped.png", { type: "image/png" });
+                await act(async () => {
+                    await result.current.handleDropImageFiles([file], { x: 300, y: 200 });
+                });
+                expect(result.current.images.length).toBe(2);
+                expect(result.current.images[1].fileName).toBe("dropped.png");
+            } finally {
+                window.Image = originalImage;
+            }
+        });
+
+        it("uses getTopmostZ when dropping image files", async () => {
+            const originalCreateElement = document.createElement.bind(document);
+            vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+                const el = originalCreateElement(tagName);
+                if (tagName.toLowerCase() === "img") {
+                    setTimeout(() => el.dispatchEvent(new Event("load")), 0);
+                }
+                return el;
+            });
+            const originalImage = window.Image;
+            // @ts-expect-error mock Image
+            window.Image = class {
+                onload: (() => void) | null = null;
+                width = 400;
+                height = 300;
+                set src(_: string) {
+                    setTimeout(() => this.onload?.(), 0);
+                }
+            };
+
+            try {
+                const getTopmostZ = vi.fn().mockReturnValue(42);
+                const { result } = renderHook(() => useBoardImages({
+                    initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                    canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                    onPreviewUpdate: vi.fn(), getTopmostZ,
+                }));
+                const file = new File(["test-content"], "dropped.png", { type: "image/png" });
+                await act(async () => {
+                    await result.current.handleDropImageFiles([file], { x: 300, y: 200 });
+                });
+                expect(getTopmostZ).toHaveBeenCalled();
+                expect(result.current.images[1].z).toBe(42);
+            } finally {
+                window.Image = originalImage;
+            }
+        });
+
+        it("rejects unsupported image MIME types when dropping files", async () => {
+            const setPermissionMessage = vi.fn();
+            const { result } = renderHook(() => useBoardImages({
+                initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage,
+                onPreviewUpdate: vi.fn(),
+            }));
+            const unsupportedFile = new File(["<svg></svg>"], "malicious.svg", { type: "image/svg+xml" });
+            await act(async () => {
+                await result.current.handleDropImageFiles([unsupportedFile], { x: 300, y: 200 });
+            });
+            expect(setPermissionMessage).toHaveBeenCalledWith("Only JPEG, PNG, and WebP images are supported.");
+            expect(result.current.images.length).toBe(1);
+        });
+
+        it("rejects unsupported image MIME types when uploading via file input", async () => {
+            const setPermissionMessage = vi.fn();
+            const { result } = renderHook(() => useBoardImages({
+                initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage,
+                onPreviewUpdate: vi.fn(),
+            }));
+            const unsupportedFile = new File(["alert(1)"], "script.html", { type: "text/html" });
+            await act(async () => {
+                await result.current.handleUploadImage({
+                    target: { files: [unsupportedFile], value: "test" },
+                } as unknown as React.ChangeEvent<HTMLInputElement>);
+            });
+            expect(setPermissionMessage).toHaveBeenCalledWith("Only JPEG, PNG, and WebP images are supported.");
+            expect(result.current.images.length).toBe(1);
         });
     });
 });

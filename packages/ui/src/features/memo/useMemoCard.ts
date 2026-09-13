@@ -32,7 +32,6 @@ type UseMemoCardOptions = {
         content: string,
         x: number,
         y: number,
-        z: number,
         width: number,
         height: number,
         color: string
@@ -102,7 +101,6 @@ export function useMemoCard({
             memoContent,
             Math.round(memoState.x),
             Math.round(memoState.y),
-            memo.z,
             Math.round(memoState.width),
             Math.round(memoState.height),
             memoColor
@@ -113,7 +111,6 @@ export function useMemoCard({
         memoContent,
         memoState.x,
         memoState.y,
-        memo.z,
         memoState.width,
         memoState.height,
         memoColor,

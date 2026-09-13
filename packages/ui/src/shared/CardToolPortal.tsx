@@ -45,7 +45,7 @@ export function CardToolButton({
                 variant="menu"
                 aria-label={label}
                 title={label}
-                className={`flex h-10 w-10 items-center justify-center px-0 py-0 hover:bg-white/80 hover:pl-0 hover:shadow-sm active:scale-90 active:bg-white active:shadow-inner [&_svg]:h-5 [&_svg]:w-5 ${className}`}
+                className={`flex h-10 w-10 items-center justify-center px-0 py-0 hover:bg-white/80 hover:pl-0 hover:shadow-sm active:scale-90 active:bg-white active:shadow-inner disabled:opacity-30 disabled:pointer-events-none disabled:active:scale-100 disabled:hover:shadow-none [&_svg]:h-5 [&_svg]:w-5 ${className}`}
             >
                 {children}
             </PressableButton>
