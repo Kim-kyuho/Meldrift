@@ -26,7 +26,7 @@ import type { BoardStroke } from "@meldrift/core/board-stroke";
 import { useBoardDrawing } from "@/hooks/useBoardDrawing";
 import { useCardLayer } from "@/hooks/useCardLayer";
 import { useBoardAuth } from "@/hooks/useBoardAuth";
-import { useBoardImages } from "@/hooks/useBoardImages";
+import { imageInputAccept, useBoardImages } from "@/hooks/useBoardImages";
 import { useBoardMermaids } from "@/hooks/useBoardMermaids";
 import { useBoardTables } from "@/hooks/useBoardTables";
 import type { TableSource } from "@meldrift/core/table-card";
@@ -409,7 +409,7 @@ export default function BoardClient(
         <input
             ref={imageInputRef}
             type="file"
-            accept="image/*"
+            accept={imageInputAccept}
             className="hidden"
             onChange={handleUploadImage}
         />

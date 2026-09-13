@@ -315,5 +315,37 @@ describe("board card collection hooks", () => {
                 window.Image = originalImage;
             }
         });
+
+        it("rejects unsupported image MIME types when dropping files", async () => {
+            const setPermissionMessage = vi.fn();
+            const { result } = renderHook(() => useBoardImages({
+                initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage,
+                onPreviewUpdate: vi.fn(),
+            }));
+            const unsupportedFile = new File(["<svg></svg>"], "malicious.svg", { type: "image/svg+xml" });
+            await act(async () => {
+                await result.current.handleDropImageFiles([unsupportedFile], { x: 300, y: 200 });
+            });
+            expect(setPermissionMessage).toHaveBeenCalledWith("Only JPEG, PNG, and WebP images are supported.");
+            expect(result.current.images.length).toBe(1);
+        });
+
+        it("rejects unsupported image MIME types when uploading via file input", async () => {
+            const setPermissionMessage = vi.fn();
+            const { result } = renderHook(() => useBoardImages({
+                initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage,
+                onPreviewUpdate: vi.fn(),
+            }));
+            const unsupportedFile = new File(["alert(1)"], "script.html", { type: "text/html" });
+            await act(async () => {
+                await result.current.handleUploadImage({
+                    target: { files: [unsupportedFile], value: "test" },
+                } as unknown as React.ChangeEvent<HTMLInputElement>);
+            });
+            expect(setPermissionMessage).toHaveBeenCalledWith("Only JPEG, PNG, and WebP images are supported.");
+            expect(result.current.images.length).toBe(1);
+        });
     });
 });

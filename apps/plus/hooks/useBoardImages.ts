@@ -1,4 +1,17 @@
 import { ChangeEvent, RefObject, useRef, useState } from "react";
+import {
+    imageInputAccept,
+    isSupportedImageMimeType,
+    supportedImageMimeTypes,
+    type SupportedImageMimeType,
+} from "@/lib/image";
+
+export {
+    imageInputAccept,
+    isSupportedImageMimeType,
+    supportedImageMimeTypes,
+    type SupportedImageMimeType,
+};
 
 export type BoardImage = {
     imageId: number;
@@ -32,6 +45,9 @@ type UseBoardImagesOptions = {
 };
 // 업로드가 FUNCTION_PAYLOAD_TOO_LARGE로 막히지 않게 클라이언트에서 미리 줄인다.
 async function compressImage(file: File) {
+    if (!isSupportedImageMimeType(file.type)) {
+        throw new Error("Only JPEG, PNG, and WebP images are supported.");
+    }
     try {
         const maxFileSize = 4 * 1024 * 1024;
         const image = new Image();
@@ -97,7 +113,7 @@ async function compressImage(file: File) {
             file.name.replace(/\.[^.]+$/, ".png"),
             { type: "image/png" }
         );
-    }   catch (error) { 
+    } catch (error) {
         console.error("Error compressing image:", error);
         return file;
     }
@@ -128,6 +144,10 @@ export function useBoardImages({
 
     const getImageDisplaySize = (file: File) =>
         new Promise<{ width: number; height: number }>((resolve) => {
+            if (!isSupportedImageMimeType(file.type)) {
+                resolve({ width: 400, height: 300 });
+                return;
+            }
             const imageUrl = URL.createObjectURL(file);
             const image = document.createElement("img");
 
@@ -172,6 +192,10 @@ export function useBoardImages({
             showPermissionMessage();
             return;
         }
+        if (!isSupportedImageMimeType(file.type)) {
+            setPermissionMessage("Only JPEG, PNG, and WebP images are supported.");
+            return;
+        }
         const compressedFile = await compressImage(file);
         const autoLocation = getImageAutoLocation();
         const { width, height } = await getImageDisplaySize(compressedFile);
@@ -205,6 +229,10 @@ export function useBoardImages({
         event.target.value = "";
 
         if (!file) {
+            return;
+        }
+        if (!isSupportedImageMimeType(file.type)) {
+            setPermissionMessage("Only JPEG, PNG, and WebP images are supported.");
             return;
         }
         await handleUploadImageFile(file);
