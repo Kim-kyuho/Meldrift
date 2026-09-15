@@ -163,6 +163,14 @@ export function useBoardImages({
     const imageInputRef = useRef<HTMLInputElement | null>(null);
     const [images, setImages] = useState(initialImages);
     const [editingImageId, setEditingImageId] = useState<number | null>(null);
+    const insertingImageIdsRef = useRef(new Set<number>());
+
+    const handleEditImage = (imageId: number | null) => {
+        if (imageId !== null && insertingImageIdsRef.current.has(imageId)) {
+            return;
+        }
+        setEditingImageId(imageId);
+    };
 
     const handleImageUploadClick = () => {
         if (!canEditCard) {
@@ -241,37 +249,45 @@ export function useBoardImages({
     };
 
     const handleInsertImage = async (tempId: number, file: File, boardId: number, x: number, y: number, z: number, width: number, height: number) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("boardId", String(boardId));
-        formData.append("x", String(x));
-        formData.append("y", String(y));
-        formData.append("z", String(z));
-        formData.append("width", String(width));
-        formData.append("height", String(height));
-
-        const response = await fetch("/api/images", {
-            method: "POST",
-            body: formData,
-        });
-        const data = await response.json();
-
-        if (!data.ok) {
-            setPermissionMessage(data.message ?? "You do not have permission to upload images.");
+        if (insertingImageIdsRef.current.has(tempId)) {
             return;
         }
+        insertingImageIdsRef.current.add(tempId);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("boardId", String(boardId));
+            formData.append("x", String(x));
+            formData.append("y", String(y));
+            formData.append("z", String(z));
+            formData.append("width", String(width));
+            formData.append("height", String(height));
 
-        const tempImage = images.find((image) => image.imageId === tempId);
-        if (tempImage?.secureUrl) {
-            URL.revokeObjectURL(tempImage.secureUrl);
+            const response = await fetch("/api/images", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await response.json();
+
+            if (!data.ok) {
+                setPermissionMessage(data.message ?? "You do not have permission to upload images.");
+                return;
+            }
+
+            const tempImage = images.find((image) => image.imageId === tempId);
+            if (tempImage?.secureUrl) {
+                URL.revokeObjectURL(tempImage.secureUrl);
+            }
+
+            setImages((prev) =>
+                prev.map((image) =>
+                    image.imageId === tempId ? data.image : image
+                )
+            );
+            onPreviewUpdate();
+        } finally {
+            insertingImageIdsRef.current.delete(tempId);
         }
-
-        setImages((prev) =>
-            prev.map((image) =>
-                image.imageId === tempId ? data.image : image
-            )
-        );
-        onPreviewUpdate();
     };
 
     const handleUpdateImage = async (imageId: number, boardId: number, publicId: string, secureUrl: string, fileName: string | null, x: number, y: number, width: number, height: number) => {
@@ -298,6 +314,9 @@ export function useBoardImages({
     };
 
     const handleDeleteImage = async (imageId: number) => {
+        if (insertingImageIdsRef.current.has(imageId)) {
+            return;
+        }
         if (imageId < 0) {
             const tempImage = images.find((image) => image.imageId === imageId);
             if (tempImage?.secureUrl) {
@@ -328,7 +347,7 @@ export function useBoardImages({
         images,
         setImages,
         editingImageId,
-        setEditingImageId,
+        handleEditImage,
         handleImageUploadClick,
         handleUploadImage,
         handleUploadImageFile,
