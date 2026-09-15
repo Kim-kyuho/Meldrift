@@ -157,7 +157,7 @@ export default function BoardClient(
         images,
         setImages,
         editingImageId,
-        setEditingImageId,
+        handleEditImage,
         handleImageUploadClick,
         handleUploadImage,
         handleDropImageFiles,
@@ -587,13 +587,13 @@ export default function BoardClient(
                             canEdit={canEditCard}
                             isEditing={editingImageId === image.imageId}
                             onEditing={() => {
-                                setEditingImageId(image.imageId);
+                                handleEditImage(image.imageId);
                                 setEditingMemoId(null);
                                 setEditingMermaidId(null);
                                 setEditingTableId(null);
                                 setFocusedMemoId(null);
                             }}
-                            onEditingClear={() => setEditingImageId(null)}
+                            onEditingClear={() => handleEditImage(null)}
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertImage}
                             onUpdate={handleUpdateImage}
@@ -614,7 +614,7 @@ export default function BoardClient(
                             onFocusClear={() => setFocusedMemoId(null)}
                             onEditing={() => {
                                 setEditingMemoId(memo.id);
-                                setEditingImageId(null);
+                                handleEditImage(null);
                                 setEditingMermaidId(null);
                                 setEditingTableId(null);
                             }}
@@ -637,7 +637,7 @@ export default function BoardClient(
                             onEditing={() => {
                                 setEditingMermaidId(mermaid.id);
                                 setEditingMemoId(null);
-                                setEditingImageId(null);
+                                handleEditImage(null);
                                 setEditingTableId(null);
                                 setFocusedMemoId(null);
                             }}
@@ -660,7 +660,7 @@ export default function BoardClient(
                             onEditing={() => {
                                 setEditingTableId(table.id);
                                 setEditingMemoId(null);
-                                setEditingImageId(null);
+                                handleEditImage(null);
                                 setEditingMermaidId(null);
                                 setFocusedMemoId(null);
                             }}

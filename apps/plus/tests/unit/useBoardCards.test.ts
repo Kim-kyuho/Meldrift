@@ -204,6 +204,81 @@ describe("board card collection hooks", () => {
     });
 
     describe("useBoardImages", () => {
+        it("blocks editing, deletion and duplicate inserts while the initial save is pending", async () => {
+            let resolveUpload!: (response: unknown) => void;
+            const fetchMock = vi.fn(() => new Promise((resolve) => { resolveUpload = resolve; }));
+            vi.stubGlobal("fetch", fetchMock);
+            const file = new File(["image"], "image.png", { type: "image/png" });
+            const tempImage = { ...image, imageId: -1, secureUrl: "blob:temporary", file };
+            const onPreviewUpdate = vi.fn();
+            const { result } = renderHook(() => useBoardImages({
+                initialImages: [tempImage, image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                onPreviewUpdate,
+            }));
+            act(() => result.current.handleEditImage(-1));
+            expect(result.current.editingImageId).toBe(-1);
+
+            let upload!: Promise<void>;
+            act(() => {
+                upload = result.current.handleInsertImage(-1, file, 5, 10, 20, 2, 400, 300);
+                result.current.handleEditImage(null);
+                result.current.handleEditImage(-1);
+            });
+            expect(result.current.editingImageId).toBeNull();
+            await act(async () => {
+                await result.current.handleInsertImage(-1, file, 5, 10, 20, 2, 400, 300);
+                await result.current.handleDeleteImage(-1);
+            });
+            expect(fetchMock).toHaveBeenCalledOnce();
+            expect(result.current.images).toEqual([tempImage, image]);
+
+            act(() => result.current.handleEditImage(image.imageId));
+            expect(result.current.editingImageId).toBe(image.imageId);
+            const savedImage = { ...image, imageId: 3 };
+            await act(async () => {
+                resolveUpload({ json: async () => ({ ok: true, image: savedImage }) });
+                await upload;
+            });
+            expect(result.current.images).toEqual([savedImage, image]);
+            expect(result.current.editingImageId).toBe(image.imageId);
+            expect(onPreviewUpdate).toHaveBeenCalledOnce();
+            act(() => result.current.handleEditImage(savedImage.imageId));
+            expect(result.current.editingImageId).toBe(savedImage.imageId);
+        });
+
+        it.each(["response", "exception"])("unlocks a temporary image after a failed %s and allows retry", async (failure) => {
+            const fetchMock = vi.fn();
+            if (failure === "response") {
+                fetchMock.mockResolvedValueOnce({ json: async () => ({ ok: false, message: "Upload failed" }) });
+            } else {
+                fetchMock.mockRejectedValueOnce(new Error("Connection lost"));
+            }
+            fetchMock.mockResolvedValueOnce({ json: async () => ({ ok: true, image }) });
+            vi.stubGlobal("fetch", fetchMock);
+            const file = new File(["image"], "image.png", { type: "image/png" });
+            const tempImage = { ...image, imageId: -1, file };
+            const { result } = renderHook(() => useBoardImages({
+                initialImages: [tempImage], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
+                canEditCard: true, showPermissionMessage: vi.fn(), setPermissionMessage: vi.fn(),
+                onPreviewUpdate: vi.fn(),
+            }));
+            await act(async () => {
+                const upload = result.current.handleInsertImage(-1, file, 5, 10, 20, 2, 400, 300);
+                if (failure === "exception") {
+                    await expect(upload).rejects.toThrow("Connection lost");
+                } else {
+                    await upload;
+                }
+            });
+            expect(result.current.images).toEqual([tempImage]);
+            act(() => result.current.handleEditImage(-1));
+            expect(result.current.editingImageId).toBe(-1);
+            await act(async () => result.current.handleInsertImage(-1, file, 5, 10, 20, 2, 400, 300));
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+            expect(result.current.images).toEqual([image]);
+        });
+
         it("opens the file input only when editing is allowed", () => {
             const allowed = renderHook(() => useBoardImages({
                 initialImages: [image], boardId: 5, boardZoom: 2, cardLocationRef: locationRef,
