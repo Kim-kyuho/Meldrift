@@ -271,7 +271,6 @@ export function useBoardImages({
                 image.imageId === tempId ? data.image : image
             )
         );
-        setEditingImageId(data.image.imageId);
         onPreviewUpdate();
     };
 
