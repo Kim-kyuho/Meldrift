@@ -1,6 +1,6 @@
 # ConfirmDialog 상세설계
 
-소스: `packages/ui/src/components/ConfirmDialog.tsx`
+소스: `packages/ui/src/shared/ConfirmDialog.tsx`
 
 ## Props
 

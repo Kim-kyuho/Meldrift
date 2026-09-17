@@ -1,6 +1,6 @@
 # `useBoardSearch` 상세설계
 
-소스: `packages/ui/src/hooks/useBoardSearch.ts`
+소스: `packages/ui/src/features/board/useBoardSearch.ts`
 
 검색 패널 자체는 [BoardSearchPanel](./board-search-panel.md)이다. 이 훅은 검색 상태와 결과 순회를 담당한다.
 

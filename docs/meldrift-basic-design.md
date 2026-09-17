@@ -27,12 +27,12 @@ Meldrift는 큰 보드 위에 메모, 이미지, Mermaid 다이어그램, 표와
 | --- | --- |
 | 애플리케이션 | Next.js 16 App Router, React 19, TypeScript |
 | 스타일 | Tailwind CSS 4, 전역 CSS |
-| 데이터베이스 | Neon PostgreSQL, Drizzle ORM |
+| 데이터베이스 | 브라우저 SQLite WASM(`@sqlite.org/sqlite-wasm`), Neon PostgreSQL, Drizzle ORM |
 | 인증 | 난수 세션 토큰의 SHA-256 해시와 만료 시각, HttpOnly 쿠키, scrypt 비밀번호 해시 |
 | 카드 이동 | `react-rnd` |
 | 메모 편집 | TipTap StarterKit, Highlight, HardBreak |
-| 이미지 | Cloudinary, Next Image |
-| 보드 미리보기 | html-to-image, Canvas, Cloudinary |
+| 이미지 | Canvas 압축 후 SQLite BLOB |
+| 보드 미리보기 | html-to-image, Canvas, Cloudinary (Plus 목록 썸네일 전용) |
 | 다이어그램 | Mermaid, Mermaid ZenUML 플러그인 |
 | 표 | TanStack Table |
 | Markdown | Turndown, React Markdown, remark-gfm |
@@ -48,8 +48,10 @@ flowchart TD
     ListPage[Server: app/page.tsx]
     BoardPage["Server: app/boards/[boardId]/page.tsx"]
     BoardList[Client: BoardList]
-    BoardClient[Client: BoardClient]
-    Hooks[Domain hooks]
+    BoardClient["Client: BoardClient (@meldrift/board)"]
+    Worker[Web Worker: SQLite WASM]
+    IDB[(IndexedDB)]
+    Sync[SnapshotSync]
     API[Next Route Handlers]
     DB[(Neon PostgreSQL)]
     Cloud[(Cloudinary)]
@@ -57,14 +59,15 @@ flowchart TD
 
     Browser --> ListPage --> BoardList
     Browser --> BoardPage --> BoardClient
-    BoardList --> Hooks
-    BoardClient --> Hooks
-    Hooks --> API --> DB
+    BoardClient --> Worker --> IDB
+    BoardClient -. Plus only .-> Sync --> API --> DB
     API --> Cloud
     API --> Gemini
 ```
 
-서버 컴포넌트는 초기 데이터를 조회한다. 클라이언트 컴포넌트는 전달받은 데이터를 편집 가능한 로컬 상태로 보유하며 Route Handler를 통해 영속화한다.
+보드 내용은 브라우저 SQLite가 1차 저장소다. 서버 컴포넌트는 보드 메타데이터만 조회하고, 카드는 클라이언트가 스냅샷으로 받는다.
+
+Plus는 그 스냅샷 파일을 통째로 `board_snapshots`에 올린다. Free는 브라우저를 떠나지 않는다. 두 Edition의 보드 화면은 `@meldrift/board`의 같은 코드다.
 
 ## 4. 화면 진입
 
@@ -108,7 +111,9 @@ BoardClient
 └── DrawingLayer / DrawingToolBar
 ```
 
-`BoardClient`는 화면 조정 허브다. 컬렉션, 현재 편집 ID, 인증, 줌, 보드 스크롤, 검색, 탐색, 레이어 변경과 드로잉 모드를 연결한다. 카드 내부 초안과 포인터 처리는 각 카드 훅이 담당한다.
+`BoardClient`는 `@meldrift/board`에 있고 두 Edition이 같은 파일을 쓴다. 컬렉션, 현재 편집 ID, 줌, 보드 스크롤, 검색, 탐색, 레이어 변경과 드로잉 모드를 연결한다. 카드 내부 초안과 포인터 처리는 각 카드 훅이 담당한다.
+
+Edition이 다른 부분은 `renderControls` 콜백 하나로 뺐다. Free는 거기에 보드 메뉴·Help·반출입·자동 저장을, Plus는 보드 메뉴·인증 모달·스냅샷 전달을 그린다. 자세한 계약은 [shared/board-client.md](./shared/board-client.md)에 있다.
 
 `AboutModal`은 `BoardMenu`의 About 항목으로 열리며 `document.body`에 포탈로 렌더링한다. 외부 링크는 새 탭으로 연다.
 
@@ -211,7 +216,7 @@ stateDiagram-v2
 - 사용자가 직접 선택한 이미지는 브라우저에서 PNG로 재인코딩한다.
 - 긴 변을 최대 2000px로 줄이고, 4MiB 이하가 될 때까지 가로·세로를 85%씩 축소한다. 변환 실패 시에는 원본 파일로 폴백한다.
 - 임시 미리보기는 Object URL을 사용하고 교체 또는 삭제 시 해제한다.
-- 서버는 Cloudinary의 `publicId`와 `secureUrl`을 저장한다.
+- 선택한 파일은 브라우저에서 WebP로 압축해 바이트 그대로 스냅샷에 담는다. 구버전 Plus 보드의 Cloudinary `secureUrl`은 보드를 처음 열 때 바이트로 옮긴다.
 
 ### 9.3 Mermaid
 
@@ -286,7 +291,7 @@ Bring to Front는 전체 카드의 최대 `z + 1`을 사용한다. Send to Back�
 
 화면은 놓는 즉시 바꾸고 서버에는 그 뒤에 알린다. 응답을 기다렸다가 반영하면 놓은 줄이 잠깐 원래 자리로 돌아갔다가 다시 움직인다. 화면과 서버가 같은 순수 함수로 계산하므로 성공하면 두 결과가 같고, 서버가 거절하거나 요청이 실패하면 순서 값만 원래대로 되돌린다. 되돌릴 때 그 사이에 바뀐 본문이나 좌표는 건드리지 않는다.
 
-클라이언트는 `POST /api/memos/order`에 옮길 메모와 놓을 자리만 보낸다. 순서 값은 서버가 정한다.
+순서 값은 브라우저가 `reorderMemos`로 계산하고, 바뀐 `sortOrder`가 스냅샷에 실려 저장된다. 서버 왕복이 없다.
 
 - 서버는 보드의 메모를 `sort_order`, `id` 순으로 읽어 그 값으로 새 순서를 계산한다.
 - 옮기는 메모의 `sort_order`를 목적지 값으로 바꾸고, 원래 자리와 목적지 사이에 낀 메모만 +1 또는 -1 한다. 나머지 메모는 건드리지 않는다.
@@ -445,7 +450,7 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 
 ### 16.6 이미지 생성
 
-모델은 그림 바이트를 만들 수 없으므로 프롬프트만 내고, 서버가 이미지 모델을 따로 호출해 base64를 받는다. 클라이언트는 이를 File로 바꿔 임시 카드에 담고, Cloudinary 업로드는 저장을 누른 시점에만 일어난다. 한 번에 최대 3장이며 실패한 장은 건너뛰고 메모만 남긴다.
+모델은 그림 바이트를 만들 수 없으므로 프롬프트만 내고, 서버가 이미지 모델을 따로 호출해 base64를 받는다. 클라이언트는 이를 File로 바꿔 임시 카드에 담고, 압축과 스냅샷 반영은 저장을 누른 시점에만 일어난다. 한 번에 최대 3장이며 실패한 장은 건너뛰고 메모만 남긴다.
 
 ### 16.7 사용법 안내
 
@@ -473,14 +478,20 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 | `users` | email, password_hash, session_token_hash, session_expires_at, permission_flg, role | 독립 |
 | `boards` | title, width, height, owner_id | 루트 |
 | `memos` | HTML, color, x/y/z, size, sort_order | `board_id` 보유 |
-| `images` | Cloudinary ID/URL, x/y/z, size | `board_id` 보유 |
+| `images` | Cloudinary ID/URL, x/y/z, size | `board_id` 보유. 구버전 보드 전용 |
 | `mermaids` | source, x/y/z, size | `board_id` 보유 |
 | `tables` | source JSONB, x/y/z, size | `board_id` 보유 |
 | `drawings` | 보드별 획 배열 JSONB | `board_id` unique |
+| `board_snapshots` | SQLite 파일(bytea), revision, mutation_id | `board_id` 기본키 |
+| `editor_leases` | session_hash, tab_id, expires_at | `user_id` 기본키 |
 
-`memos.sort_order`는 보드 안에서만 의미가 있으므로 `(board_id, sort_order)` 인덱스를 둔다. 새 메모는 그 보드의 `MAX(sort_order) + 1`을 받는다.
+**보드 내용의 정본은 `board_snapshots`다.** 카드 테이블 다섯은 스냅샷으로 옮기지 않은 구버전 보드를 위해 남아 있고, 쓰기는 `proxy.ts`가 410으로 막는다.
 
-현재 스키마는 카드·드로잉의 `board_id`에 외래키를 두지 않는다. 보드 삭제 API가 DB 이미지 원본과 고정 미리보기 `PreviewIMG`를 Cloudinary에서 먼저 삭제하고 `images`, `memos`, `mermaids`, `drawings`, `tables`, `boards` 순서로 관련 행을 명시적으로 삭제한다.
+`memos.sort_order`는 보드 안에서만 의미가 있으므로 `(board_id, sort_order)` 인덱스를 둔다.
+
+현재 스키마는 카드·드로잉의 `board_id`에 외래키를 두지 않는다. 보드 삭제 API가 Cloudinary 자산을 먼저 지우고, `boards`·`board_snapshots`와 카드 테이블 삭제를 `db.batch` 한 번으로 보낸다.
+
+브라우저 SQLite는 같은 테이블 구성을 쓰되 `users`가 없고 이미지가 URL 대신 BLOB을 가진다. 두 스키마는 `@meldrift/board`의 `sqlite-codec.ts`와 `lib/db/schema.ts`에 각각 있다.
 
 ## 19. API 목록
 
@@ -490,15 +501,15 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 | POST | `/api/signin`, `/api/signup`, `/api/signout` | 인증 |
 | POST | `/api/boards` | 보드 생성 |
 | PATCH/DELETE | `/api/boards/[boardId]` | 이름 변경, 보드 삭제 |
-| POST | `/api/memos`, `/api/images`, `/api/mermaids`, `/api/tables` | 카드 생성 |
-| PATCH/DELETE | `/api/{cardType}/[id]` | 카드 수정, 삭제 |
-| POST | `/api/memos/order` | 메모 순서 변경 |
-| POST | `/api/cards/layer` | 레이어 이동과 정규화 |
-| GET/PATCH | `/api/drawings/[boardId]` | 획 조회, 전체 교체 |
+| GET/PUT | `/api/boards/[boardId]/snapshot` | 보드 스냅샷 내려받기, 올리기 |
+| GET | `/api/boards/[boardId]/snapshot/images/[imageId]` | 스냅샷 안 이미지 바이트 |
+| POST/DELETE | `/api/editor-lease` | 편집 자리 확보, 반납 |
 | GET | `/api/boards/[boardId]/markdown` | Markdown 컴파일 |
 | PUT | `/api/boards/[boardId]/preview` | 보드 미리보기 WebP 덮어쓰기 |
 | GET | `/api/ai/status` | AI 어시스턴트 사용 가능 여부 |
 | POST | `/api/ai/chat` | AI 어시스턴트 대화와 카드 계획 생성 |
+
+카드별 쓰기 경로(`/api/memos`, `/api/images`, `/api/mermaids`, `/api/tables`, `/api/memos/order`, `/api/cards/layer`, `/api/drawings/[boardId]`)는 `proxy.ts`가 410으로 막는다. 읽기만 남겨 둔 것은 구버전 보드 마이그레이션이 그 테이블을 읽어야 하기 때문이다.
 
 ## 20. 테스트와 CI
 

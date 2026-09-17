@@ -1,6 +1,6 @@
 # BoardNavigator 상세설계
 
-소스: `packages/ui/src/components/BoardNavigator.tsx`, `packages/ui/src/hooks/useBoardMemoFocus.ts`
+소스: `packages/ui/src/features/board/BoardNavigator.tsx`, `packages/ui/src/features/board/useBoardMemoFocus.ts`
 
 ## 역할
 

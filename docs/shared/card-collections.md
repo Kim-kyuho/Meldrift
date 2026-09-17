@@ -1,20 +1,21 @@
-# 카드 컬렉션 훅 상세설계 (Free)
+# 카드 컬렉션 훅 상세설계
 
-소스: `hooks/useBoardMemos.ts`, `hooks/useBoardImages.ts`, `hooks/useBoardMermaids.ts`, `hooks/useBoardTables.ts`, `hooks/useCardLayer.ts`
+소스: `packages/board/src/hooks/useBoardMemos.ts`, `packages/board/src/hooks/useBoardImages.ts`, `packages/board/src/hooks/useBoardMermaids.ts`, `packages/board/src/hooks/useBoardTables.ts`, `packages/board/src/hooks/useCardLayer.ts`
 
-## Plus와 갈리는 지점
+## 두 Edition이 같은 훅을 쓴다
 
-Plus의 같은 이름 훅들은 `handleInsert*`/`handleUpdate*`/`handleDelete*`에서 Route Handler를 호출하고 응답으로 받은 서버 id를 반영한다. Free는 **네트워크가 없다.** 같은 핸들러가 로컬 상태만 바꾸고, 영속화는 `BoardClient`의 자동 저장이 스냅샷 단위로 한꺼번에 처리한다.
+카드를 만들고 고치고 지우는 일은 **네트워크 없이 로컬 상태만 바꾼다.** 두 Edition 모두 그렇다. 영속화는 한 층 위에서 스냅샷 단위로 일어난다.
 
-| | Plus | Free |
+| | Free | Plus |
 | --- | --- | --- |
-| 삽입 | `POST` → 서버가 발급한 id | `nextPositiveId`로 클라이언트가 발급 |
-| 갱신 | `PATCH` | `setState`만 |
-| 삭제 | `DELETE` | `setState`만 |
-| 실패 처리 | 응답 실패 시 롤백·메시지 | 없다(네트워크가 없으므로) |
-| 권한 | `canEditCard` 검사 | 없다 |
+| 삽입 | `nextPositiveId`로 클라이언트가 발급 | 같다 |
+| 갱신·삭제 | `setState`만 | 같다 |
+| 저장 | `useBoardPersistance`가 브라우저 DB에 스냅샷을 쓴다 | `SnapshotSync`가 브라우저 DB에 쓰고 서버로 올린다 |
+| 권한 | 없다 | `BoardClient`가 `canEdit`으로 핸들러 앞을 막는다 |
 
-핸들러가 `async`로 남아 있는 것은 카드 컴포넌트가 두 Edition에서 같은 시그니처를 받기 위해서다. 실제로 기다릴 것은 없다.
+권한 검사가 훅 안에 없다. 카드 컴포넌트에 핸들러를 넘기는 `BoardClient`가 `canEditCard`를 보고 막거나 통과시킨다. 훅은 권한 개념을 모른다.
+
+핸들러가 `async`로 남아 있는 것은 카드 컴포넌트가 같은 시그니처를 받기 위해서다. 실제로 기다릴 것은 없다.
 
 ## 임시 카드와 id
 
@@ -28,7 +29,7 @@ id: -Date.now()
 
 음수 id는 두 곳에서 의미를 갖는다.
 
-- `board-state`의 스키마가 양의 정수만 허용하므로, 임시 카드가 남아 있는 상태는 저장되지 않는다. `BoardClient`가 편집 중·AI 제안 대기 중에 자동 저장을 막는 이유와 같은 장치다.
+- `board-state`의 스키마가 양의 정수만 허용하므로, 임시 카드가 남아 있는 상태는 저장되지 않는다. `BoardClient`가 편집 중·AI 제안 대기 중에 `savePaused`를 세우는 이유와 같은 장치다.
 - `useCardLayer`는 `id < 0`이면 레이어 변경을 하지 않는다.
 
 이미지는 예외다. 업로드가 없어 압축이 끝나는 즉시 양수 id를 받고 임시 상태를 거치지 않는다.
@@ -67,11 +68,11 @@ y = max(0, (scrollTop + clientHeight / 2) / zoom - 카드높이/2)
 
 실패하면 예외 문구를 보드 메시지로 띄운다. 성공·실패 모두 `uploadingImage`를 되돌린다.
 
-Plus의 같은 훅에 있는 낙관적 임시 카드, Cloudinary 업로드, `publicId` 반영 단계가 여기에는 없다.
+업로드 왕복이 없다. 압축이 끝나면 그 바이트가 곧 최종 카드다.
 
 ## `useCardLayer`
 
-레이어 계산 자체는 Plus의 Route Handler와 같은 규칙이지만, 계산 위치가 다르다. Free는 브라우저에서 계산하고 상태만 바꾼다.
+레이어 계산은 브라우저에서 한다. 요청이 없다.
 
 1. `id < 0`이면 종료한다.
 2. 네 컬렉션을 `{ type, id, z }`로 모아 `z` → `cardTypeOrder` → `id` 순으로 정렬한다.
@@ -85,4 +86,4 @@ Plus의 같은 훅에 있는 낙관적 임시 카드, Cloudinary 업로드, `pub
 
 ## 반환값 공통 형태
 
-각 훅은 컬렉션, `setX`, `editingXId`, `setEditingXId`와 핸들러들을 돌려준다. `BoardClient`가 이것들을 모아 `snapshot`을 만들고, 그 스냅샷 하나가 브라우저 DB로 간다.
+각 훅은 컬렉션, `setX`, `editingXId`, `setEditingXId`와 핸들러들을 돌려준다. `BoardClient`가 이것들을 모아 `snapshot`을 만들고, 그 스냅샷 하나가 저장 계층으로 간다 — Free는 브라우저 DB까지, Plus는 브라우저 DB를 거쳐 서버까지.

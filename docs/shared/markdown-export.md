@@ -1,16 +1,12 @@
-# Markdown 컴파일과 내보내기 상세설계 (Free)
+# Markdown 컴파일과 내보내기 상세설계
 
-소스: `lib/board-markdown.ts`, `hooks/useBoardMarkdown.ts`, `components/BoardMarkdownView.tsx`
+소스: `packages/board/src/board-markdown.ts`, `packages/board/src/hooks/useBoardMarkdown.ts`, `packages/board/src/components/BoardMarkdownView.tsx`
 
-## Plus와 갈리는 지점
+## 어디서 계산하나
 
-문서 순서 규칙(메모 순서 → 메모 네 꼭짓점 → 겹친 카드 중 맨 위 한 장)은 두 Edition이 같다. 다른 것은 **어디서 계산하고 이미지를 어떻게 내보내는가**다.
+두 Edition 모두 **브라우저에서** `compileBoardMarkdownDocument`로 계산한다. 화면에 있는 스냅샷이 곧 입력이라 서버 왕복이 없다.
 
-| | Plus | Free |
-| --- | --- | --- |
-| 계산 위치 | 서버 Route Handler의 SQL | 브라우저에서 `compileBoardMarkdownDocument` |
-| 이미지 | Cloudinary `secure_url`을 그대로 링크 | 바이트를 PNG로 변환해 zip에 동봉 |
-| 내려받기 | `.md` 하나 | `.md` + `images/`를 담은 `.zip` |
+Plus에는 같은 문서를 서버에서 만드는 경로가 하나 더 있다. `GET /api/boards/[boardId]/markdown`은 저장된 스냅샷을 해독해 같은 함수로 컴파일하고, 이미지는 zip 대신 `/api/boards/[boardId]/snapshot/images/[imageId]` 링크로 바꿔 넣는다. 화면이 쓰는 경로가 아니라 보드 밖에서 문서를 받아 가려는 쪽을 위한 것이다([Route Handler](../plus/api-routes.md)).
 
 ## 컴파일 (`compileBoardMarkdownDocument`)
 
@@ -23,7 +19,7 @@ imageAsset = { path: "images/image-{imageId}.png", data, mimeType }
 content    = imageAsset ? "./images/image-{imageId}.png" : image.url
 ```
 
-바이트가 없는 구버전 이미지는 원래 URL을 그대로 링크한다.
+바이트가 없는 이미지(Plus의 구버전 Cloudinary 이미지, 또는 서버 컴파일에서 링크로 바뀐 이미지)는 `url`을 그대로 링크한다.
 
 이어서 `sortMemosByOrder`로 정렬한 메모를 돌며 다음을 이어 붙인다.
 

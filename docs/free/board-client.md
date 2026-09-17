@@ -1,86 +1,80 @@
 # BoardClient 상세설계 (Free)
 
-소스: `app/page.tsx`, `components/BoardClient.tsx`
+소스: `app/page.tsx`, `components/BoardClient.tsx`, `components/BoardControls.tsx`, `hooks/useBoardLoad.ts`, `hooks/useBoardPersistance.ts`
 
-## Plus와 갈리는 지점
+보드 화면 자체는 [공유 BoardClient](../shared/board-client.md)다. Free가 가진 것은 **불러오기와 저장, 그리고 껍데기**뿐이다.
 
-| | Plus | Free |
-| --- | --- | --- |
-| 초기 데이터 | 서버 컴포넌트가 DB를 조회해 props로 내려준다 | props가 없다. 마운트 후 워커에서 읽는다 |
-| Props | `currentBoard`, `mappedImages` 등 | 없음 |
-| 저장 | 카드마다 Route Handler 호출 | 스냅샷 하나를 통째로 워커에 넘긴다 |
-| 보드 | 여러 개, 목록 화면 있음 | `defaultBoard` 하나 |
-| 인증 | 로그인·권한 | 없음 |
-| 미리보기 | 있음 | 없음 |
+## 세 파일이 하는 일
+
+| 파일 | 역할 |
+| --- | --- |
+| `hooks/useBoardLoad.ts` | 마운트 후 워커에서 스냅샷을 한 번 읽는다 |
+| `components/BoardClient.tsx` | 읽기 전/실패 화면을 그리고, 읽히면 공유 BoardClient에 넘긴다 |
+| `components/BoardControls.tsx` | 보드 메뉴·Help·반출입·자동 저장을 `renderControls` 자리에 그린다 |
 
 `app/page.tsx`는 `BoardClient`를 그리는 것 외에 하는 일이 없다.
 
-## 부품 출처
+## 불러오기
 
-`@meldrift/ui`에서 가져오는 것과 Free가 직접 가진 것이 섞여 있다.
+`useBoardLoad`는 `loadBoardState()` 하나를 부르고 결과를 상태로 돌려준다.
 
-| 출처 | 컴포넌트 |
+| 반환값 | 의미 |
 | --- | --- |
-| `@meldrift/ui` | `MemoCard`, `MermaidCard`, `TableCard`, `BoardSearchPanel`, `BoardNavigator`, `MemoReorderPanel`, `DrawingToolBar`, `ConfirmDialog`, `AiAssistantButton` |
-| Free 로컬 | `ImageCard`, `BoardMenu`, `BoardToolBar`, `BoardMessage`, `BoardMarkdownView`, `DrawingLayer`, `AboutModal`, `HelpModal`, `AiChatPanel`, `AiUnlockPanel` |
-| `@meldrift/ui` 훅 | `useBoardMemoFocus`, `useBoardScroll`, `useBoardSearch`, `useBoardZoom` |
-| Free 로컬 훅 | `useBoardMemos`, `useBoardImages`, `useBoardMermaids`, `useBoardTables`, `useBoardDrawing`, `useCardLayer`, `useMemoReorder`, `useBoardTransfer`, `useAiAssistant` |
-
-카드 컬렉션 훅이 로컬인 이유는 저장 방식이 다르기 때문이다. 화면 조작 훅(줌·스크롤·검색·포커스)은 저장과 무관해서 그대로 공유한다.
-
-## 초기화
-
-| 상태 | 의미 |
-| --- | --- |
-| `databaseReady` | 워커에서 스냅샷을 한 번 읽어 화면에 반영했다 |
+| `initialSnapshot` | 읽힌 스냅샷. 읽기 전에는 `null` |
 | `databaseError` | 워커 초기화 실패 문구 |
 
-마운트 시 `loadBoardState()`를 호출하고, 성공하면 `applySnapshot`으로 다섯 컬렉션과 보드 정보를 채운 뒤 `databaseReady`를 세운다. 이어서 `isBoardContentEmpty(stored)`이면 Help를 연다.
+`active` 플래그로 언마운트 후 setState를 막는다.
 
-effect는 `active` 플래그로 언마운트 후 setState를 막는다. 실패하면 문구만 남기고 `databaseReady`는 서지 않는다.
-
-## 스냅샷
+`BoardClient`는 이 값으로 세 갈래를 그린다.
 
 ```text
-snapshot = useMemo({ board: currentBoard, memos, images, mermaids, tables, strokes })
+databaseError    → 브라우저 SQLite 안내 화면
+initialSnapshot 없음 → 제품 소개 + Loading...
+그 외            → <SharedBoardClient initialSnapshot={...} renderControls={...} />
 ```
 
-화면의 모든 상태가 모이는 단일 값이다. 저장과 내보내기 둘 다 이 값 하나를 쓴다.
+**빈 보드를 먼저 띄우고 나중에 채우지 않는다.** 그렇게 하면 읽기 전의 빈 스냅샷이 자동 저장에 실려 실제 데이터를 덮을 수 있다. 값이 있을 때만 편집기를 마운트하는 것이 그 방지책이다.
+
+Help 모달은 읽힌 스냅샷이 비어 있을 때(`isBoardContentEmpty`) 처음부터 열린 상태로 시작한다.
 
 ## 자동 저장
 
+`useBoardPersistance`가 `BoardControls` 안에서 돈다.
+
 ```text
-조건: databaseReady && !isEditing && !drawingMode && !hasPendingAiCards && !resetting
+조건: !savePaused && !resetting
 지연: 150ms
 동작: replaceBoardState(snapshot)
 ```
 
-`snapshot`이 바뀔 때마다 타이머를 다시 건다. 실패하면 보드 메시지로 문구를 띄운다.
+`snapshot`이 바뀔 때마다 타이머를 다시 건다. 언마운트하면 대기 중인 저장은 취소된다. 실패 문구는 `setMessage`로 보드 메시지에 띄운다.
 
-저장을 막는 조건에는 이유가 있다.
+`savePaused`는 공유 BoardClient가 계산해서 내려준다(편집 중·드로잉 중·AI 제안 대기). 여기에 Free만의 조건 하나를 더한다.
 
-- **편집 중·드로잉 중**: 초안이 확정되기 전 상태를 쓰지 않는다.
-- **AI 제안이 남아 있을 때**: 임시 카드는 음수 id라서 `board-state`의 양의 정수 검증에 걸린다.
 - **리셋 중**: 방금 지운 브라우저 DB가 저장으로 되살아나는 것을 막는다.
 
 부분 갱신이 없다. 워커가 `DELETE` 후 전부 다시 INSERT하므로 한 번의 저장이 보드 전체를 다시 쓴다.
 
-## 편집 상태와 잠금
-
-`editingMemoId`·`editingImageId`·`editingMermaidId`·`editingTableId` 중 하나라도 있으면 `isEditing`이다.
+## 내보내기 잠금
 
 ```text
-exportDisabled = isEditing || drawingMode || hasPendingAiCards
+exportDisabled = savePaused
 ```
 
-내보내기는 저장과 같은 이유로 잠근다. 내보내기 직전에 `replaceBoardState`를 한 번 더 부르므로, 잠그지 않으면 확정되지 않은 초안이 파일에 들어간다.
-
-## 화면 열림 상태
-
-`menuOpen`, `aboutOpen`, `helpOpen`, `markdownViewOpen`, `boardNavigatorOpen`, `boardMessage`를 직접 들고 있다.
-
-`openHelp()`는 메뉴·About·Markdown 뷰를 먼저 닫고 Help를 연다. 겹쳐 뜨는 것을 막는다.
+내보내기 직전에 저장을 한 번 더 부르므로, 잠그지 않으면 확정되지 않은 초안이 파일에 들어간다. 저장을 막는 이유와 같다.
 
 ## Help 단축키
 
-`window`에 캡처 단계로 `keydown` 리스너를 붙인다. `Ctrl` 또는 `⌘` + `Shift` + `H`에서 `preventDefault` 후 `openHelp()`를 부른다. 캡처 단계라 메모 편집기가 키를 삼켜도 동작한다.
+`useBoardShortcuts`가 `window`에 캡처 단계로 `keydown` 리스너를 붙인다. `Ctrl` 또는 `⌘` + `Shift` + `H`에서 `preventDefault` 후 Help를 연다. 캡처 단계라 메모 편집기가 키를 삼켜도 동작한다.
+
+Help를 열 때는 `closeOverlays()`로 메뉴·About·Markdown 뷰를 먼저 닫는다. 겹쳐 뜨는 것을 막는다.
+
+## Plus와 갈리는 지점
+
+| | Free | Plus |
+| --- | --- | --- |
+| 초기 데이터 | 마운트 후 워커에서 읽는다 | 서버가 보드 메타데이터만 내려주고, 스냅샷은 클라이언트가 받는다 |
+| 저장 | `replaceBoardState` 한 번 | 브라우저 DB에 쓴 뒤 서버로 올린다 |
+| 보드 | `defaultBoard` 하나 | 여러 개, 목록 화면 있음 |
+| 인증 | 없음 | 로그인·승인·편집 리스 |
+| 반출입 | `.sqlite` 세이브 파일 | 없음(서버가 원본을 들고 있다) |

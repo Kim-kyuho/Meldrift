@@ -1,6 +1,6 @@
 # TableCard 상세설계
 
-소스: `packages/ui/src/components/TableCard.tsx`, `packages/ui/src/hooks/useTableCard.ts`
+소스: `packages/ui/src/features/table/TableCard.tsx`, `packages/ui/src/features/table/useTableCard.ts`
 
 ## TableCard Props
 

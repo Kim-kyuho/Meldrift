@@ -1,6 +1,6 @@
 # MemoToolBar 상세설계
 
-소스: `packages/ui/src/components/MemoToolBar.tsx`, `packages/ui/src/hooks/useMemoToolBar.ts`
+소스: `packages/ui/src/features/memo/MemoToolBar.tsx`, `packages/ui/src/features/memo/useMemoToolBar.ts`
 
 ## Props
 

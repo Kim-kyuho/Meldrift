@@ -1,6 +1,6 @@
 # TableToolBar 상세설계
 
-소스: `packages/ui/src/components/TableToolBar.tsx`
+소스: `packages/ui/src/features/table/TableToolBar.tsx`
 
 ## Props
 

@@ -1,10 +1,10 @@
 # 로컬 이미지 처리 상세설계
 
-소스: `lib/image-file.ts`
+소스: `packages/board/src/image-file.ts`
 
 ## 목적
 
-Free Edition은 이미지 저장소를 쓰지 않는다. 사용자가 고른 파일을 브라우저에서 압축해 SQLite BLOB으로 넣을 수 있는 크기까지 줄인다. 이미지가 DB 안에 들어가므로 한 장의 크기가 곧 세이브 파일 크기다.
+두 Edition 모두 이미지 저장소를 쓰지 않는다. 사용자가 고른 파일을 브라우저에서 압축해 SQLite BLOB으로 넣을 수 있는 크기까지 줄인다. 이미지가 DB 안에 들어가므로 한 장의 크기가 곧 스냅샷 크기다. Plus는 그 스냅샷을 서버로 올리므로 4 MiB 상한이 한 번 더 걸린다.
 
 ## 상수
 
@@ -16,7 +16,7 @@ Free Edition은 이미지 저장소를 쓰지 않는다. 사용자가 고른 파
 | `maxImageDimension` | 1920 | 긴 변 상한 |
 | `imageCompressionQuality` | 0.82 | WebP 첫 품질 |
 
-`supportedImageMimeTypes`는 JPEG·PNG·WebP 셋이다. `lib/board-state.ts`의 이미지 검증도 이 목록과 `maxStoredImageBytes`를 그대로 쓴다.
+`supportedImageMimeTypes`는 JPEG·PNG·WebP 셋이다. `board-state.ts`의 이미지 검증도 이 목록과 `maxStoredImageBytes`를 그대로 쓴다.
 
 ## `prepareImageFile(file)`
 

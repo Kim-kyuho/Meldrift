@@ -1,6 +1,6 @@
 # BoardMessage 상세설계
 
-소스: `components/BoardMessage.tsx`
+소스: `packages/ui/src/shared/BoardMessage.tsx`
 
 ## Props
 

@@ -1,6 +1,6 @@
 # PressableButton 상세설계
 
-소스: `packages/ui/src/components/PressableButton.tsx`
+소스: `packages/ui/src/shared/PressableButton.tsx`
 
 ## Props
 

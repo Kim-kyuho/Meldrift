@@ -1,6 +1,6 @@
 # MemoReorderPanel 상세설계
 
-소스: `packages/ui/src/components/MemoReorderPanel.tsx`, `hooks/useMemoReorder.ts`, `packages/core/src/memo-order.ts`, `app/api/memos/order/route.ts`
+소스: `packages/ui/src/features/memo/MemoReorderPanel.tsx`, `packages/board/src/hooks/useMemoReorder.ts`, `packages/core/src/memo-order.ts`
 
 ## 역할
 
@@ -45,40 +45,18 @@
 - 잡은 지점이 손가락에 붙도록 `grabOffsetRef`에 줄 안에서의 세로 위치를 기록하고 매 이동에서 빼 준다.
 - 놓을 자리는 줄의 위쪽 끝을 기준으로 `Math.round(top / memoReorderRowHeight)`로 정한다. 포인터 위치가 아니라 줄 위치를 쓰므로 화면에 보이는 것과 판정이 같다.
 - 끌고 있는 줄이 목록 밖으로 나가지 않도록 위치를 `0..(N-1) * 줄 높이`로 자른다.
-- 편집 권한이 없으면 끌기를 시작하지 않고 권한 메시지를 표시한다. 저장 전 임시 카드는 음수 ID라 순서를 바꿀 수 없다.
 
 ## 순서 저장
 
-순서 값은 서버가 정한다. 클라이언트는 옮길 메모와 놓을 자리만 보낸다.
+순서 값은 브라우저가 정한다. 서버 왕복이 없다.
 
-```text
-POST /api/memos/order   { boardId, memoId, targetIndex }
-                    ->  { ok, memos: [{ id, sortOrder }] }
-```
+1. 놓는 순간 `setMemos((prev) => reorderMemos(prev, memoId, targetIndex))`로 확정한다.
+2. 바뀐 `sortOrder`가 `snapshot.memos`에 실린다.
+3. 저장 계층이 그 스냅샷을 통째로 쓴다 — Free는 브라우저 DB까지, Plus는 서버까지.
 
-화면은 놓는 즉시 바꾸고 요청은 그 뒤에 보낸다. 응답을 기다렸다가 반영하면 놓은 줄이 잠깐 원래 자리로 돌아갔다가 다시 움직인다. 화면과 서버가 같은 `reorderMemos`로 계산하므로 성공하면 두 결과가 같다.
+되돌릴 대상이 없다. 반영이 곧 결과이고, 실패는 저장 계층의 실패지 순서 계산의 실패가 아니다.
 
-1. 옮긴 결과를 화면에 먼저 적용하고, 되돌릴 때 쓸 이전 `sortOrder`를 id별로 들고 있는다.
-2. 서버가 편집 권한을 확인한다. `getCardPermissionMessage`가 메시지를 돌려주면 403이다.
-3. 서버가 보드의 메모를 `sort_order`, `id` 순으로 조회한다. 클라이언트가 보낸 순서 값은 요청에 들어 있지도 않다.
-4. `reorderMemos`가 새 `sort_order`를 계산한다.
-5. 바뀐 행만 모아 `UPDATE ... FROM (VALUES ...)` 한 문장으로 쓴다.
-6. 클라이언트가 응답 값으로 화면을 맞춘다. 서버가 거절하거나 요청이 실패하면 1에서 들고 있던 값으로 되돌린다.
-
-되돌릴 때는 `sortOrder`만 되돌린다. 그 사이에 바뀐 본문이나 좌표는 건드리지 않는다.
-
-6에서 서버 값이 이미 화면에 있는 값과 같으면 상태 배열을 새로 만들지 않고 그대로 돌려준다. 그러지 않으면 화면이 그대로인데도 메모 객체가 전부 새로 만들어져 카드가 모두 다시 그려진다.
-
-순서 변경 한 번의 렌더 횟수는 `tests/unit/useMemoReorderRenders.test.tsx`가 고정한다.
-
-| | 놓는 순간 | 응답 도착 |
-| --- | --- | --- |
-| 서버 값이 같을 때 | 컬렉션 1회, 카드 전체 | 컬렉션 1회, **카드 0회** |
-| 서버 값이 다를 때 | 컬렉션 1회, 카드 전체 | 컬렉션 1회, 카드 전체 |
-
-컬렉션을 가진 컴포넌트는 어느 쪽이든 응답 때 한 번 더 돈다. 같은 값을 돌려줘도 React는 그 컴포넌트를 한 번 그린 뒤에 bail out하기 때문이다. 아끼는 것은 그 아래 카드들의 렌더다.
-
-재정렬 한 번에 조회 1회, 쓰기 1회다. 자리가 그대로면 쓰기를 아예 하지 않는다.
+배열 순서는 그대로 두고 `sortOrder`만 바꾼다. 그래서 순서를 바꿔도 메모 객체의 배열 위치는 움직이지 않고, 화면 순서는 `sortMemosByOrder`가 매번 계산한다.
 
 ### reorderMemos
 
@@ -92,23 +70,8 @@ POST /api/memos/order   { boardId, memoId, targetIndex }
 
 | 시점 | 값 |
 | --- | --- |
-| 마이그레이션 | 보드마다 `ROW_NUMBER() OVER (PARTITION BY board_id ORDER BY id)` |
-| 새 메모 | 그 보드의 `MAX(sort_order) + 1` (서버가 INSERT에서 매긴다) |
-| 임시 카드 | 화면에서 `nextMemoOrder(memos)`. 저장하면 서버 값으로 교체된다 |
-| 재정렬 | `POST /api/memos/order`의 계산 결과 |
+| 새 메모 | 화면에서 `nextMemoOrder(memos)` — 현재 최댓값 + 1 |
+| 재정렬 | `reorderMemos`의 계산 결과 |
+| 불러올 때 | `rankMemoOrders`로 1..N 재번호 |
 
-`(board_id, sort_order)` 인덱스를 둔다. 재정렬은 보드 하나의 구간만 읽고 쓴다.
-
-## Free Edition과의 차이
-
-화면 동작과 `packages/core/src/memo-order.ts`의 계산은 두 에디션이 같다. 저장 경로만 다르다.
-
-| | Free | Plus |
-| --- | --- | --- |
-| 순서 계산 | 브라우저 | 서버 |
-| 저장 | 스냅샷 자동 저장(150ms 디바운스) | `POST /api/memos/order` |
-| 실패 시 | 저장 실패 메시지 | 화면 순서를 되돌리고 메시지 |
-| 권한 | 없음 | 로그인 + 관리자 승인 |
-| 불러올 때 | `rankMemoOrders`로 1..N 재번호 | DB 값 그대로 |
-
-Free는 순서 컬럼이 없던 시절의 저장 파일을 열 수 있어야 해서 불러올 때 다시 매긴다. Plus는 마이그레이션이 값을 채워 두므로 그럴 일이 없다.
+불러올 때 다시 매기는 이유는 순서 컬럼이 없던 시절의 저장 파일과 Plus의 구버전 카드 테이블을 둘 다 열 수 있어야 하기 때문이다. 저장값이 전부 0이어도 화면 연번은 항상 1..N이 된다.

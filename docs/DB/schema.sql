@@ -86,3 +86,19 @@ CREATE TABLE public.tables (
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     updated_at timestamp without time zone NOT NULL DEFAULT now()
 );
+
+CREATE TABLE public.board_snapshots (
+    board_id integer PRIMARY KEY,
+    snapshot bytea NOT NULL,
+    format_version integer NOT NULL,
+    revision integer NOT NULL,
+    mutation_id text NOT NULL,
+    updated_at timestamp without time zone NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.editor_leases (
+    user_id integer PRIMARY KEY,
+    session_hash text NOT NULL,
+    tab_id text NOT NULL,
+    expires_at timestamp without time zone NOT NULL
+);

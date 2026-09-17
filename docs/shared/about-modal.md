@@ -1,6 +1,6 @@
 # AboutModal 상세설계
 
-소스: `components/AboutModal.tsx`
+소스: `packages/ui/src/features/board/AboutModal.tsx`
 
 ## Props
 

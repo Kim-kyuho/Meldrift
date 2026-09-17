@@ -1,18 +1,20 @@
 # 보드 상태와 검증 상세설계
 
-소스: `lib/board-state.ts`
+소스: `packages/board/src/board-state.ts`
 
 ## 목적
 
-Free Edition이 다루는 보드 전체를 하나의 값(`BoardSnapshot`)으로 정의하고, 그 값이 SQLite와 화면 사이를 오갈 때마다 zod로 검증한다. 세이브 파일은 사용자가 손댈 수 있는 파일이므로 신뢰하지 않는다.
+보드 하나를 통째로 담는 값(`BoardSnapshot`)을 정의하고, 그 값이 SQLite와 화면 사이를 오갈 때마다 zod로 검증한다. 세이브 파일과 업로드된 스냅샷은 사용자가 손댈 수 있으므로 신뢰하지 않는다.
+
+두 Edition이 같은 타입과 같은 검증을 쓴다. Free는 보드가 하나뿐이고 Plus는 여럿이라는 것만 다르다.
 
 ## 고정값
 
 | 이름 | 값 | 의미 |
 | --- | --- | --- |
-| `defaultBoardId` | `1` | Free Edition은 보드가 하나뿐이다 |
+| `defaultBoardId` | `1` | Free가 쓰는 보드 id. Plus는 서버가 발급한 id를 쓴다 |
 | `schemaVersion` | `3` | 브라우저 DB의 `PRAGMA user_version` |
-| `defaultBoard` | `{ 1, "Meldrift Free Edition", 4000, 3000 }` | 초기화 시 넣는 보드 |
+| `defaultBoard` | `{ 1, "Meldrift Free Edition", 4000, 3000 }` | Free 초기화 시 넣는 보드 |
 
 ## 타입
 
@@ -22,20 +24,20 @@ Free Edition이 다루는 보드 전체를 하나의 값(`BoardSnapshot`)으로 
 | `BoardMemo` | `@meldrift/core`의 `MemoCardData` 그대로 |
 | `BoardMermaid` | `@meldrift/core`의 `MermaidCardData` 그대로 |
 | `BoardTable` | `@meldrift/core`의 `TableCardData` 그대로 |
-| `BoardImage` | Free 고유 — 아래 참조 |
+| `BoardImage` | 보드 고유 — 아래 참조 |
 | `BoardSnapshot` | `board` + `memos`/`images`/`mermaids`/`tables`/`strokes` |
 
-메모·머메이드·표는 Plus와 형태가 같아 코어 타입을 그대로 쓴다. 이미지만 다르다.
+메모·머메이드·표는 코어 타입을 그대로 쓴다. 이미지만 따로 정의한다.
 
 ```text
 BoardImage = imageId, boardId, url, data, mimeType, label, x, y, z, width, height
 ```
 
-`data`는 압축된 이미지 바이트(`Uint8Array`)이고 `mimeType`이 그 형식이다. Plus의 `publicId`/`secureUrl` 자리를 대신한다.
+`data`는 압축된 이미지 바이트(`Uint8Array`)이고 `mimeType`이 그 형식이다. `url`은 Cloudinary에 올려 두었던 Plus 구버전 이미지를 위한 자리이며, 스냅샷으로 옮겨진 뒤에는 빈 문자열이 된다.
 
 ## 검증 규칙
 
-좌표는 정수, 크기는 양의 정수다. `boardId`는 `z.literal(1)`이라 다른 보드 값이 섞여 들어오면 거부된다.
+좌표는 정수, 크기는 양의 정수다. `boardId`도 양의 정수다. 보드 id를 고정하는 대신 **카드의 `boardId`가 스냅샷의 보드와 같은지**를 본다. 다른 보드의 카드가 섞여 들어오면 거부된다. 같은 검사가 서버의 스냅샷 수신부에도 한 번 더 있다.
 
 | 대상 | 규칙 |
 | --- | --- |
@@ -71,4 +73,4 @@ BoardImage = imageId, boardId, url, data, mimeType, label, x, y, z, width, heigh
 | `parseBoardSnapshot(value)` | 통과하면 검증된 스냅샷, 실패하면 `The SQLite file contains invalid Meldrift Free Edition data.` |
 | `nextPositiveId(ids)` | 양수 id 중 최댓값 + 1. 비어 있으면 1 |
 
-`parseBoardSnapshot`은 실패 이유를 문구에 담지 않는다. 호출부는 워커의 읽기·쓰기·불러오기 세 곳이다.
+`parseBoardSnapshot`은 실패 이유를 문구에 담지 않는다. 호출부는 워커의 읽기·쓰기·불러오기 세 곳과, Plus 서버가 업로드된 스냅샷을 해독하는 `decodeSnapshot`이다.

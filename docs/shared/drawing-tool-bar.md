@@ -1,6 +1,6 @@
 # DrawingToolBar 상세설계
 
-소스: `packages/ui/src/components/DrawingToolBar.tsx`, `hooks/useBoardDrawing.ts`, `packages/core/src/board-stroke.ts`
+소스: `packages/ui/src/features/drawing/DrawingToolBar.tsx`, `packages/ui/src/features/drawing/useBoardDrawing.ts`, `packages/core/src/board-stroke.ts`
 
 ## DrawingToolBar Props
 
@@ -44,7 +44,7 @@
 | 굵기 팝업 (92줄) | `openWidthMenu`일 때만 | `penWidths`(Thin 2 / Medium 4 / Bold 8) 순회 |
 | Erase (107줄) | 항상, `aria-pressed={drawingTool==="erase"}` | 라벨이 상태에 따라 "Erase" ↔ "Stop erasing"으로 바뀜, 활성 시 아이콘이 `#ec4899`(activeToolColor) |
 
-## 도구 상태 소유자: `useBoardDrawing` (`hooks/useBoardDrawing.ts`)
+## 도구 상태 소유자: `useBoardDrawing` (`packages/ui/src/features/drawing/useBoardDrawing.ts`)
 
 이 컴포넌트 자신은 `drawingTool`/`penColor`/`penWidth`를 소유하지 않는다 — 실제 소유자는 부모가 사용하는 `useBoardDrawing`이다.
 
@@ -55,13 +55,13 @@
 | `drawingTool` | `"draw"` | `"draw" \| "erase"` |
 | `penColor` | `defaultPenColor` ("Ink" `#1f2937`) | - |
 | `penWidth` | `defaultPenWidth` (Medium, 4) | - |
-| `unsavedRef` | `false` | 획 추가/지우기/undo 시 `true`로 표시(저장 필요 플래그) |
+| `unsavedRef` | `false` | 획 추가/지우기/undo 시 `true`로 표시(모드 종료 시 알림 여부) |
 
-### `handleToggleDrawingMode` (50~70줄)
-- 이미 그리기 모드 → 모드 종료 + `drawingTool`을 `"draw"`로 리셋 + `unsavedRef`가 true면 `saveStrokes(strokes)`(`PATCH /api/drawings/{boardId}`) 호출 후 플래그 초기화
-- 아니면 → `canEditCard`가 false면 `showPermissionMessage()`로 거부, true면 모드 진입 + 도구를 `"draw"`로 리셋
+### `handleToggleDrawingMode`
+- 이미 그리기 모드 → 모드 종료 + `drawingTool`을 `"draw"`로 리셋 + `unsavedRef`가 true면 `onDrawingModeEnd?.(strokes)`를 부르고 플래그 초기화
+- 아니면 → `canEdit`이 false면 `onPermissionDenied?.()`로 거부, true면 모드 진입 + 도구를 `"draw"`로 리셋
 
-`saveStrokes` 성공 후에는 `onPreviewUpdate()`를 호출해 저장된 획이 보드 목록 미리보기에 반영되도록 예약한다.
+**무엇을 저장할지는 훅이 정하지 않는다.** `boardId`도 `fetch`도 이 패키지에 없다. 두 Edition 모두 `onDrawingModeEnd`를 넘기지 않고, 획은 `strokes` 상태로 `snapshot.strokes`에 실려 저장 계층으로 간다.
 
 ### `handleToggleEraseTool`
 지우개를 다시 누르면 `"draw"`로 되돌아가는 토글 방식이다.
@@ -71,5 +71,5 @@
 
 ## 알려진 특이사항
 
-- 저장은 `BoardToolBar` 왼쪽 아래의 `Check` 버튼으로 모드를 종료하는 시점에만 일어난다 — 그리는 도중에는 서버에 반영되지 않으므로, 그리기 모드에서 벗어나지 않고 새로고침하면 미저장 획을 잃는다.
+- 그리기 모드 동안에는 `BoardClient`가 `savePaused`를 세워 저장을 멈춘다. 저장은 `BoardToolBar` 왼쪽 아래의 `Check` 버튼으로 모드를 종료한 뒤에 일어나므로, 그리기 모드에서 벗어나지 않고 새로고침하면 미저장 획을 잃는다.
 - Undo 버튼은 항상 클릭 가능하게 렌더되며(disabled 처리 없음) 빈 스택에서는 `handleUndoStroke`가 조용히 아무 것도 하지 않는다 — 사용자에게 "더 이상 undo할 게 없다"는 피드백이 없다.

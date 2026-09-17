@@ -1,6 +1,6 @@
 # 보드 껍데기 상세설계 (Free)
 
-소스: `app/layout.tsx`, `components/BoardMenu.tsx`, `components/BoardMessage.tsx`, `components/AboutModal.tsx`
+소스: `app/layout.tsx`, `components/BoardMenu.tsx`, `packages/ui/src/shared/BoardMessage.tsx`, `packages/ui/src/features/board/AboutModal.tsx`
 
 카드와 캔버스를 둘러싼 화면 요소다. Plus와 이름이 같지만 담는 항목이 다르다. 인증·보드 목록·미리보기가 없고, 대신 세이브 파일 조작이 들어온다.
 

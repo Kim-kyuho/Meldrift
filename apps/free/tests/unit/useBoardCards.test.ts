@@ -1,10 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useBoardImages, type BoardImage } from "@/hooks/useBoardImages";
-import { useBoardMemos, type BoardMemo } from "@/hooks/useBoardMemos";
-import { useBoardMermaids, type BoardMermaid } from "@/hooks/useBoardMermaids";
-import { useBoardTables, type BoardTable } from "@/hooks/useBoardTables";
+import { useBoardImages, type BoardImage } from "@meldrift/board/useBoardImages";
+import { useBoardMemos, type BoardMemo } from "@meldrift/board/useBoardMemos";
+import { useBoardMermaids, type BoardMermaid } from "@meldrift/board/useBoardMermaids";
+import { useBoardTables, type BoardTable } from "@meldrift/board/useBoardTables";
 import { prepareImageFile } from "@meldrift/board/image-file";
 
 vi.mock("@meldrift/board/image-file", async (importOriginal) => ({

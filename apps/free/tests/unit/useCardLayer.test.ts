@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { useCardLayer } from "@/hooks/useCardLayer";
+import { useCardLayer } from "@meldrift/board/useCardLayer";
 import type { BoardImage, BoardMemo, BoardMermaid, BoardTable } from "@/lib/board-state";
 
 const memo: BoardMemo = { id: 1, boardId: 1, content: "memo", x: 0, y: 0, z: 1, width: 100, height: 100, color: "#fff", sortOrder: 1 };

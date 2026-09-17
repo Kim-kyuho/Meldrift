@@ -1,19 +1,10 @@
-# ImageCard 상세설계 (Free)
+# ImageCard 상세설계
 
-소스: `components/ImageCard.tsx`, `hooks/useImageCard.ts`, `hooks/useBoardImages.ts`
+소스: `packages/board/src/components/ImageCard.tsx`, `packages/board/src/hooks/useImageCard.ts`, `packages/board/src/hooks/useBoardImages.ts`
 
-## Plus와 갈리는 지점
+이미지 카드는 다른 카드와 달리 `@meldrift/ui`가 아니라 `@meldrift/board`에 있다. 바이트·MIME·object URL을 다루느라 `board-state`와 `image-file`에 묶여 있기 때문이다. 툴바(`ImageToolBar`)와 확인 대화상자(`ConfirmDialog`)만 `@meldrift/ui`에서 가져온다.
 
-이미지 카드는 두 Edition이 공유하지 않는 유일한 카드다. Plus는 Cloudinary에 올린 `secureUrl`을 참조하지만 Free는 압축한 바이트를 SQLite BLOB에 넣는다. 저장이 다르니 카드가 받는 데이터와 콜백이 다르다.
-
-| | Plus | Free |
-| --- | --- | --- |
-| 데이터 | `publicId`, `secureUrl`, `fileName` | `data: Uint8Array \| null`, `mimeType`, `url`, `label` |
-| 표시 | `next/image` | 원시 `<img>` + object URL |
-| 삽입 | `onInsert(tempId, file, ...)`로 업로드 | 압축 결과를 그대로 스냅샷에 넣는다 |
-| 권한 | `canEdit`, `onPermissionDenied` | 없다 |
-
-툴바(`ImageToolBar`)와 확인 대화상자(`ConfirmDialog`)는 `@meldrift/ui`에서 공유한다.
+카드가 들고 있는 데이터는 `data: Uint8Array | null`, `mimeType`, `url`, `label`이다. `next/image`를 쓰지 않고 원시 `<img>`에 object URL을 넣는다.
 
 ## ImageCard Props
 
@@ -27,7 +18,7 @@
 | `onDelete` | `(imageId) => void` | 삭제 |
 | `onBringToFront`/`onSendToBack` | `() => void` | 레이어 변경 |
 
-`onUpdate`에 이미지 내용 인자가 없다. Free의 이미지 카드는 만든 뒤 바이트가 바뀌지 않는다.
+`onUpdate`에 이미지 내용 인자가 없다. 이미지 카드는 만든 뒤 바이트가 바뀌지 않는다.
 
 ## 표시 방식
 
@@ -40,7 +31,7 @@ useEffect: data와 mimeType이 있으면
 deps: [image.data, image.mimeType]
 ```
 
-`data`가 없으면 `src={image.url}`로 구버전 URL을 그대로 쓴다. 둘 다 없으면 `<img>` 자체를 렌더링하지 않는다.
+`data`가 없으면 `src={image.url}`로 URL을 그대로 쓴다. Plus에서 아직 스냅샷으로 옮겨지지 않은 Cloudinary 이미지가 이 경로를 탄다. 둘 다 없으면 `<img>` 자체를 렌더링하지 않는다.
 
 Next의 이미지 최적화를 쓸 수 없어 원시 `<img>`를 쓴다. blob URL과 임의 외부 URL은 최적화 대상이 아니다.
 
@@ -72,7 +63,7 @@ Next의 이미지 최적화를 쓸 수 없어 원시 `<img>`를 쓴다. blob URL
 
 | 핸들러 | 동작 |
 | --- | --- |
-| `editImage()` | `onEditing()`만 호출. 권한 검사가 없다 |
+| `editImage()` | `onEditing()`만 호출. 권한 검사는 `BoardClient`가 한 단계 위에서 한다 |
 | `handleDoubleTap` | `pointerType === "touch"`이고 300ms 이내 재탭이면 `editImage()`. `preventDefault`는 호출하지 않는다 |
 | `handleImagePress` | `stopPropagation()`만 한다 |
 | `confirmDelete` | `onDelete(imageId)` → 대화상자 닫기 → `onEditingClear()` |

@@ -1,6 +1,6 @@
 # MermaidCard 상세설계
 
-소스: `packages/ui/src/components/MermaidCard.tsx`, `packages/ui/src/hooks/useMermaidCard.ts`, `packages/ui/src/hooks/useMermaidRenderer.ts`
+소스: `packages/ui/src/features/mermaid/MermaidCard.tsx`, `packages/ui/src/features/mermaid/useMermaidCard.ts`, `packages/ui/src/features/mermaid/useMermaidRenderer.ts`
 
 ## MermaidCard Props
 
@@ -58,7 +58,7 @@
 | `MermaidToolBar` (168줄) | `isEditing`일 때만 | `onDelete={openDeleteDialog}` |
 | `ConfirmDialog` (176줄) | `deleteDialogOpen`일 때만 | 메시지 "Delete this mermaid?" |
 
-## `useMermaidRenderer({ source, mermaidId })` (`packages/ui/src/hooks/useMermaidRenderer.ts`)
+## `useMermaidRenderer({ source, mermaidId })` (`packages/ui/src/features/mermaid/useMermaidRenderer.ts`)
 
 ### 모듈 수준 초기화 (12~17줄)
 - `mermaidRenderer.initialize({ startOnLoad: false, securityLevel: "strict" })` — 모든 인스턴스가 공유, 컴포넌트 마운트와 무관하게 앱 로드 시 1회

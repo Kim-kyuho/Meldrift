@@ -76,7 +76,7 @@ setMemoState({
 
 Meldrift 적용 위치:
 
-- `packages/ui/src/hooks/useMemoCard.ts`
-- `hooks/useImageCard.ts`
+- `packages/ui/src/features/memo/useMemoCard.ts`
+- `packages/board/src/hooks/useImageCard.ts`
 - `packages/ui/src/hooks/useBoardZoom.ts`
 - `packages/ui/src/hooks/useBoardScroll.ts`
