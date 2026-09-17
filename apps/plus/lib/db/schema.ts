@@ -1,7 +1,29 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, text, integer, boolean, timestamp, varchar, check, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, varchar, check, index, jsonb, customType } from "drizzle-orm/pg-core";
 import type { TableSource } from "@meldrift/core/table-card";
 import type { BoardStroke } from "@meldrift/core/board-stroke";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer | string }>({
+    dataType: () => "bytea",
+    toDriver: (value) => value,
+    fromDriver: (value) => typeof value === "string" ? Buffer.from(value.replace(/^\\x/, ""), "hex") : value,
+});
+
+export const db_boardSnapshots = pgTable("board_snapshots", {
+    boardId: integer("board_id").primaryKey(),
+    snapshot: bytea("snapshot").notNull(),
+    formatVersion: integer("format_version").notNull(),
+    revision: integer("revision").notNull(),
+    mutationId: text("mutation_id").notNull(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const db_editorLeases = pgTable("editor_leases", {
+    userId: integer("user_id").primaryKey(),
+    sessionHash: text("session_hash").notNull(),
+    tabId: text("tab_id").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+});
 
 export const db_users = pgTable("users", {
     id: serial("id").primaryKey(),

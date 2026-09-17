@@ -5,10 +5,10 @@ import { useBoardImages, type BoardImage } from "@/hooks/useBoardImages";
 import { useBoardMemos, type BoardMemo } from "@/hooks/useBoardMemos";
 import { useBoardMermaids, type BoardMermaid } from "@/hooks/useBoardMermaids";
 import { useBoardTables, type BoardTable } from "@/hooks/useBoardTables";
-import { prepareImageFile } from "@/lib/image-file";
+import { prepareImageFile } from "@meldrift/board/image-file";
 
-vi.mock("@/lib/image-file", async (importOriginal) => ({
-    ...await importOriginal<typeof import("@/lib/image-file")>(),
+vi.mock("@meldrift/board/image-file", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@meldrift/board/image-file")>(),
     prepareImageFile: vi.fn(),
 }));
 

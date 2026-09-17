@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PgDialect } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import { GET } from "@/app/api/boards/[boardId]/markdown/route";
+import { createEmptyBoardSnapshot } from "@meldrift/board/board-state";
 
 // 문서 순서는 메모의 sort_order다. 판정식이 Free Edition의 compileBoardMarkdown과 같아야 한다.
 
@@ -9,9 +10,11 @@ const mocks = vi.hoisted(() => ({
     getDb: vi.fn(),
     execute: vi.fn(),
     limit: vi.fn(),
+    loadSnapshot: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
+vi.mock("@/lib/saved-board-snapshot", () => ({ loadSavedBoardSnapshot: mocks.loadSnapshot }));
 
 const params = (boardId: string) => Promise.resolve({ boardId });
 
@@ -21,6 +24,7 @@ const renderedSql = () =>
 describe("GET /api/boards/[boardId]/markdown", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.loadSnapshot.mockResolvedValue(null);
         mocks.limit.mockResolvedValue([{ boardId: 7 }]);
         mocks.execute.mockResolvedValue({ rows: [] });
         mocks.getDb.mockReturnValue({
@@ -68,6 +72,19 @@ describe("GET /api/boards/[boardId]/markdown", () => {
         const data = await response.json();
 
         expect(data.markdown).toBe("First\n\nSecond");
+    });
+
+    it("compiles the saved snapshot instead of reading obsolete card tables", async () => {
+        const snapshot = createEmptyBoardSnapshot();
+        snapshot.board.boardId = 7;
+        snapshot.memos = [{ id: 1, boardId: 7, content: "<p>Snapshot memo</p>", sortOrder: 1, x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fff" }];
+        snapshot.images = [{ imageId: 2, boardId: 7, x: 0, y: 0, width: 30, height: 30, z: 2, data: new Uint8Array([1]), mimeType: "image/png", label: "Binary", url: "" }];
+        mocks.loadSnapshot.mockResolvedValue(snapshot);
+        const response = await GET(new Request("http://localhost"), { params: params("7") });
+        const data = await response.json();
+        expect(data.markdown).toContain("Snapshot memo");
+        expect(data.markdown).toContain("/api/boards/7/snapshot/images/2");
+        expect(mocks.execute).not.toHaveBeenCalled();
     });
 
     it("보드가 없으면 404를 돌려준다", async () => {
