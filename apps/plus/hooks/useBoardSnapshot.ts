@@ -173,6 +173,14 @@ export function useBoardSnapshot(board: BoardInfo) {
     const save = useCallback((snapshot: BoardSnapshot) => {
         return managerRef.current?.save(snapshot);
     }, []);
+    const exportSnapshot = useCallback(async (snapshot: BoardSnapshot) => {
+        if (!databaseRef.current) throw new Error("The board is not ready.");
+        return databaseRef.current.encode(snapshot);
+    }, []);
+    const readSnapshotFile = useCallback(async (bytes: ArrayBuffer) => {
+        if (!databaseRef.current) throw new Error("The board is not ready.");
+        return databaseRef.current.decode(bytes);
+    }, []);
     const downloadLocal = useCallback(async () => {
         const bytes = await databaseRef.current?.export();
         if (!bytes) return;
@@ -198,5 +206,5 @@ export function useBoardSnapshot(board: BoardInfo) {
             setState((prev) => ({ ...prev, message: error instanceof Error ? error.message : "Restore failed." }));
         }
     }, [board.boardId]);
-    return { ...state, save, downloadLocal, restoreServer, serverSaveVersion };
+    return { ...state, save, downloadLocal, restoreServer, serverSaveVersion, exportSnapshot, readSnapshotFile };
 }

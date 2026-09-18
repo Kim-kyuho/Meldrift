@@ -77,7 +77,7 @@ test("persists locally, uploads SQLite after debounce, and restores memo and ima
     await expect.poll(() => server.uploads.length, { timeout: 10000 }).toBe(baseline + 1);
     expect(server.uploads.at(-1)!.includes(Buffer.from("Snapshot persisted memo"))).toBe(true);
 
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.getByLabel("Upload image").setInputFiles({
         name: "snapshot.png", mimeType: "image/png",
         buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1kAAAAASUVORK5CYII=", "base64"),
     });
@@ -89,6 +89,41 @@ test("persists locally, uploads SQLite after debounce, and restores memo and ima
     const image = page.getByRole("img", { name: "snapshot.png" });
     await expect(image).toBeVisible();
     await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
+    expect(server.legacyWrites).toEqual([]);
+});
+
+test("exports, resets and imports the current board without resetting its server revision", async ({ page, context }) => {
+    test.setTimeout(60000);
+    const server = await mockSnapshotServer(context);
+    await openBoard(page);
+    await createMemo(page, "Original imported memo");
+    await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
+    await page.getByRole("button", { name: "Open board menu" }).click();
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    const download = await downloadPromise;
+    const filePath = (await download.path())!;
+
+    await page.getByRole("button", { name: "Open board menu" }).click();
+    await page.getByRole("button", { name: "Reset", exact: true }).click();
+    await page.getByRole("button", { name: "Yes", exact: true }).click();
+    await expect(page.getByText("Original imported memo", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("status").filter({ hasText: /^Saved locally$/ })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
+
+    await createMemo(page, "Replacement with the same ID");
+    await page.getByRole("button", { name: "Open board menu" }).click();
+    const chooserPromise = page.waitForEvent("filechooser");
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    const chooser = await chooserPromise;
+    page.once("dialog", (dialog) => dialog.accept());
+    await chooser.setFiles(filePath);
+    await expect(page.getByText("Original imported memo", { exact: true })).toBeVisible();
+    await expect(page.getByText("Replacement with the same ID", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("status").filter({ hasText: /^Saved locally$/ })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
+    await page.reload();
+    await expect(page.getByText("Original imported memo", { exact: true })).toBeVisible();
     expect(server.legacyWrites).toEqual([]);
 });
 

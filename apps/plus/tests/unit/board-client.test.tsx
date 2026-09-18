@@ -27,6 +27,7 @@ vi.mock("@meldrift/board/BoardClient", () => ({
                 onCompileMarkdown: vi.fn(),
                 onAbout: vi.fn(),
                 closeOverlays: vi.fn(),
+                replaceSnapshot: vi.fn(),
             })}
         </div>
     )),
@@ -48,6 +49,10 @@ vi.mock("@/components/SignInModal", () => ({ default: () => null }));
 vi.mock("@/components/SignUpModal", () => ({ default: () => null }));
 
 describe("Plus shared board integration", () => {
+    const files = {
+        exportSnapshot: vi.fn(async () => new ArrayBuffer(16)),
+        readSnapshotFile: vi.fn(async () => createEmptyBoardSnapshot()),
+    };
     beforeEach(() => {
         vi.useFakeTimers();
         mocks.canEditCard = true;
@@ -59,7 +64,7 @@ describe("Plus shared board integration", () => {
     it("coalesces changes and does not save after unmount", async () => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0 };
+        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
         const { rerender, unmount } = render(<BoardClient {...props} />);
         mocks.changedSnapshot = { ...initialSnapshot, strokes: [] };
         rerender(<BoardClient {...props} />);
@@ -83,7 +88,7 @@ describe("Plus shared board integration", () => {
     it.each(["editing", "permission"])("cancels a queued save on %s changes and resumes with the latest snapshot", async (reason) => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0 };
+        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
         const { rerender } = render(<BoardClient {...props} />);
         mocks.changedSnapshot = { ...initialSnapshot, strokes: [] };
         rerender(<BoardClient {...props} />);
@@ -105,7 +110,7 @@ describe("Plus shared board integration", () => {
     it("does not reupload initial data and saves edited data 150ms after editing ends", async () => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0 };
+        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
         const { rerender } = render(<BoardClient {...props} />);
         await act(async () => vi.advanceTimersByTimeAsync(150));
         expect(onSnapshotChange).not.toHaveBeenCalled();
@@ -131,7 +136,7 @@ describe("Plus shared board integration", () => {
     it("passes both account and lease permissions to the shared editor and blocks saves", async () => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: false, serverSaveVersion: 0 };
+        const props = { initialSnapshot, onSnapshotChange, editingAllowed: false, serverSaveVersion: 0, ...files };
         const { rerender } = render(<BoardClient {...props} />);
         expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "false");
 

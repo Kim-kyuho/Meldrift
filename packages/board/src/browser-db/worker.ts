@@ -146,7 +146,7 @@ async function ensureInitialized() {
     return initialization;
 }
 
-async function importDatabase(bytes: ArrayBuffer, revision = 0) {
+function decodeDatabase(bytes: ArrayBuffer, expectedBoardId?: number) {
     if (bytes.byteLength > 50 * 1024 * 1024) {
         throw new Error("The SQLite save file must be 50 MiB or smaller.");
     }
@@ -172,32 +172,33 @@ async function importDatabase(bytes: ArrayBuffer, revision = 0) {
         }
 
         const boardCount = Number(imported.selectValue("SELECT count(*) FROM boards"));
-        const defaultBoardCount = Number(imported.selectValue(
-            "SELECT count(*) FROM boards WHERE board_id = ?",
-            [initialBoard.boardId],
-        ));
-        if (boardCount !== 1 || defaultBoardCount !== 1) {
-            throw new Error("A save file must contain exactly one Meldrift Free Edition board.");
+        const boardId = Number(imported.selectValue("SELECT board_id FROM boards LIMIT 1"));
+        if (boardCount !== 1 || (expectedBoardId !== undefined && boardId !== expectedBoardId)) {
+            throw new Error("A save file must contain exactly one supported Meldrift board.");
         }
 
         for (const table of ["memos", "images", "mermaids", "drawings", "tables"]) {
             const unsupportedRows = Number(imported.selectValue(
-                `SELECT count(*) FROM ${table} WHERE board_id <> ?`,
-                [initialBoard.boardId],
+                `SELECT count(*) FROM ${table} WHERE board_id <> ? OR board_id IS NULL`,
+                [boardId],
             ));
             if (unsupportedRows !== 0) {
                 throw new Error("The save file contains data for an unsupported board.");
             }
         }
 
-        const snapshot = readSnapshot(imported, initialBoard.boardId);
-        replaceSnapshot(database, snapshot);
-        sync = { revision, generation: 0, dirty: false, changedAt: 0 };
-        await persistDatabase();
-        return snapshot;
+        return readSnapshot(imported, boardId);
     } finally {
         imported.close();
     }
+}
+
+async function importDatabase(bytes: ArrayBuffer, revision = 0) {
+    const snapshot = decodeDatabase(bytes, initialBoard.boardId);
+    replaceSnapshot(database, snapshot);
+    sync = { revision, generation: 0, dirty: false, changedAt: 0 };
+    await persistDatabase();
+    return snapshot;
 }
 
 async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> {
@@ -224,6 +225,17 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
             const bytes = exportDatabase(database);
             return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
         }
+        case "encode": {
+            const exported = new sqlite3.oo1.DB(":memory:");
+            try {
+                exported.exec(schemaSql);
+                replaceSnapshot(exported, request.snapshot);
+                const bytes = exportDatabase(exported);
+                return bytes.slice().buffer as ArrayBuffer;
+            } finally { exported.close(); }
+        }
+        case "decode":
+            return decodeDatabase(request.bytes);
         case "import":
             return importDatabase(request.bytes, request.revision);
         case "record": {

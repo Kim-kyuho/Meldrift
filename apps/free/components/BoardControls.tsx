@@ -15,7 +15,12 @@ export default function BoardControls({
     setMessage,
     closeOverlays,
     initialHelpOpen,
-    ...menu
+    menuOpen,
+    setMenuOpen,
+    reorderOpen,
+    onReorder,
+    onCompileMarkdown,
+    onAbout,
 }: BoardControlsProps & { initialHelpOpen: boolean }) {
     const [helpOpen, setHelpOpen] = useState(initialHelpOpen);
     const openHelp = useCallback(() => {
@@ -53,7 +58,12 @@ export default function BoardControls({
                 onChange={handleImport}
             />
             <BoardMenu
-                {...menu}
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+                reorderOpen={reorderOpen}
+                onReorder={onReorder}
+                onCompileMarkdown={onCompileMarkdown}
+                onAbout={onAbout}
                 exportDisabled={savePaused}
                 transferring={transferring}
                 resetting={resetting}
