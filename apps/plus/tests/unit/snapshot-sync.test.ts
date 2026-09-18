@@ -3,6 +3,8 @@ import { SnapshotSync } from "@/lib/snapshot-sync";
 import { createEmptyBoardSnapshot } from "@meldrift/board/board-state";
 import type { BoardDatabaseClient } from "@meldrift/board/browser-db/client";
 import type { StoredBoard } from "@meldrift/board/browser-db/protocol";
+import { act, renderHook } from "@testing-library/react";
+import { useBoardPersistence } from "@meldrift/board/useBoardPersistence";
 
 function setup() {
     let record: StoredBoard = { bytes: new ArrayBuffer(16), sync: { revision: 0, generation: 0, dirty: false, changedAt: 0 } };
@@ -27,6 +29,34 @@ describe("snapshot synchronization", () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ revision: 1 }) }));
     });
     afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+    it("keeps the 150ms local debounce separate from the 3s server debounce", async () => {
+        const { manager, database } = setup();
+        const onSave = (snapshot: ReturnType<typeof createEmptyBoardSnapshot>) => manager.save(snapshot);
+        const onError = vi.fn();
+        const initial = createEmptyBoardSnapshot();
+        const { rerender, unmount } = renderHook(
+            ({ snapshot }) => useBoardPersistence({
+                snapshot, savePaused: false, onSave, onError, skipInitialSave: true,
+            }),
+            { initialProps: { snapshot: initial } },
+        );
+        const latest = { ...initial, strokes: [] };
+        rerender({ snapshot: latest });
+        await act(async () => vi.advanceTimersByTimeAsync(149));
+        expect(database.replace).not.toHaveBeenCalled();
+        expect(fetch).not.toHaveBeenCalled();
+
+        await act(async () => vi.advanceTimersByTimeAsync(1));
+        expect(database.replace).toHaveBeenCalledExactlyOnceWith(latest, true);
+        await act(async () => vi.advanceTimersByTimeAsync(2999));
+        expect(fetch).not.toHaveBeenCalled();
+        await act(async () => vi.advanceTimersByTimeAsync(1));
+        expect(fetch).toHaveBeenCalledOnce();
+        expect(onError).not.toHaveBeenCalled();
+        unmount();
+        await manager.close();
+    });
 
     it("debounces from the last completed IndexedDB save", async () => {
         const { manager, database } = setup();

@@ -52,7 +52,7 @@ const savePaused = isEditing || drawingMode || hasPendingAiCards;
 | Edition | 저장 |
 | --- | --- |
 | Free | `useBoardPersistance`가 150ms 뒤 `replaceBoardState(snapshot)` |
-| Plus | `SnapshotPersistence`가 즉시 `SnapshotSync.save(snapshot)` → 로컬 쓰기 후 3초 뒤 업로드 |
+| Plus | `SnapshotPersistence`가 즉시 `SnapshotSync.save(snapshot)` → 마지막 로컬 쓰기 후 3초 디바운스로 업로드 |
 
 Plus에 디바운스가 없는 이유는 카드 조작이 `onDragStop`·`onResizeStop`처럼 확정 시점에만 상태를 바꾸기 때문이다. 서버로 나가는 요청은 `SnapshotSync`가 묶는다.
 

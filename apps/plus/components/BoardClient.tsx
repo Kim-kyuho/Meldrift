@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useBoardPersistence } from "@meldrift/board/useBoardPersistence";
 import SharedBoardClient, { type BoardControls } from "@meldrift/board/BoardClient";
 import type { BoardSnapshot } from "@meldrift/board/board-state";
 import { useBoardAuth } from "@/hooks/useBoardAuth";
@@ -16,19 +17,23 @@ type BoardClientProps = {
     serverSaveVersion: number;
 };
 
-function SnapshotPersistence({ snapshot, savePaused, canEdit, onSnapshotChange }: {
+function SnapshotPersistence({ snapshot, savePaused, canEdit, onSnapshotChange, setMessage }: {
     snapshot: BoardSnapshot;
     savePaused: boolean;
     canEdit: boolean;
     onSnapshotChange: (snapshot: BoardSnapshot) => void;
+    setMessage: (message: string) => void;
 }) {
-    const lastSavedRef = useRef(snapshot);
-
-    useEffect(() => {
-        if (!canEdit || savePaused || snapshot === lastSavedRef.current) return;
-        lastSavedRef.current = snapshot;
-        onSnapshotChange(snapshot);
-    }, [snapshot, canEdit, savePaused, onSnapshotChange]);
+    const onError = useCallback((error: unknown) => {
+        setMessage(error instanceof Error ? error.message : "The board could not be saved.");
+    }, [setMessage]);
+    useBoardPersistence({
+        snapshot,
+        savePaused: !canEdit || savePaused,
+        onSave: onSnapshotChange,
+        onError,
+        skipInitialSave: true,
+    });
 
     return null;
 }
@@ -66,6 +71,7 @@ export default function BoardClient({
                 savePaused={controls.savePaused}
                 canEdit={canEdit}
                 onSnapshotChange={onSnapshotChange}
+                setMessage={controls.setMessage}
             />
             <BoardMenu
                 menuOpen={controls.menuOpen}

@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./BoardClient": "./src/components/BoardClient.tsx",
+    "./useBoardPersistence": "./src/hooks/useBoardPersistence.ts",
     "./useAiAssistant": "./src/hooks/useAiAssistant.ts",
     "./board-state": "./src/board-state.ts",
     "./image-file": "./src/image-file.ts",

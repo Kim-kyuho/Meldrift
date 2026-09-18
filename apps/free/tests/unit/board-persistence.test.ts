@@ -37,6 +37,22 @@ describe("Free board persistence", () => {
     });
     afterEach(() => vi.useRealTimers());
 
+    it("coalesces consecutive changes into the latest snapshot", async () => {
+        const first = createEmptyBoardSnapshot();
+        const latest = { ...first, board: { ...first.board, title: "Latest" } };
+        const setMessage = vi.fn();
+        const { rerender } = renderHook(
+            ({ snapshot }) => useBoardPersistance({ snapshot, savePaused: false, setMessage }),
+            { initialProps: { snapshot: first } },
+        );
+        await act(async () => vi.advanceTimersByTimeAsync(100));
+        rerender({ snapshot: latest });
+        await act(async () => vi.advanceTimersByTimeAsync(149));
+        expect(replaceBoardState).not.toHaveBeenCalled();
+        await act(async () => vi.advanceTimersByTimeAsync(1));
+        expect(replaceBoardState).toHaveBeenCalledExactlyOnceWith(latest);
+    });
+
     it("cancels pending saves while editing and saves the latest snapshot after editing ends", async () => {
         const first = createEmptyBoardSnapshot();
         const latest = { ...first, board: { ...first.board, title: "Updated" } };
