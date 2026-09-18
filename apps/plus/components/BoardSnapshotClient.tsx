@@ -5,12 +5,14 @@ import { useBoardSnapshot } from "@/hooks/useBoardSnapshot";
 import BoardClient from "./BoardClient";
 
 export default function BoardSnapshotClient({ board }: { board: BoardInfo }) {
-    const { snapshot, status, message, canEdit, save, downloadLocal, restoreServer, serverSaveVersion } = useBoardSnapshot(board);
+    const { snapshot, status, message, canEdit, save, downloadLocal, restoreServer, serverSaveVersion, exportSnapshot, readSnapshotFile } = useBoardSnapshot(board);
     return (
         <>
             {snapshot && (
                 <div inert={status === "blocked"}>
-                    <BoardClient key={board.boardId} initialSnapshot={snapshot} editingAllowed={canEdit} onSnapshotChange={save} serverSaveVersion={serverSaveVersion} />
+                    <BoardClient key={board.boardId} initialSnapshot={snapshot} editingAllowed={canEdit}
+                        onSnapshotChange={save} serverSaveVersion={serverSaveVersion}
+                        exportSnapshot={exportSnapshot} readSnapshotFile={readSnapshotFile} />
                 </div>
             )}
             {!snapshot || status === "blocked" ? (

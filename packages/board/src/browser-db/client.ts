@@ -46,6 +46,8 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
             ? Promise.resolve()
             : request<void>({ type: "replace", snapshot, dirty }),
         export: () => request<ArrayBuffer>({ type: "export" }),
+        encode: (snapshot: BoardSnapshot) => request<ArrayBuffer>({ type: "encode", snapshot }),
+        decode: (bytes: ArrayBuffer) => request<BoardSnapshot>({ type: "decode", bytes }, [bytes]),
         import: (bytes: ArrayBuffer, revision = 0) =>
             request<BoardSnapshot>({ type: "import", bytes, revision }, [bytes]),
         record: () => request<StoredBoard>({ type: "record" }),

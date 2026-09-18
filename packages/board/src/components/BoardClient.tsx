@@ -46,6 +46,7 @@ export type BoardControls = {
     onCompileMarkdown: () => void;
     onAbout: () => void;
     closeOverlays: () => void;
+    replaceSnapshot: (snapshot: BoardSnapshot) => void;
 };
 
 type BoardClientProps = {
@@ -73,6 +74,7 @@ export default function BoardClient({
     const [markdownViewOpen, setMarkdownViewOpen] = useState(false);
     const [boardNavigatorOpen, setBoardNavigatorOpen] = useState(false);
     const [boardMessage, setBoardMessage] = useState("");
+    const [contentVersion, setContentVersion] = useState(0);
     const showPermissionMessage = () => {
         setBoardMessage(permissionMessage);
     };
@@ -271,6 +273,7 @@ export default function BoardClient({
 
     const {
         strokes,
+        setStrokes,
         drawingMode,
         drawingTool,
         penColor,
@@ -359,6 +362,21 @@ export default function BoardClient({
             onCompileMarkdown: () => setMarkdownViewOpen(true),
             onAbout: () => setAboutOpen(true),
             closeOverlays,
+            replaceSnapshot: (next) => {
+                if (!canEditCard) { showPermissionMessage(); return; }
+                if (next.board.boardId !== currentBoard.boardId) return;
+                setMemos(next.memos);
+                setImages(next.images);
+                setMermaids(next.mermaids);
+                setTables(next.tables);
+                setStrokes(next.strokes);
+                setContentVersion((version) => version + 1);
+                setEditingMemoId(null);
+                setEditingImageId(null);
+                setEditingMermaidId(null);
+                setEditingTableId(null);
+                setFocusedMemoId(null);
+            },
         })}
         <BoardToolBar
             cardEditing={isEditing || drawingMode}
@@ -507,7 +525,7 @@ export default function BoardClient({
                 >
                     {images.map((image) => (
                         <ImageCard
-                            key={image.imageId}
+                            key={`${contentVersion}:${image.imageId}`}
                             image={image}
                             zoom={boardZoom}
                             isEditing={editingImageId === image.imageId}
@@ -528,7 +546,7 @@ export default function BoardClient({
                     ))}
                     {memos.map((memo) => (
                         <MemoCard
-                            key={memo.id}
+                            key={`${contentVersion}:${memo.id}`}
                             memo={memo}
                             zoom={boardZoom}
                             canEdit={canEditCard}
@@ -554,7 +572,7 @@ export default function BoardClient({
                     ))}
                     {mermaids.map((mermaid) => (
                         <MermaidCard
-                            key={mermaid.id}
+                            key={`${contentVersion}:${mermaid.id}`}
                             mermaid={mermaid}
                             zoom={boardZoom}
                             canEdit={canEditCard}
@@ -578,7 +596,7 @@ export default function BoardClient({
                     ))}
                     {tables.map((table) => (
                         <TableCard
-                            key={table.id}
+                            key={`${contentVersion}:${table.id}`}
                             table={table}
                             zoom={boardZoom}
                             canEdit={canEditCard}
@@ -601,7 +619,7 @@ export default function BoardClient({
                         />
                     ))}
                     <DrawingLayer
-                        key={drawingMode ? "drawing-active" : "drawing-inactive"}
+                        key={`${contentVersion}:${drawingMode ? "drawing-active" : "drawing-inactive"}`}
                         strokes={strokes}
                         drawingMode={drawingMode}
                         drawingTool={drawingTool}

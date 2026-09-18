@@ -13,6 +13,8 @@ export type BrowserDbPayload =
     | { type: "load" }
     | { type: "replace"; snapshot: BoardSnapshot; dirty?: boolean }
     | { type: "export" }
+    | { type: "encode"; snapshot: BoardSnapshot }
+    | { type: "decode"; bytes: ArrayBuffer }
     | { type: "import"; bytes: ArrayBuffer; revision?: number }
     | { type: "record" }
     | { type: "acknowledge"; generation: number; revision: number }
