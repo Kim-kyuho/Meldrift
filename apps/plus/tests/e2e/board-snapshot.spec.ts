@@ -1,8 +1,10 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { getBoardToolButton } from "./helpers";
 
+test.describe.configure({ timeout: 60000 });
+
 // Only board metadata is read from Neon. Every browser API request is intercepted.
-async function mockSnapshotServer(context: BrowserContext) {
+async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 0) {
     let bytes: Buffer | null = null;
     let revision = 0;
     let mutation = "";
@@ -29,6 +31,10 @@ async function mockSnapshotServer(context: BrowserContext) {
             if (bytes) return route.fulfill({ body: bytes, headers: {
                 "Content-Type": "application/vnd.sqlite3", "X-Snapshot-Revision": String(revision), "X-Snapshot-Mutation": mutation,
             } });
+            if (initialLoadDelayMs > 0) {
+                await new Promise((resolve) => setTimeout(resolve, initialLoadDelayMs));
+                initialLoadDelayMs = 0;
+            }
             return route.fulfill({ json: { revision: 0, legacy: {
                 board: { boardId: Number(match[1]), title: "Snapshot test", width: 7680, height: 4320 },
                 memos: [], images: [], mermaids: [], tables: [], strokes: [],
@@ -50,7 +56,8 @@ async function openBoard(page: Page) {
         await expect(link, "A board metadata fixture is required").toBeVisible();
         await link.click();
     }
-    await expect(page.locator(".board-scroll-layer")).toBeVisible();
+    // Client-side navigation includes cold dev compilation and SQLite worker initialization.
+    await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: 20000 });
     await expect(page.getByRole("status", { name: "" }).filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
 }
 
@@ -93,7 +100,6 @@ test("persists locally, uploads SQLite after debounce, and restores memo and ima
 });
 
 test("exports, resets and imports the current board without resetting its server revision", async ({ page, context }) => {
-    test.setTimeout(60000);
     const server = await mockSnapshotServer(context);
     await openBoard(page);
     await createMemo(page, "Original imported memo");
@@ -124,6 +130,13 @@ test("exports, resets and imports the current board without resetting its server
     await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
     await page.reload();
     await expect(page.getByText("Original imported memo", { exact: true })).toBeVisible();
+    expect(server.legacyWrites).toEqual([]);
+});
+
+test("waits for board initialization that exceeds the default assertion timeout", async ({ page, context }) => {
+    const server = await mockSnapshotServer(context, 6000);
+    await openBoard(page);
+    expect(server.uploads).toHaveLength(1);
     expect(server.legacyWrites).toEqual([]);
 });
 
