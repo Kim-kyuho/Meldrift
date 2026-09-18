@@ -40,8 +40,6 @@ export function useCardLayer({
     };
 
     const handleCardLayer = (type: CardLayerType, id: number, action: CardLayerAction) => {
-        if (id < 0) return;
-
         const cards: CardLayer[] = [
             ...memos.map((memo) => ({ type: "memo" as const, id: memo.id, z: memo.z })),
             ...images.map((image) => ({ type: "image" as const, id: image.imageId, z: image.z })),

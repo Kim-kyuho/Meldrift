@@ -112,7 +112,6 @@ export default function TableCard({
                 <TableToolBar
                     onBringToFront={onBringToFront}
                     onSendToBack={onSendToBack}
-                    layerDisabled={table.id < 0}
                     onDelete={openDeleteDialog}
                 />
             )}
