@@ -196,7 +196,6 @@ export default function MemoCard(props: MemoCardProps) {
                     onBlockQuote={() => memoEditorRef.current?.toggleBlockQuote()}
                     onBringToFront={onBringToFront}
                     onSendToBack={onSendToBack}
-                    layerDisabled={memo.id < 0}
                     onDelete={openDeleteDialog}
                 />
             )}

@@ -208,7 +208,6 @@ export default function MermaidCard({
                 <MermaidToolBar
                     onBringToFront={onBringToFront}
                     onSendToBack={onSendToBack}
-                    layerDisabled={mermaid.id < 0}
                     onDelete={openDeleteDialog}
                 />
             )}
