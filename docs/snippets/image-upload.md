@@ -57,46 +57,42 @@ const response = await fetch("/api/images", {
 });
 ```
 
-## Cloudinary upload_stream
+## 브라우저에서 압축해 바이트로 담는다
+
+업로드 대상이 없다. 고른 파일을 그 자리에서 줄여 스냅샷에 넣는다.
 
 ```ts
-const bytes = await file.arrayBuffer();
-const buffer = Buffer.from(bytes);
+const prepared = await prepareImageFile(file);
+// { data: Uint8Array, mimeType, label, width, height }
 
-const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
-  const uploadStream = cloudinary.uploader.upload_stream(
-    { folder: `meldrift/boards/${boardId}` },
-    (error, result) => {
-      if (error || !result) {
-        reject(error ?? new Error("Cloudinary upload failed"));
-        return;
-      }
-
-      resolve(result);
-    },
-  );
-
-  uploadStream.end(buffer);
-});
+setImages((prev) => [...prev, {
+  imageId: nextPositiveId(prev.map((image) => image.imageId)),
+  boardId, url: "", data: prepared.data, mimeType: prepared.mimeType,
+  label: prepared.label, x, y, z: 1, width: prepared.width, height: prepared.height,
+}]);
 ```
 
-## 초기 이미지 크기 계산
+압축 루프는 결과가 `maxStoredImageBytes`(5 MiB) 이하가 될 때까지 해상도와 품질을 함께 낮춘다. 자세한 규칙은 [로컬 이미지 처리](../shared/image-file.md)에 있다.
 
-```ts
-const maxWidth = 400;
-const maxHeight = 300;
-const scale = Math.min(
-  maxWidth / uploadResult.width,
-  maxHeight / uploadResult.height,
-  1,
-);
+Plus는 이 바이트가 스냅샷에 실려 서버로 올라가므로, 보드 전체가 4 MiB를 넘지 않아야 한다는 제약이 한 겹 더 붙는다.
 
-const width = Math.round(uploadResult.width * scale);
-const height = Math.round(uploadResult.height * scale);
+## 화면에 그릴 때
+
+```tsx
+useEffect(() => {
+  if (!image.data || !image.mimeType) return;
+  const url = URL.createObjectURL(imageBytesToBlob(image.data, image.mimeType));
+  element.src = url;
+  return () => URL.revokeObjectURL(url);
+}, [image.data, image.mimeType]);
 ```
+
+`imageBytesToBlob`은 바이트를 **복사해서** Blob을 만든다. 원본이 SQLite가 소유한 버퍼일 수 있어, 그대로 참조하면 DB가 닫히거나 재할당될 때 내용이 어긋난다.
+
+`next/image`를 쓰지 않는다. blob URL은 최적화 대상이 아니다.
 
 Meldrift 적용 위치:
 
-- `hooks/useBoardImages.ts`
-- `app/api/images/route.ts`
-- `components/ImageCard.tsx`
+- `packages/board/src/hooks/useBoardImages.ts`
+- `packages/board/src/image-file.ts`
+- `packages/board/src/components/ImageCard.tsx`

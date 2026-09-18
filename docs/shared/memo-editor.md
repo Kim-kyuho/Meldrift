@@ -1,6 +1,6 @@
 # MemoEditor 상세설계
 
-소스: `packages/ui/src/components/MemoEditor.tsx`
+소스: `packages/ui/src/features/memo/MemoEditor.tsx`
 
 ## Props
 

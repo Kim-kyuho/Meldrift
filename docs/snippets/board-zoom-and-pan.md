@@ -99,4 +99,4 @@ Meldrift 적용 위치:
 
 - `packages/ui/src/hooks/useBoardZoom.ts`
 - `packages/ui/src/hooks/useBoardScroll.ts`
-- `components/BoardClient.tsx`
+- `packages/board/src/components/BoardClient.tsx`

@@ -1,6 +1,6 @@
 # ImageToolBar 상세설계
 
-소스: `packages/ui/src/components/ImageToolBar.tsx`
+소스: `packages/ui/src/features/image/ImageToolBar.tsx`
 
 ## Props
 

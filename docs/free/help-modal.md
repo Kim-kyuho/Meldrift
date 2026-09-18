@@ -1,6 +1,6 @@
 # Help 상세설계
 
-소스: `components/HelpModal.tsx`, `lib/help.ts`, `components/BoardClient.tsx`
+소스: `components/HelpModal.tsx`, `lib/help.ts`, `components/BoardClient.tsx`, `hooks/useBoardShortcuts.ts`
 
 ## 목적
 

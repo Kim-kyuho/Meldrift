@@ -4,6 +4,8 @@ import { tableSourceSchema, tableSourceToMarkdown } from "@meldrift/core/table-c
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import TurndownService from "turndown";
+import { loadSavedBoardSnapshot } from "@/lib/saved-board-snapshot";
+import { compileBoardMarkdown } from "@meldrift/board/board-markdown";
 
 type CompiledCardRow = {
     memo_id: number;
@@ -106,6 +108,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
                 },
                 { status: 404 },
             );
+        }
+
+        const snapshot = await loadSavedBoardSnapshot(boardId);
+        if (snapshot) {
+            const basePath = process.env.PLUS_STANDALONE === "true" ? "" : "/plus";
+            const markdown = compileBoardMarkdown({
+                ...snapshot,
+                images: snapshot.images.map((image) => ({
+                    ...image, data: null,
+                    url: `${basePath}/api/boards/${boardId}/snapshot/images/${image.imageId}`,
+                })),
+            });
+            return NextResponse.json({ ok: true, markdown }, { headers: { "Cache-Control": "no-store" } });
         }
 
         const result = await db.execute<CompiledCardRow>(sql`

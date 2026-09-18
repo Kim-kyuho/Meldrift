@@ -18,6 +18,7 @@
     "test:e2e:install": "playwright install"
   },
   "dependencies": {
+    "@meldrift/board": "*",
     "@meldrift/ai": "*",
     "@meldrift/core": "*",
     "@meldrift/ui": "*",

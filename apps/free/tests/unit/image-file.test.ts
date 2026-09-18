@@ -3,7 +3,7 @@ import {
     fitImageSize,
     imageBytesToPng,
     prepareImageFile,
-} from "@/lib/image-file";
+} from "@meldrift/board/image-file";
 
 describe("local image preparation", () => {
     afterEach(() => {

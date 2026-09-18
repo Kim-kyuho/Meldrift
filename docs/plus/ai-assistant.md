@@ -1,6 +1,6 @@
 # AI 어시스턴트 상세설계
 
-소스: `packages/ui/src/components/AiAssistantButton.tsx`, `components/AiChatPanel.tsx`, `packages/ui/src/components/GeminiIcon.tsx`, `hooks/useAiAssistant.ts`, `packages/core/src/board-plan.ts`, `lib/ai/assistant.ts`, `lib/ai/meldrift-guide.ts`, `app/api/ai/status/route.ts`, `app/api/ai/chat/route.ts`
+소스: `packages/ui/src/features/ai/AiAssistantButton.tsx`, `packages/ui/src/features/ai/AiChatPanel.tsx`, `packages/ui/src/features/ai/GeminiIcon.tsx`, `packages/board/src/hooks/useAiAssistant.ts`, `packages/core/src/board-plan.ts`, `lib/ai/assistant.ts`, `lib/ai/meldrift-guide.ts`, `app/api/ai/status/route.ts`, `app/api/ai/chat/route.ts`
 
 ## 역할
 
@@ -140,7 +140,7 @@ lucide-react에는 Gemini 아이콘이 없어 `GeminiIcon`에 별 모양 심볼�
 2. 서버가 `assistantImageModels` 순서대로 이미지 모델을 호출해 base64를 받는다. 한 번에 최대 `maxGeneratedImages`(3)장이다.
 3. 결과는 계획과 분리된 `GeneratedImage[]`로 내려가고, 섹션 인덱스로 다시 이어 붙는다.
 4. 클라이언트가 base64를 `File`로 바꿔 임시 이미지 카드에 담는다. 미리보기는 수동 업로드와 같은 Object URL이다.
-5. **Cloudinary 업로드는 저장을 눌렀을 때 일어난다.** Discard하면 업로드도 저장도 없고 Object URL만 해제한다.
+5. **압축과 스냅샷 반영은 저장을 눌렀을 때 일어난다.** Discard하면 아무것도 남지 않고 Object URL만 해제한다.
 
 한 장이 실패해도 나머지는 살린다. 실패한 섹션은 첨부 없이 메모만 남고 채팅에 몇 장을 건너뛰었는지 알린다.
 

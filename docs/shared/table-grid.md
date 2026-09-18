@@ -1,6 +1,6 @@
 # TableGrid 상세설계
 
-소스: `packages/ui/src/components/TableGrid.tsx`, `packages/ui/src/hooks/useTableEdit.tsx`, `packages/core/src/table-card.ts`
+소스: `packages/ui/src/features/table/TableGrid.tsx`, `packages/ui/src/features/table/useTableEdit.tsx`, `packages/core/src/table-card.ts`
 
 ## TableGrid Props
 

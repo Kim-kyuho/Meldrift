@@ -1,6 +1,6 @@
 # MemoCard 상세설계
 
-소스: `packages/ui/src/components/MemoCard.tsx`, `packages/ui/src/hooks/useMemoCard.ts`
+소스: `packages/ui/src/features/memo/MemoCard.tsx`, `packages/ui/src/features/memo/useMemoCard.ts`
 
 ## MemoCard Props
 

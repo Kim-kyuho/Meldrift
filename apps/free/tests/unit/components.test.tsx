@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import BoardMenu from "@/components/BoardMenu";
-import AboutModal from "@/components/AboutModal";
+import AboutModal from "@meldrift/ui/AboutModal";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
 import BoardToolBar from "@meldrift/ui/BoardToolBar";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";

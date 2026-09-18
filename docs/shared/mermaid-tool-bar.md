@@ -1,6 +1,6 @@
 # MermaidToolBar 상세설계
 
-소스: `packages/ui/src/components/MermaidToolBar.tsx`
+소스: `packages/ui/src/features/mermaid/MermaidToolBar.tsx`
 
 ## Props
 

@@ -1,6 +1,6 @@
 # BoardZoomControl 상세설계
 
-소스: `packages/ui/src/components/BoardZoomControl.tsx`
+소스: `packages/ui/src/features/board/BoardZoomControl.tsx`
 
 ## Props
 

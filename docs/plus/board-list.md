@@ -62,7 +62,7 @@ https://res.cloudinary.com/{cloudName}/image/upload/meldrift/boards/{boardId}/Pr
 
 ### 삭제
 
-관리자만 확인 다이얼로그를 열 수 있다. 서버는 보드 존재와 Cloudinary 설정을 확인하고, 해당 보드의 이미지 원본과 `meldrift/boards/{boardId}/PreviewIMG`를 Cloudinary에서 삭제한 뒤 관련 `images`, `memos`, `mermaids`, `drawings`, `tables`, `boards` 행을 순서대로 삭제한다. 성공 시 클라이언트는 목록에서 해당 보드를 제거하고 선택 상태를 초기화한 뒤 `router.refresh()`로 서버 데이터를 재검증한다.
+관리자만 확인 다이얼로그를 열 수 있다. 서버는 보드 존재와 Cloudinary 설정을 확인하고, 구버전 이미지 원본과 `meldrift/boards/{boardId}/PreviewIMG`를 Cloudinary에서 삭제한 뒤 `boards`·`board_snapshots`와 카드 테이블 삭제를 `db.batch` 한 번으로 보낸다. 성공 시 클라이언트는 목록에서 해당 보드를 제거하고 선택 상태를 초기화한 뒤 `router.refresh()`로 서버 데이터를 재검증한다.
 
 ## 렌더 구조
 
@@ -97,4 +97,4 @@ ConfirmDialog
 - `previewUrl`은 실제 파일 존재 여부를 보장하지 않으므로 클라이언트의 이미지 오류 상태가 필요하다.
 - 새 보드와 미리보기 실패 보드의 최초 캡처 요청은 sessionStorage 단일 키를 통해 다음 보드 화면으로 전달된다.
 - 삭제 실패 시 선택 ID는 유지되고 다이얼로그만 닫힌다.
-- 외래키 cascade 대신 보드 삭제 API가 관계 행과 Cloudinary 자산을 명시적으로 정리한다.
+- 외래키 cascade 대신 보드 삭제 API가 관계 행과 Cloudinary 자산을 명시적으로 정리한다. 스냅샷 행도 같은 배치에서 지운다.

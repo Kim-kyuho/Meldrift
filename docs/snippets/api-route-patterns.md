@@ -92,9 +92,9 @@ if (!updated[0]) {
 
 Meldrift 적용 위치:
 
-- `app/api/memos/route.ts`
-- `app/api/memos/[id]/route.ts`
-- `app/api/images/route.ts`
-- `app/api/images/[id]/route.ts`
 - `app/api/boards/route.ts`
 - `app/api/boards/[boardId]/route.ts`
+- `app/api/boards/[boardId]/snapshot/route.ts`
+- `app/api/editor-lease/route.ts`
+
+카드별 CRUD 라우트(`app/api/memos` 등)는 쓰기가 410으로 막혀 있다. 새 코드의 본보기로 삼지 않는다.

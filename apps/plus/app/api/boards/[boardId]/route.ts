@@ -1,6 +1,6 @@
 import { getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
-import { db_boards, db_drawings, db_images, db_memos, db_mermaids, db_tables } from "@/lib/db/schema";
+import { db_boards, db_boardSnapshots, db_drawings, db_images, db_memos, db_mermaids, db_tables } from "@/lib/db/schema";
 import { v2 as cloudinary } from "cloudinary";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -143,17 +143,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             cloudinary.uploader.destroy(previewPublicId, { invalidate: true }),
         ]);
 
-        await db.delete(db_images).where(eq(db_images.boardId, boardId));
-
-        await db.delete(db_memos).where(eq(db_memos.boardId, boardId));
-
-        await db.delete(db_mermaids).where(eq(db_mermaids.boardId, boardId));
-
-        await db.delete(db_drawings).where(eq(db_drawings.boardId, boardId));
-
-        await db.delete(db_tables).where(eq(db_tables.boardId, boardId));
-
-        const deletedBoard = await db.delete(db_boards).where(eq(db_boards.boardId, boardId)).returning();
+        const [deletedBoard] = await db.batch([
+            db.delete(db_boards).where(eq(db_boards.boardId, boardId)).returning(),
+            db.delete(db_boardSnapshots).where(eq(db_boardSnapshots.boardId, boardId)),
+            db.delete(db_images).where(eq(db_images.boardId, boardId)),
+            db.delete(db_memos).where(eq(db_memos.boardId, boardId)),
+            db.delete(db_mermaids).where(eq(db_mermaids.boardId, boardId)),
+            db.delete(db_drawings).where(eq(db_drawings.boardId, boardId)),
+            db.delete(db_tables).where(eq(db_tables.boardId, boardId)),
+        ]);
 
         return NextResponse.json({
             ok: true,

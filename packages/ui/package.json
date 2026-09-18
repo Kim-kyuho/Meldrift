@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./AboutModal": "./src/features/board/AboutModal.tsx",
     "./fonts.css": "./font/fonts.css",
     "./globals.css": "./styles/globals.css",
     "./AiAssistantButton": "./src/features/ai/AiAssistantButton.tsx",

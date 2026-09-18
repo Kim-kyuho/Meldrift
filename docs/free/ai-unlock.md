@@ -1,6 +1,6 @@
 # AI 잠금 상세설계
 
-소스: `lib/ai/passcode.ts`, `lib/ai/unlock-throttle.ts`, `app/api/ai/unlock/route.ts`, `app/api/ai/status/route.ts`, `components/AiUnlockPanel.tsx`
+소스: `packages/ai/src/passcode.ts`, `packages/ai/src/unlock-throttle.ts`, `app/api/ai/unlock/route.ts`, `app/api/ai/status/route.ts`, `packages/ui/src/features/ai/AiUnlockPanel.tsx`
 
 ## 목적
 

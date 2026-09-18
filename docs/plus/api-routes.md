@@ -1,26 +1,41 @@
 # Route Handler 상세설계
 
-소스: `app/api/boards/route.ts`, `app/api/boards/[boardId]/route.ts`, `app/api/boards/[boardId]/markdown/route.ts`, `app/api/cards/layer/route.ts`, `app/api/drawings/[boardId]/route.ts`, `app/api/memos/route.ts`, `app/api/memos/[id]/route.ts`, `app/api/images/route.ts`, `app/api/images/[id]/route.ts`, `app/api/mermaids/route.ts`, `app/api/mermaids/[id]/route.ts`, `app/api/tables/route.ts`, `app/api/tables/[id]/route.ts`
+소스: `app/api/boards/route.ts`, `app/api/boards/[boardId]/route.ts`, `app/api/boards/[boardId]/markdown/route.ts`, `app/api/boards/[boardId]/snapshot/route.ts`, `app/api/boards/[boardId]/snapshot/images/[imageId]/route.ts`, `app/api/editor-lease/route.ts`, `proxy.ts`
 
 Free Edition에는 이 계층이 없다. 브라우저 SQLite 워커가 같은 자리를 대신한다.
 
-인증·미리보기·AI 경로는 [인증](./authentication.md), [보드 미리보기](./board-preview.md), [AI 어시스턴트](./ai-assistant.md)에서 다룬다. 공통 예외처리 골격은 [API Route 예외처리](../snippets/api-route-patterns.md)에 있다.
+인증·미리보기·AI 경로는 [인증](./authentication.md), [보드 미리보기](./board-preview.md), [AI 어시스턴트](./ai-assistant.md)에서 다룬다. 스냅샷 경로의 동작은 [보드 스냅샷](./board-snapshot.md)에 있고 여기서는 계약만 적는다. 공통 예외처리 골격은 [API Route 예외처리](../snippets/api-route-patterns.md)에 있다.
 
-## 전체 목록
+## 살아 있는 경로
 
 | 경로 | 메서드 | 권한 |
 | --- | --- | --- |
 | `/api/boards` | POST | 관리자 |
 | `/api/boards/[boardId]` | PATCH, DELETE | 관리자 |
+| `/api/boards/[boardId]/snapshot` | GET | 없음 |
+| `/api/boards/[boardId]/snapshot` | PUT | 카드 편집 + 편집 리스 |
+| `/api/boards/[boardId]/snapshot/images/[imageId]` | GET | 없음 |
 | `/api/boards/[boardId]/markdown` | GET | 없음 |
 | `/api/boards/[boardId]/preview` | PUT | 카드 편집 |
-| `/api/cards/layer` | POST | 카드 편집 |
-| `/api/drawings/[boardId]` | GET | 없음 |
-| `/api/drawings/[boardId]` | PATCH | 카드 편집 |
-| `/api/memos`, `/api/images`, `/api/mermaids`, `/api/tables` | POST | 카드 편집 |
-| `/api/memos/[id]`, `/api/images/[id]`, `/api/mermaids/[id]`, `/api/tables/[id]` | PATCH, DELETE | 카드 편집 |
+| `/api/editor-lease` | POST, DELETE | 카드 편집 |
 
 읽기 경로(GET)에는 권한 검사가 없다. 쓰기 경로만 `getCardPermissionMessage`를 통과해야 한다.
+
+## 410으로 막힌 경로
+
+카드별 저장 경로는 `proxy.ts`가 쓰기 메서드를 가로챈다.
+
+```text
+/api/memos/*      /api/images/*     /api/mermaids/*
+/api/tables/*     /api/drawings/*   /api/cards/layer
+
+POST · PATCH · PUT · DELETE → 410 Gone
+  "Card-by-card saving is no longer supported. Reload the board to use snapshot saving."
+```
+
+읽기는 통과시킨다. 스냅샷이 아직 없는 보드를 열 때 마이그레이션이 이 테이블들을 읽어야 한다.
+
+라우트 파일 자체는 남아 있다. 지우면 옛 클라이언트가 404를 받고 왜 실패했는지 알 수 없다.
 
 ## 공통 응답
 
@@ -28,68 +43,86 @@ Free Edition에는 이 계층이 없다. 브라우저 SQLite 워커가 같은 �
 | --- | --- | --- |
 | 성공 | 200 | `{ ok: true, ... }` |
 | 권한 없음 | 403 | `{ ok: false, message }` |
-| 본문·id 형식 오류 | 400 | `{ ok: false, message: "Invalid request body." }` 등 |
+| 본문·id 형식 오류 | 400 | `{ ok: false, message }` |
 | 대상 없음 | 404 | `{ ok: false, message }` |
+| 스냅샷 초과 | 413 | `{ message }` |
+| 판 번호·리스 불일치 | 409 | `{ message }` |
 | 예외 | 500 | 일반 문구. 상세는 서버 로그로만 |
 
 500 문구는 내부 사정을 드러내지 않는다. `console.error`로만 남긴다.
 
-## 카드 CRUD
+## `/api/boards/[boardId]/snapshot`
 
-메모·이미지·머메이드·표 여덟 경로가 같은 골격을 쓴다.
+### GET
+
+저장된 스냅샷이 있으면 SQLite 바이트를 그대로 내려준다.
 
 ```text
-POST   /api/{종류}        새 카드. 성공 시 생성된 행을 통째로 돌려준다
-PATCH  /api/{종류}/[id]   내용·좌표·크기 갱신
-DELETE /api/{종류}/[id]   삭제
+Content-Type: application/vnd.sqlite3
+X-Snapshot-Revision: {판 번호}
+X-Snapshot-Mutation: {마지막 변경 id}
+Cache-Control: no-store
 ```
 
-POST가 행을 `returning()`으로 돌려주는 이유는 **DB가 발급한 id를 화면이 받아야** 하기 때문이다. 화면은 그 id로 임시 카드를 교체한다. Free는 이 왕복이 없어 클라이언트가 id를 발급한다.
+없으면 카드 테이블에서 만든 JSON을 내려준다.
 
-### 본문 검증
+```json
+{ "legacy": { "board": {}, "memos": [], "images": [] }, "revision": 0 }
+```
 
-좌표는 `Number.isFinite`, 크기는 그 위에 양수까지 본다. `boardId`는 양의 정수여야 한다. 종류별 추가 검사는 다음과 같다.
+클라이언트는 `Content-Type`으로 두 갈래를 가른다.
 
-| 종류 | 추가 검사 |
+### PUT
+
+본문이 SQLite 파일 바이트다. `maxDuration`은 60초다.
+
+| 헤더 | 검증 |
 | --- | --- |
-| memo | `content`가 문자열, `color`가 공백이 아닌 문자열 |
-| mermaid | `source`가 문자열 |
-| table | `source`가 `tableSourceSchema`를 통과 |
-| image | 업로드 파일의 형식·크기 (상세는 [ImageCard](./image-card.md)) |
+| `X-Snapshot-Revision` | 0 이상의 안전한 정수 |
+| `X-Snapshot-Mutation` | `^[a-zA-Z0-9:-]{1,160}$` |
+| `X-Editor-Tab` | `^[a-zA-Z0-9-]{20,80}$` |
 
-zod를 쓰는 곳은 표와 드로잉뿐이다. 나머지는 수동 검사다.
+크기는 `Content-Length`와 실제 바이트 길이를 모두 본다. 헤더만 믿지 않는다.
 
-### 메모의 `sortOrder`
+내용 검증(`decodeSnapshot`)과 권한·판 번호 판정은 [보드 스냅샷](./board-snapshot.md)에 있다. 성공하면 `{ ok: true, revision }`이다.
 
-새 메모는 그 보드의 맨 뒤로 간다. 값을 클라이언트가 계산해 보내지 않고 INSERT 안에서 직접 구한다.
+## `/api/boards/[boardId]/snapshot/images/[imageId]`
 
-```sql
-(SELECT COALESCE(MAX(sort_order), 0) + 1 FROM memos WHERE board_id = ?)
+저장된 스냅샷에서 이미지 한 장의 바이트를 꺼내 돌려준다. 서버가 만든 Markdown 문서가 이 경로를 링크한다.
+
+사용자가 올린 바이트를 그대로 내보내므로 브라우저가 문서로 해석하지 못하게 막는다.
+
+```text
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'none'; sandbox
+Cache-Control: no-store
 ```
 
-동시에 두 개가 만들어져도 서로 다른 값을 받는다.
+## `/api/boards/[boardId]/markdown`
 
-## `/api/drawings/[boardId]`
+두 경로가 한 라우트에 있다. 스냅샷이 있으면 그것을 쓰고, 없으면 옛 SQL 컴파일로 내려간다.
+
+```text
+저장된 스냅샷 있음
+  → decodeSnapshot → compileBoardMarkdown (공유 코드)
+  → 이미지는 /api/boards/{id}/snapshot/images/{imageId} 링크로 교체
+
+없음
+  → 카드 테이블을 SQL 한 번으로 컴파일 (아래)
+```
+
+스냅샷 경로는 Free 화면이 쓰는 것과 **같은 함수**를 쓴다. 두 Edition의 문서가 갈라질 여지가 없어졌다.
+
+구버전 SQL 경로는 메모의 네 꼭짓점을 `CROSS JOIN LATERAL VALUES`로 펼치고, 카드를 `UNION ALL`로 모아 포함 여부로 조인한 뒤, `ROW_NUMBER() OVER (PARTITION BY memo_id, corner_order ORDER BY z DESC, card_type ASC, card_id ASC)`로 꼭짓점마다 한 장만 남긴다. 스냅샷으로 옮긴 보드에서는 더 이상 실행되지 않는다.
+
+## `/api/editor-lease`
 
 | 메서드 | 동작 |
 | --- | --- |
-| GET | 획 배열을 돌려준다. 행이 없으면 `[]` |
-| PATCH | `boardStrokesSchema`로 검증 후 upsert |
+| POST | `{ tabId }`로 60초 리스를 발급하거나 갱신한다. 남이 쥐고 있으면 409 |
+| DELETE | `{ tabId }`로 자기 리스를 반납한다. 항상 204 |
 
-PATCH는 `onConflictDoUpdate`로 `board_id` 유일 제약에 맞춰 넣는다. 보드당 획 묶음이 한 행이므로 INSERT와 UPDATE를 구분하지 않는다. `updatedAt`도 함께 갱신한다.
-
-획 검증은 `@meldrift/core/board-stroke`의 스키마를 그대로 쓴다. 브라우저와 서버가 같은 규칙으로 판정한다.
-
-## `/api/cards/layer`
-
-카드 하나를 맨 앞/맨 뒤로 보내고 필요하면 전체 `z`를 다시 매긴다.
-
-1. `boardId`·`id`가 양의 정수이고 `type`·`action`이 유효한지 검사한다. 판정은 `@meldrift/core/cards`의 `isCardType`/`isCardLayerAction`을 쓴다.
-2. 보드의 카드를 네 테이블에서 모은다.
-3. `front`면 `maxZ + 1`, `back`이면 최소보다 아래 값을 준다.
-4. 최대 `z`가 `normalizeThreshold`(9000)를 넘으면 전체를 `1..N`으로 다시 매긴다.
-
-정규화 정렬은 `z` → `cardTypeOrder` → `id` 순이다. 새 카드가 전부 `z = 1`이라 동률이 흔하므로 이 tiebreak가 상시 동작한다.
+`tabId`는 `^[a-zA-Z0-9-]{20,80}$`여야 한다. 자세한 판정 규칙은 [보드 스냅샷](./board-snapshot.md#리스)에 있다.
 
 ## `/api/boards`, `/api/boards/[boardId]`
 
@@ -101,12 +134,4 @@ PATCH는 `onConflictDoUpdate`로 `board_id` 유일 제약에 맞춰 넣는다. �
 | PATCH | `boardId`가 양의 정수. 바꿀 필드가 하나도 없으면 400 `No update fields were provided.` |
 | DELETE | 보드가 없으면 404 |
 
-보드를 지우면 카드와 드로잉은 FK `ON DELETE CASCADE`로 함께 사라진다.
-
-## `/api/boards/[boardId]/markdown`
-
-문서 컴파일을 **SQL 한 번으로** 처리한다. 메모의 네 꼭짓점을 `CROSS JOIN LATERAL VALUES`로 펼치고, 카드를 `UNION ALL`로 모아 포함 여부로 조인한 뒤, `ROW_NUMBER() OVER (PARTITION BY memo_id, corner_order ORDER BY z DESC, card_type ASC, card_id ASC)`로 꼭짓점마다 한 장만 남긴다.
-
-응답 행을 이어 붙이는 단계에서 이미 쓴 카드를 `Set`으로 걸러 한 카드가 두 번 나오지 않게 한다.
-
-같은 규칙의 TypeScript 구현이 Free의 `apps/free/lib/board-markdown.ts`에 있다([Free Markdown 컴파일](../free/markdown-export.md)). **두 구현은 서로 다른 언어로 같은 규칙을 적은 것이므로 한쪽만 고치면 두 Edition의 문서가 갈라진다.**
+DELETE는 Cloudinary 자산을 지운 뒤 삭제 일곱 개를 `db.batch`로 함께 보낸다. 스냅샷 행(`board_snapshots`)도 여기서 지운다. 카드 테이블은 FK `ON DELETE CASCADE`로도 지워지지만, 배치에 명시해 순서를 못 박는다.
