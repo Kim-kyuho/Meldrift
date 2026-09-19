@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         const newMemo = await db
             .insert(db_memos)
             .values({
+                syncId: crypto.randomUUID(),
                 boardId: body.boardId,
                 content: body.content,
                 x: body.x,

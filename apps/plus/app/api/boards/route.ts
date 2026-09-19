@@ -1,6 +1,6 @@
 import { getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
-import { db_boards } from "@/lib/db/schema";
+import { db_boards, db_boardSync } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
                 createdAt: now,
             })
             .returning();
+
+        await db.insert(db_boardSync)
+            .values({ boardId: newBoard[0].boardId, revision: 0, mode: "delta" })
+            .onConflictDoNothing();
 
         return NextResponse.json(
             {

@@ -22,7 +22,7 @@ describe("Plus board file operations", () => {
     it("imports cards into the current board while preserving Neon metadata", async () => {
         const options = setupOptions();
         const imported = createEmptyBoardSnapshot();
-        imported.memos.push({ id: 1, boardId: 1, content: "Imported", x: 0, y: 0, z: 1,
+        imported.memos.push({ id: 1, syncId: "memo-1", boardId: 1, content: "Imported", x: 0, y: 0, z: 1,
             width: 300, height: 200, color: "#fff", sortOrder: 1 });
         options.readSnapshotFile.mockResolvedValue(imported);
         vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -30,8 +30,28 @@ describe("Plus board file operations", () => {
         await act(async () => result.current.handleImport(importEvent()));
         expect(options.replaceSnapshot).toHaveBeenCalledWith({
             ...imported, board: options.snapshot.board,
-            memos: [{ ...imported.memos[0], boardId: 7 }],
+            memos: [{ ...imported.memos[0], boardId: 7, syncId: expect.any(String) }],
         });
+    });
+
+    it("가져온 카드에는 새 동기화 식별자를 발급한다", async () => {
+        const options = setupOptions();
+        const imported = createEmptyBoardSnapshot();
+        imported.memos.push({ id: 1, syncId: "memo-1", boardId: 1, content: "Imported", x: 0, y: 0, z: 1,
+            width: 300, height: 200, color: "#fff", sortOrder: 1 });
+        imported.images.push({ imageId: 1, syncId: "image-1", assetId: "asset-1", boardId: 1, url: "",
+            data: new Uint8Array([1, 2, 3]), mimeType: "image/webp", label: "a.webp",
+            x: 0, y: 0, z: 1, width: 10, height: 10 });
+        options.readSnapshotFile.mockResolvedValue(imported);
+        vi.spyOn(window, "confirm").mockReturnValue(true);
+        const { result } = renderHook(() => useBoardTransfer(options));
+        await act(async () => result.current.handleImport(importEvent()));
+
+        const [replaced] = options.replaceSnapshot.mock.calls[0];
+        expect(replaced.memos[0].syncId).not.toBe("memo-1");
+        expect(replaced.images[0].syncId).not.toBe("image-1");
+        expect(replaced.images[0].assetId).not.toBe("asset-1");
+        expect(replaced.images[0].assetId).not.toBe("");
     });
 
     it("resets only content and requires confirmation", () => {

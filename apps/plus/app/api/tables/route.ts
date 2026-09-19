@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
         const newTable = await db
             .insert(db_tables)
             .values({
+                syncId: crypto.randomUUID(),
                 boardId: body.boardId,
                 source: parsedSource.data,
                 x: body.x,

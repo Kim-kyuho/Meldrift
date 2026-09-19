@@ -1,5 +1,5 @@
 import { ChangeEvent, RefObject, useRef, useState } from "react";
-import { nextPositiveId, type BoardImage } from "@meldrift/board/board-state";
+import { createAssetId, createSyncId, nextPositiveId, type BoardImage } from "@meldrift/board/board-state";
 import { prepareImageFile } from "@meldrift/board/image-file";
 
 export type { BoardImage } from "@meldrift/board/board-state";
@@ -59,6 +59,8 @@ export function useBoardImages({
             nextImageIdRef.current = imageId + 1;
             const image: BoardImage = {
                 imageId,
+                syncId: createSyncId(),
+                assetId: createAssetId(),
                 boardId,
                 url: "",
                 data: prepared.data,

@@ -1,6 +1,9 @@
 import { getCurrentUserFromRequest } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db";
-import { db_boards, db_boardSnapshots, db_drawings, db_images, db_memos, db_mermaids, db_tables } from "@/lib/db/schema";
+import {
+    db_assetChunks, db_assets, db_boards, db_boardSnapshots, db_boardSync, db_drawings, db_drawingStrokes,
+    db_images, db_memos, db_mermaids, db_syncMutations, db_tables, db_uploadSessions,
+} from "@/lib/db/schema";
 import { v2 as cloudinary } from "cloudinary";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -139,7 +142,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         const previewPublicId = `meldrift/boards/${boardId}/PreviewIMG`;
 
         await Promise.all([
-            ...boardImages.map((image) => cloudinary.uploader.destroy(image.publicId)),
+            ...boardImages.flatMap((image) => image.publicId ? [cloudinary.uploader.destroy(image.publicId)] : []),
             cloudinary.uploader.destroy(previewPublicId, { invalidate: true }),
         ]);
 
@@ -151,6 +154,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             db.delete(db_mermaids).where(eq(db_mermaids.boardId, boardId)),
             db.delete(db_drawings).where(eq(db_drawings.boardId, boardId)),
             db.delete(db_tables).where(eq(db_tables.boardId, boardId)),
+            db.delete(db_drawingStrokes).where(eq(db_drawingStrokes.boardId, boardId)),
+            db.delete(db_assetChunks).where(eq(db_assetChunks.boardId, boardId)),
+            db.delete(db_assets).where(eq(db_assets.boardId, boardId)),
+            db.delete(db_uploadSessions).where(eq(db_uploadSessions.boardId, boardId)),
+            db.delete(db_boardSync).where(eq(db_boardSync.boardId, boardId)),
+            db.delete(db_syncMutations).where(eq(db_syncMutations.boardId, boardId)),
         ]);
 
         return NextResponse.json({

@@ -12,6 +12,7 @@ import {
     type BoardPlan,
 } from "@meldrift/core/board-plan";
 import { nextMemoOrder } from "@meldrift/core/memo-order";
+import { createSyncId } from "@meldrift/board/board-state";
 import type { BoardImage } from "@meldrift/board/board-state";
 import type { BoardMemo } from "@meldrift/board/board-state";
 import type { BoardMermaid } from "@meldrift/board/board-state";
@@ -360,6 +361,7 @@ export function useAiAssistant({
 
         const newMemos: BoardMemo[] = planned.memos.map((memo, index) => ({
             id: nextTempId(),
+            syncId: createSyncId(),
             boardId,
             content: memo.content,
             x: memo.x,
@@ -372,6 +374,7 @@ export function useAiAssistant({
         }));
         const newMermaids: BoardMermaid[] = planned.mermaids.map((mermaid) => ({
             id: nextTempId(),
+            syncId: createSyncId(),
             boardId,
             source: mermaid.source,
             x: mermaid.x,
@@ -382,6 +385,7 @@ export function useAiAssistant({
         }));
         const newTables: BoardTable[] = planned.tables.map((table) => ({
             id: nextTempId(),
+            syncId: createSyncId(),
             boardId,
             source: table.source,
             x: table.x,

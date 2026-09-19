@@ -9,7 +9,7 @@ describe("browser SQLite board snapshots", () => {
     it("accepts a complete local board snapshot", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.memos.push({
-            id: 1, boardId: 1, content: "Saved memo", x: 1, y: 2, z: 3,
+            id: 1, syncId: "memo-1", boardId: 1, content: "Saved memo", x: 1, y: 2, z: 3,
             width: 300, height: 200, color: "#fffadc", sortOrder: 1,
         });
 
@@ -19,7 +19,7 @@ describe("browser SQLite board snapshots", () => {
     it("rejects invalid imported board data", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.images.push({
-            imageId: 1, boardId: 1, url: "javascript:alert(1)", label: null,
+            imageId: 1, syncId: "image-1", assetId: "", boardId: 1, url: "javascript:alert(1)", label: null,
             data: null, mimeType: null,
             x: 0, y: 0, z: 1, width: 400, height: 300,
         });
@@ -30,7 +30,7 @@ describe("browser SQLite board snapshots", () => {
     it("accepts compressed local image bytes", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.images.push({
-            imageId: 1, boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
+            imageId: 1, syncId: "image-1", assetId: "asset-1", boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
             mimeType: "image/webp", label: "photo.webp",
             x: 0, y: 0, z: 1, width: 400, height: 300,
         });

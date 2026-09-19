@@ -1,3 +1,4 @@
+import { webcrypto } from "node:crypto";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
@@ -5,6 +6,13 @@ import { afterEach, vi } from "vitest";
 afterEach(() => {
     cleanup();
 });
+
+if (!window.crypto.subtle) {
+    Object.defineProperty(window.crypto, "subtle", {
+        configurable: true,
+        value: webcrypto.subtle,
+    });
+}
 
 if (!("PointerEvent" in window)) {
     Object.defineProperty(window, "PointerEvent", {

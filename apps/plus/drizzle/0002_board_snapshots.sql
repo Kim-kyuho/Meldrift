@@ -1,4 +1,4 @@
-CREATE TABLE "board_snapshots" (
+CREATE TABLE IF NOT EXISTS "board_snapshots" (
 	"board_id" integer PRIMARY KEY NOT NULL,
 	"snapshot" "bytea" NOT NULL,
 	"format_version" integer NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE "board_snapshots" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "editor_leases" (
+CREATE TABLE IF NOT EXISTS "editor_leases" (
 	"user_id" integer PRIMARY KEY NOT NULL,
 	"session_hash" text NOT NULL,
 	"tab_id" text NOT NULL,

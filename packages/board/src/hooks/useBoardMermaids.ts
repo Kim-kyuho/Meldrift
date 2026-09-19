@@ -1,5 +1,5 @@
 import { RefObject, useState } from "react";
-import { nextPositiveId, type BoardMermaid } from "@meldrift/board/board-state";
+import { createSyncId, nextPositiveId, type BoardMermaid } from "@meldrift/board/board-state";
 
 export type { BoardMermaid } from "@meldrift/board/board-state";
 
@@ -46,6 +46,7 @@ export function useBoardMermaids({
         const z = getTopmostZ ? getTopmostZ() : 1;
         const tempMermaid: BoardMermaid = {
             id: -Date.now(),
+            syncId: createSyncId(),
             boardId,
             source: defaultMermaidSource,
             x: Math.round(x),
@@ -72,7 +73,7 @@ export function useBoardMermaids({
         setMermaids((prev) => {
             const id = nextPositiveId(prev.map((mermaid) => mermaid.id));
             return prev.map((mermaid) => mermaid.id === tempId
-                ? { id, boardId, source, x, y, z, width, height }
+                ? { ...mermaid, id, boardId, source, x, y, z, width, height }
                 : mermaid);
         });
     };

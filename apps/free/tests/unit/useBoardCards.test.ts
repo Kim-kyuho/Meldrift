@@ -26,20 +26,20 @@ function setLocation() {
 }
 
 const memo: BoardMemo = {
-    id: 1, boardId: 5, content: "memo", x: 10, y: 20, z: 1,
+    id: 1, syncId: "memo-1", boardId: 5, content: "memo", x: 10, y: 20, z: 1,
     width: 300, height: 200, color: "#fffadc", sortOrder: 1,
 };
 const image: BoardImage = {
-    imageId: 2, boardId: 5, url: "https://example.com/image.png", label: "image.png",
+    imageId: 2, syncId: "image-2", assetId: "", boardId: 5, url: "https://example.com/image.png", label: "image.png",
     data: null, mimeType: null,
     x: 10, y: 20, z: 2, width: 400, height: 300,
 };
 const mermaid: BoardMermaid = {
-    id: 3, boardId: 5, source: "flowchart LR", x: 10, y: 20, z: 3,
+    id: 3, syncId: "mermaid-3", boardId: 5, source: "flowchart LR", x: 10, y: 20, z: 3,
     width: 480, height: 360,
 };
 const table: BoardTable = {
-    id: 4, boardId: 5,
+    id: 4, syncId: "table-4", boardId: 5,
     source: { columns: [{ id: "c", name: "C" }], rows: [] },
     x: 10, y: 20, z: 4, width: 560, height: 360,
 };
@@ -136,7 +136,7 @@ describe("board card collection hooks", () => {
         });
         expect(result.current.images).toEqual([{
             ...image,
-            imageId: 1,
+            imageId: 1, syncId: expect.any(String), assetId: expect.any(String),
             url: "",
             data: new Uint8Array([1, 2, 3]),
             mimeType: "image/webp",

@@ -15,11 +15,11 @@ import { defaultBoard, type BoardImage, type BoardMemo } from "@/lib/board-state
 const locationRef = createRef<HTMLDivElement>();
 
 const existingMemo: BoardMemo = {
-    id: 1, boardId: defaultBoard.boardId, content: "<p>기존 메모</p>", x: 10, y: 20, z: 1,
+    id: 1, syncId: "memo-1", boardId: defaultBoard.boardId, content: "<p>기존 메모</p>", x: 10, y: 20, z: 1,
     width: 300, height: 200, color: "#fffadc", sortOrder: 1,
 };
 const existingImage: BoardImage = {
-    imageId: 1, boardId: defaultBoard.boardId, url: "https://example.com/a.png", label: "a",
+    imageId: 1, syncId: "image-1", assetId: "", boardId: defaultBoard.boardId, url: "https://example.com/a.png", label: "a",
     data: null, mimeType: null,
     x: 10, y: 400, z: 1, width: 400, height: 300,
 };

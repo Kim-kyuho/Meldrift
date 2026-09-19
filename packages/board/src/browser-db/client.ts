@@ -1,5 +1,7 @@
 import { defaultBoard, type BoardInfo, type BoardSnapshot } from "../board-state";
-import type { BrowserDbPayload, BrowserDbRequest, BrowserDbResponse, StoredBoard } from "./protocol";
+import type {
+    BrowserDbPayload, BrowserDbRequest, BrowserDbResponse, OutboxBatch, OutboxState, StoredAsset, StoredBoard,
+} from "./protocol";
 
 export function createBoardDatabase(storageName: string, board: BoardInfo) {
     let worker: Worker | null = null;
@@ -53,6 +55,15 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
         record: () => request<StoredBoard>({ type: "record" }),
         acknowledge: (generation: number, revision: number) =>
             request<void>({ type: "acknowledge", generation, revision }),
+        seed: (snapshot: BoardSnapshot, revision: number) =>
+            request<BoardSnapshot>({ type: "seed", snapshot, revision }),
+        commitOutbox: (claim: number, generation: number, revision: number) =>
+            request<void>({ type: "commitOutbox", claim, generation, revision }),
+        asset: (assetId: string) => request<StoredAsset | null>({ type: "asset", assetId }),
+        outbox: () => request<OutboxState>({ type: "outbox" }),
+        claimOutbox: (limit: number) => request<OutboxBatch>({ type: "claimOutbox", limit }),
+        releaseOutbox: (claim: number) => request<void>({ type: "releaseOutbox", claim }),
+        clearOutbox: (claim: number) => request<void>({ type: "clearOutbox", claim }),
         reset: async () => {
             if (resetInProgress) return;
             resetInProgress = true;

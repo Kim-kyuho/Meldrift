@@ -7,10 +7,10 @@ import { useBoardMermaids } from "@meldrift/board/useBoardMermaids";
 import { useBoardTables } from "@meldrift/board/useBoardTables";
 import type { BoardImage, BoardMemo, BoardMermaid, BoardTable } from "@/lib/board-state";
 
-const memo: BoardMemo = { id: 1, boardId: 1, content: "memo", x: 0, y: 0, z: 1, width: 100, height: 100, color: "#fff", sortOrder: 1 };
-const image: BoardImage = { imageId: 2, boardId: 1, url: "https://example.com/image.png", data: null, mimeType: null, label: null, x: 0, y: 0, z: 2, width: 100, height: 100 };
-const mermaid: BoardMermaid = { id: 3, boardId: 1, source: "flowchart LR", x: 0, y: 0, z: 3, width: 100, height: 100 };
-const table: BoardTable = { id: 4, boardId: 1, source: { columns: [{ id: "c", name: "C" }], rows: [{ id: "r", cells: { c: "" } }] }, x: 0, y: 0, z: 4, width: 100, height: 100 };
+const memo: BoardMemo = { id: 1, syncId: "memo-1", boardId: 1, content: "memo", x: 0, y: 0, z: 1, width: 100, height: 100, color: "#fff", sortOrder: 1 };
+const image: BoardImage = { imageId: 2, syncId: "image-2", assetId: "", boardId: 1, url: "https://example.com/image.png", data: null, mimeType: null, label: null, x: 0, y: 0, z: 2, width: 100, height: 100 };
+const mermaid: BoardMermaid = { id: 3, syncId: "mermaid-3", boardId: 1, source: "flowchart LR", x: 0, y: 0, z: 3, width: 100, height: 100 };
+const table: BoardTable = { id: 4, syncId: "table-4", boardId: 1, source: { columns: [{ id: "c", name: "C" }], rows: [{ id: "r", cells: { c: "" } }] }, x: 0, y: 0, z: 4, width: 100, height: 100 };
 
 function createStateSetter<T>(initial: T[]) {
     let state = initial;

@@ -17,6 +17,8 @@ Plus는 카드 하나를 고칠 때마다 Route Handler를 부르고 DB 행 하�
 
 Free와 같은 코드가 화면과 브라우저 DB를 담당하고([브라우저 데이터베이스](../shared/browser-database.md)), 이 문서는 그 위에 얹힌 서버 동기화를 다룬다.
 
+**이 방식은 보드마다 물러나는 중이다.** `board_sync.mode`가 `delta`인 보드는 스냅샷 대신 변경분만 주고받는다. 전환 절차와 새 저장 구조는 [변경분 동기화](./change-sync.md)에 있다.
+
 ## 고정값 (`lib/snapshot.ts`)
 
 | 이름 | 값 | 의미 |

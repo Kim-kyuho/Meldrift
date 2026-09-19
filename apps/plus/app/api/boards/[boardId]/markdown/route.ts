@@ -1,10 +1,11 @@
 import { getDb } from "@/lib/db";
-import { db_boards } from "@/lib/db/schema";
+import { db_boards, db_boardSync } from "@/lib/db/schema";
 import { tableSourceSchema, tableSourceToMarkdown } from "@meldrift/core/table-card";
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import TurndownService from "turndown";
 import { loadSavedBoardSnapshot } from "@/lib/saved-board-snapshot";
+import { loadBoardState } from "@/lib/board-state-store";
 import { compileBoardMarkdown } from "@meldrift/board/board-markdown";
 
 type CompiledCardRow = {
@@ -95,7 +96,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
 
         const db = getDb();
         const targetBoard = await db
-            .select({ boardId: db_boards.boardId })
+            .select()
             .from(db_boards)
             .where(eq(db_boards.boardId, boardId))
             .limit(1);
@@ -110,9 +111,27 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
             );
         }
 
+        const basePath = process.env.PLUS_STANDALONE === "true" ? "" : "/plus";
+        const [sync] = await db.select().from(db_boardSync).where(eq(db_boardSync.boardId, boardId)).limit(1);
+        if (sync?.mode === "delta") {
+            const board = targetBoard[0];
+            const state = await loadBoardState({
+                boardId: board.boardId, title: board.title, width: board.width, height: board.height,
+            });
+            const markdown = compileBoardMarkdown({
+                ...state,
+                images: state.images.map((image) => ({
+                    ...image, data: null,
+                    url: image.assetId
+                        ? `${basePath}/api/boards/${boardId}/assets/${image.assetId}/bytes`
+                        : image.url,
+                })),
+            });
+            return NextResponse.json({ ok: true, markdown }, { headers: { "Cache-Control": "no-store" } });
+        }
+
         const snapshot = await loadSavedBoardSnapshot(boardId);
         if (snapshot) {
-            const basePath = process.env.PLUS_STANDALONE === "true" ? "" : "/plus";
             const markdown = compileBoardMarkdown({
                 ...snapshot,
                 images: snapshot.images.map((image) => ({

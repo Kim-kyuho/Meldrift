@@ -1,8 +1,7 @@
 import initSqlJs from "sql.js/dist/sql-asm.js";
 import type { Database as SqlDatabase } from "sql.js";
 import type { Database, SqlValue } from "@sqlite.org/sqlite-wasm";
-import { readSnapshot } from "@meldrift/board/sqlite-codec";
-import { schemaVersion } from "@meldrift/board/board-state";
+import { isSupportedVersion, readSnapshot } from "@meldrift/board/sqlite-codec";
 import { maxSnapshotBytes } from "./snapshot";
 
 let sqlite: ReturnType<typeof initSqlJs> | undefined;
@@ -32,7 +31,7 @@ export async function decodeSnapshot(bytes: Uint8Array, boardId: number) {
     const db = new SQL.Database(bytes);
     try {
         const scalar = (sql: string) => db.exec(sql)[0]?.values[0]?.[0];
-        if (scalar("PRAGMA integrity_check") !== "ok" || scalar("PRAGMA user_version") !== schemaVersion) {
+        if (scalar("PRAGMA integrity_check") !== "ok" || !isSupportedVersion(Number(scalar("PRAGMA user_version")))) {
             throw new Error("Unsupported or corrupt snapshot.");
         }
         if (scalar("SELECT count(*) FROM boards") !== 1) throw new Error("A snapshot must contain one board.");

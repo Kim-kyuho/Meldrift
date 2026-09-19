@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/current-user", () => ({ getCurrentUserFromRequest: mocks.user, getCardPermissionMessage: mocks.permission }));
 vi.mock("@/lib/auth/session", () => ({ getSessionTokenHash: () => "current-session", sessionCookieName: "session" }));
 vi.mock("@/lib/snapshot-codec", () => ({ decodeSnapshot: mocks.decode }));
-vi.mock("@/lib/legacy-board-snapshot", () => ({ loadLegacySnapshot: mocks.legacy }));
+vi.mock("@/lib/board-state-store", () => ({ loadBoardState: mocks.legacy }));
 vi.mock("@/lib/db", () => ({ getDb: () => ({
     execute: mocks.execute,
     select: () => ({ from: () => ({ where: () => ({ limit: mocks.limit }) }) }),
@@ -90,18 +90,42 @@ describe("snapshot API", () => {
     });
 
     it("returns binary bytes and the committed revision without cache", async () => {
-        mocks.limit.mockResolvedValueOnce([{ boardId: 7 }]).mockResolvedValueOnce([{ snapshot: Buffer.from([1, 2, 3]), revision: 4, mutationId: "change-4" }]);
+        mocks.limit
+            .mockResolvedValueOnce([{ boardId: 7 }])
+            .mockResolvedValueOnce([{ boardId: 7, mode: "snapshot", revision: 4 }])
+            .mockResolvedValueOnce([{ snapshot: Buffer.from([1, 2, 3]), revision: 4, mutationId: "change-4" }]);
         const response = await GET(request(), context);
         expect(response.headers.get("X-Snapshot-Revision")).toBe("4");
+        expect(response.headers.get("X-Storage-Mode")).toBe("snapshot");
         expect(response.headers.get("Cache-Control")).toBe("no-store");
         expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
     });
 
     it("loads legacy cards only before the first snapshot", async () => {
-        mocks.limit.mockResolvedValueOnce([{ boardId: 7 }]).mockResolvedValueOnce([]);
+        mocks.limit
+            .mockResolvedValueOnce([{ boardId: 7 }])
+            .mockResolvedValueOnce([{ boardId: 7, mode: "snapshot", revision: 0 }])
+            .mockResolvedValueOnce([]);
         mocks.legacy.mockResolvedValue({ board: { boardId: 7 }, memos: [] });
         expect((await GET(request(), context)).status).toBe(200);
         expect(mocks.legacy).toHaveBeenCalledWith({ boardId: 7 });
+    });
+
+    it("stops serving the snapshot once the board moved to change sync", async () => {
+        mocks.limit
+            .mockResolvedValueOnce([{ boardId: 7 }])
+            .mockResolvedValueOnce([{ boardId: 7, mode: "delta", revision: 9 }]);
+        const response = await GET(request(), context);
+        expect(response.headers.get("X-Storage-Mode")).toBe("delta");
+        expect(await response.json()).toEqual({ mode: "delta", revision: 9 });
+        expect(mocks.legacy).not.toHaveBeenCalled();
+    });
+
+    it("refuses a whole-snapshot write on a board that moved to change sync", async () => {
+        await PUT(request(), context);
+        const query = new PgDialect().sqlToQuery(mocks.execute.mock.calls[0][0]);
+        expect(query.sql).toContain("NOT EXISTS (SELECT 1 FROM board_sync WHERE board_id = $");
+        expect(query.sql).toContain("mode <> 'snapshot'");
     });
 
     it("refuses a second editor lease and malformed lease requests", async () => {

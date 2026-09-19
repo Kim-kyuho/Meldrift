@@ -22,7 +22,8 @@
     "./useImageCard": "./src/hooks/useImageCard.ts",
     "./useBoardMarkdown": "./src/hooks/useBoardMarkdown.ts",
     "./ImageCard": "./src/components/ImageCard.tsx",
-    "./BoardMarkdownView": "./src/components/BoardMarkdownView.tsx"
+    "./BoardMarkdownView": "./src/components/BoardMarkdownView.tsx",
+    "./board-delta": "./src/board-delta.ts"
   },
   "dependencies": {
     "@meldrift/core": "*",
@@ -38,6 +39,11 @@
     "react-rnd": "^10.5.3"
   },
   "devDependencies": {
-    "@types/turndown": "^5.0.6"
+    "@types/turndown": "^5.0.6",
+    "vitest": "^4.1.9"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
   }
 }

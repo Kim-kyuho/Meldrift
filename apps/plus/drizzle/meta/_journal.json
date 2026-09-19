@@ -22,6 +22,27 @@
       "when": 1789651097998,
       "tag": "0002_board_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789781567104,
+      "tag": "0003_delta_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789783878150,
+      "tag": "0004_asset_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789787652837,
+      "tag": "0005_storage_mode",
+      "breakpoints": true
     }
   ]
 }
