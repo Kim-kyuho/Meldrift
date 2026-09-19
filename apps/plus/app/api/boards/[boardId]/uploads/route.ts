@@ -5,7 +5,9 @@ import { assetChunkBytes } from "@meldrift/board/board-delta";
 import { getDb } from "@/lib/db";
 import { db_assets, db_uploadSessions } from "@/lib/db/schema";
 import { editorFromRequest, editorSessionGuard } from "@/lib/editor-guard";
-import { chunkCountFor, receivedChunks, uploadRequestSchema, uploadSessionTtlMs } from "@/lib/assets";
+import {
+    chunkCountFor, receivedChunks, uploadRequestFailure, uploadRequestSchema, uploadSessionTtlMs,
+} from "@/lib/assets";
 
 type Context = { params: Promise<{ boardId: string }> };
 
@@ -16,7 +18,7 @@ export async function POST(request: NextRequest, { params }: Context) {
 
     const parsed = uploadRequestSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
-        return NextResponse.json({ message: "Invalid upload request." }, { status: 400 });
+        return NextResponse.json({ message: uploadRequestFailure(parsed.error) }, { status: 400 });
     }
     const { assetId, digest, byteLength, mimeType } = parsed.data;
     const chunkCount = chunkCountFor(byteLength);

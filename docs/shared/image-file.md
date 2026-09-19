@@ -4,7 +4,7 @@
 
 ## 목적
 
-두 Edition 모두 이미지 저장소를 쓰지 않는다. 사용자가 고른 파일을 브라우저에서 압축해 SQLite BLOB으로 넣을 수 있는 크기까지 줄인다. 이미지가 DB 안에 들어가므로 한 장의 크기가 곧 스냅샷 크기다. Plus는 그 스냅샷을 서버로 올리므로 4 MiB 상한이 한 번 더 걸린다.
+두 Edition 모두 이미지 저장소를 쓰지 않는다. 사용자가 고른 파일을 브라우저에서 압축해 SQLite BLOB으로 넣을 수 있는 크기까지 줄인다. 이미지가 DB 안에 들어가므로 한 장의 크기가 곧 스냅샷 크기다. 변경분 동기화를 쓰는 Plus 보드는 이미지를 자산으로 따로 올리므로 `maxStoredImageBytes`가 그대로 서버 상한이다.
 
 ## 상수
 
@@ -14,7 +14,7 @@
 | `maxImageSourceBytes` | 25 MiB | 받아들이는 원본 상한 |
 | `maxStoredImageBytes` | 5 MiB | DB에 넣는 결과물 상한 |
 | `maxImageDimension` | 1920 | 긴 변 상한 |
-| `imageCompressionQuality` | 0.82 | WebP 첫 품질 |
+| `imageCompressionQuality` | 0.82 | 손실 인코딩 첫 품질 |
 
 `supportedImageMimeTypes`는 JPEG·PNG·WebP 셋이다. `board-state.ts`의 이미지 검증도 이 목록과 `maxStoredImageBytes`를 그대로 쓴다.
 
@@ -33,14 +33,18 @@
 
 ```text
 canvas를 outputSize로 맞추고 다시 그린다
-toBlob("image/webp", quality)
-  → null이면 toBlob("image/png")로 대체
-  → 그것도 null이면 The image could not be compressed.
+첫 회차에 알파 유무를 한 번 판정한다 (원본이 JPEG이면 생략)
+encodeCanvas(canvas, transparent, quality)
+  → toBlob("image/webp", quality)
+  → 돌아온 타입이 webp가 아니고 알파가 없으면 toBlob("image/jpeg", quality)
+  → 그래도 아니면 앞서 받은 blob, 마지막으로 toBlob("image/png")
 결과가 5 MiB 이하면 끝
 아니면 outputSize를 0.82배, quality를 0.04 낮춤(하한 0.55) 후 반복
 ```
 
-WebP를 만들지 못하는 브라우저에서는 PNG로 떨어진다. 그 경우 품질 인자가 없어 크기 축소는 해상도 축소로만 이뤄진다.
+**요청한 타입이 돌아왔는지 직접 확인한다.** 브라우저는 지원하지 않는 타입을 받으면 `null`이 아니라 PNG를 돌려준다. Safari에는 캔버스 WebP 인코더가 없어서 `null` 검사만으로는 폴백이 영원히 실행되지 않고, 사진이 무손실 PNG로 다시 싸여 5~10배로 부푼다. 그러면 품질 인자가 없어 크기 축소가 해상도 축소로만 이뤄지고, 루프는 5 MiB 밑에 들어오는 즉시 멈추므로 결과가 3.35~5 MiB 구간에 착지한다.
+
+알파가 있으면 JPEG로 내려가지 않는다. JPEG는 투명도를 담지 못한다. 캔버스를 읽을 수 없으면(tainted 등) 알파가 있다고 보고 PNG를 유지한다.
 
 반환값은 `{ data, mimeType, label, width, height }`이고 `label`은 원본 파일명이다.
 

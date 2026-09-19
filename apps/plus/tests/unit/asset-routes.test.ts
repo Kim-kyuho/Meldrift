@@ -9,6 +9,7 @@ import { PUT as putChunk } from "@/app/api/boards/[boardId]/uploads/[uploadId]/c
 import { POST as completeUpload } from "@/app/api/boards/[boardId]/uploads/[uploadId]/complete/route";
 import { GET as getChunk } from "@/app/api/boards/[boardId]/assets/[assetId]/chunks/[index]/route";
 import { GET as getAssetBytes } from "@/app/api/boards/[boardId]/assets/[assetId]/bytes/route";
+import { maxStoredImageBytes } from "@meldrift/board/image-file";
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(), permission: vi.fn(), execute: vi.fn(), rows: vi.fn(), deleteWhere: vi.fn(),
@@ -75,6 +76,49 @@ describe("asset upload routes", () => {
         expect(rendered()).toContain("INSERT INTO upload_sessions");
         expect(rendered()).toContain("e.tab_id = $");
         expect(rendered()).toContain("EXISTS (SELECT 1 FROM boards WHERE board_id = $");
+    });
+
+    it.each([4 * 1024 * 1024 + 1, maxStoredImageBytes])(
+        "accepts a prepared image of %i bytes for chunked upload",
+        async (byteLength) => {
+            const response = await start({
+                assetId: "asset-large", digest: "a".repeat(64), byteLength, mimeType: "image/webp",
+            });
+
+            expect(response.status).toBe(200);
+            expect(await response.json()).toMatchObject({ chunkSize: 1024 * 1024, chunkCount: 5 });
+        },
+    );
+
+    it("accepts three independent images even when their combined size exceeds 4 MiB", async () => {
+        for (let index = 0; index < 3; index += 1) {
+            const response = await start({
+                assetId: `asset-${index}`, digest: "a".repeat(64),
+                byteLength: 2 * 1024 * 1024, mimeType: "image/png",
+            });
+            expect(response.status).toBe(200);
+            expect(await response.json()).toMatchObject({ chunkCount: 2 });
+        }
+        expect(mocks.execute).toHaveBeenCalledTimes(3);
+    });
+
+    it("reports the image size policy when a prepared image is too large", async () => {
+        const response = await start({
+            assetId: "asset-large", digest: "a".repeat(64),
+            byteLength: maxStoredImageBytes + 1, mimeType: "image/webp",
+        });
+        expect(response.status).toBe(400);
+        expect((await response.json()).message).toContain("5 MiB");
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it("identifies the invalid upload field without including the request contents", async () => {
+        const response = await start({
+            assetId: "asset-1", digest: "a".repeat(64), byteLength: 100, mimeType: null,
+        });
+        expect(response.status).toBe(400);
+        expect((await response.json()).message).toContain("mimeType");
+        expect(mocks.execute).not.toHaveBeenCalled();
     });
 
     it("skips the upload when the server already holds those bytes", async () => {
