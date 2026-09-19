@@ -6,6 +6,7 @@ export type BoardOperationType = "memo" | "image" | "mermaid" | "table" | "strok
 export const maxOperationsPerRequest = 500;
 export const maxChangeBytes = 1024 * 1024;
 export const changeEnvelopeBytes = 1024;
+export const maxStagedChangeBytes = 4 * 1024 * 1024;
 export const maxStagedOperations = 2000;
 export const stagedChangeMimeType = "application/json";
 export const assetChunkBytes = 1024 * 1024;

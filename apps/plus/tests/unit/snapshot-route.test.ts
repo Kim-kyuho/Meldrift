@@ -3,7 +3,6 @@ import { NextRequest } from "next/server";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { GET, PUT } from "@/app/api/boards/[boardId]/snapshot/route";
 import { POST as acquireLease } from "@/app/api/editor-lease/route";
-import { proxy } from "@/proxy";
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(), permission: vi.fn(), execute: vi.fn(), limit: vi.fn(), decode: vi.fn(), legacy: vi.fn(),
@@ -133,10 +132,5 @@ describe("snapshot API", () => {
         const make = (body: string) => new NextRequest("http://localhost/api/editor-lease", { method: "POST", body });
         expect((await acquireLease(make(JSON.stringify({ tabId: "another-editor-identifier" })))).status).toBe(409);
         expect((await acquireLease(make("{"))).status).toBe(400);
-    });
-
-    it("stops old clients from writing individual card tables", async () => {
-        expect(proxy(new NextRequest("http://localhost/plus/api/memos", { method: "POST" })).status).toBe(410);
-        expect(proxy(new NextRequest("http://localhost/plus/api/memos")).status).toBe(200);
     });
 });

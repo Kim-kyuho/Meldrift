@@ -3,9 +3,8 @@ import { and, eq } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { sql } from "drizzle-orm";
 import { db_assetChunks, db_assets } from "@/lib/db/schema";
-import { assetChunkBytes, stagedChangeMimeType } from "@meldrift/board/board-delta";
+import { assetChunkBytes, maxStagedChangeBytes, stagedChangeMimeType } from "@meldrift/board/board-delta";
 import { maxStoredImageBytes, supportedImageMimeTypes } from "@meldrift/board/image-file";
-import { maxSnapshotBytes } from "./snapshot";
 
 export { stagedChangeMimeType };
 
@@ -18,13 +17,38 @@ export const chunkCountFor = (byteLength: number) => Math.ceil(byteLength / asse
 export const chunkLengthFor = (byteLength: number, index: number) =>
     Math.min(assetChunkBytes, byteLength - index * assetChunkBytes);
 
+// An asset is one image or one staged change batch, never a whole board, so each carries its own
+// limit. Borrowing the snapshot limit here rejected images the browser is allowed to store.
+export const uploadByteLimitFor = (mimeType: string) =>
+    mimeType === stagedChangeMimeType ? maxStagedChangeBytes : maxStoredImageBytes;
+
+const describeLimit = (bytes: number) => `${Math.round(bytes / (1024 * 1024))} MiB`;
+
 export const uploadRequestSchema = z.object({
     assetId: z.string().regex(assetIdPattern),
     digest: z.string().regex(/^[a-f0-9]{64}$/),
-    byteLength: z.number().int().min(1).max(maxSnapshotBytes),
+    byteLength: z.number().int().min(1),
     mimeType: z.enum([...supportedImageMimeTypes, stagedChangeMimeType]),
-}).refine((upload) => upload.mimeType === stagedChangeMimeType
-    || upload.byteLength <= maxStoredImageBytes);
+}).superRefine((upload, context) => {
+    const limit = uploadByteLimitFor(upload.mimeType);
+    if (upload.byteLength > limit) {
+        context.addIssue({
+            code: "custom",
+            path: ["byteLength"],
+            message: `byteLength must be ${describeLimit(limit)} or smaller.`,
+        });
+    }
+});
+
+// The reply names the field and its rule. It never echoes the request, and one shared sentence for
+// every violation is what made a rejected upload impossible to tell apart from a broken session.
+export function uploadRequestFailure(error: z.ZodError) {
+    const [issue] = error.issues;
+    const field = issue?.path.join(".") || "body";
+    return issue?.code === "custom"
+        ? `Invalid upload request: ${issue.message}`
+        : `Invalid upload request: ${field} is not valid.`;
+}
 
 export type UploadRequest = z.infer<typeof uploadRequestSchema>;
 
