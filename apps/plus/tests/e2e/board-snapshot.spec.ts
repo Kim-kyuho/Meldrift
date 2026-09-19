@@ -15,7 +15,6 @@ async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 
         const request = route.request();
         const path = new URL(request.url()).pathname.replace(/^\/plus/, "");
         if (path === "/api/me") return route.fulfill({ json: { user: { email: "snapshot-e2e@example.test", isApproved: true, role: "user" } } });
-        if (path === "/api/editor-lease") return route.fulfill({ status: request.method() === "DELETE" ? 204 : 200, json: { ok: true } });
         const match = path.match(/^\/api\/boards\/(\d+)\/snapshot$/);
         if (match) {
             if (request.method() === "PUT") {
@@ -140,7 +139,7 @@ test("waits for board initialization that exceeds the default assertion timeout"
     expect(server.legacyWrites).toEqual([]);
 });
 
-test("retains unsynced edits through reload and blocks a second tab", async ({ page, context }) => {
+test("retains unsynced edits through reload and opens the board in a second tab", async ({ page, context }) => {
     const server = await mockSnapshotServer(context);
     await openBoard(page);
     server.setOffline(true);
@@ -150,7 +149,7 @@ test("retains unsynced edits through reload and blocks a second tab", async ({ p
     await expect(page.getByText("Recover this local memo", { exact: true })).toBeVisible();
     const second = await context.newPage();
     await second.goto(page.url());
-    await expect(second.getByText("This account is already editing in another tab.")).toBeVisible();
+    await expect(second.getByText("Recover this local memo", { exact: true })).toBeVisible({ timeout: 20000 });
     await second.close();
     server.setOffline(false);
     await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 15000 });

@@ -15,7 +15,6 @@ export class SnapshotSync {
     constructor(
         private database: BoardDatabaseClient,
         private endpoint: string,
-        private tabId: string,
         private onStatus: (status: SyncStatus, message?: string) => void,
         private onSaved: () => void = () => {},
     ) {}
@@ -67,7 +66,6 @@ export class SnapshotSync {
                     "Content-Type": "application/vnd.sqlite3",
                     "X-Snapshot-Revision": String(record.sync.revision),
                     "X-Snapshot-Mutation": record.sync.mutationId ?? "",
-                    "X-Editor-Tab": this.tabId,
                 },
                 body: record.bytes,
                 signal: AbortSignal.any([this.uploadController.signal, AbortSignal.timeout(60000)]),

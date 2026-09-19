@@ -10,7 +10,6 @@ vi.mock("@meldrift/board/browser-db/client", () => ({ createBoardDatabase: mocks
 const board = { ...createEmptyBoardSnapshot().board, boardId: 7 };
 const snapshot = { ...createEmptyBoardSnapshot(), board };
 let sync: { revision: number; generation: number; dirty: boolean; changedAt: number; mutationId?: string };
-let held = false;
 let database: ReturnType<typeof makeDatabase>;
 
 function makeDatabase() {
@@ -28,53 +27,39 @@ function makeDatabase() {
 describe("Plus snapshot lifecycle", () => {
     beforeEach(() => {
         sessionStorage.clear();
-        held = false;
         sync = { revision: 1, generation: 1, dirty: false, changedAt: 0 };
         database = makeDatabase();
         mocks.createDatabase.mockReturnValue(database);
-        Object.defineProperty(navigator, "locks", { configurable: true, value: {
-            request: vi.fn(async (_name, _options, callback) => {
-                if (held) return callback(null);
-                held = true;
-                try { await callback({ name: "editor" }); }
-                finally { held = false; }
-            }),
-        } });
-        vi.stubGlobal("fetch", vi.fn(async (url: string, options?: RequestInit) => {
+        vi.stubGlobal("fetch", vi.fn(async (url: string) => {
             if (url === "/api/me") return Response.json({ user: { email: "editor@example.com", isApproved: true } });
-            if (url === "/api/editor-lease") return new Response(null, { status: options?.method === "DELETE" ? 204 : 200 });
             return new Response(new Uint8Array(16), { headers: { "Content-Type": "application/vnd.sqlite3", "X-Snapshot-Revision": "1" } });
         }));
     });
     afterEach(async () => { await act(async () => {}); vi.unstubAllGlobals(); });
 
-    it("loads a matching local revision without importing and releases the editor on unmount", async () => {
+    it("loads a matching local revision without importing and closes the database on unmount", async () => {
         const { result, unmount } = renderHook(() => useBoardSnapshot(board));
         await waitFor(() => expect(result.current.canEdit).toBe(true));
         expect(database.import).not.toHaveBeenCalled();
         expect(mocks.createDatabase).toHaveBeenCalledWith("meldrift-plus:editor%40example.com:7", board);
         unmount();
-        await waitFor(() => expect(held).toBe(false));
-        expect(database.close).toHaveBeenCalledOnce();
+        await waitFor(() => expect(database.close).toHaveBeenCalledOnce());
     });
 
-    it("reuses the tab identifier on reload and survives StrictMode initialization", async () => {
-        sessionStorage.setItem("meldrift-plus-editor:editor@example.com", "persisted-tab-identifier-1234");
+    it("survives StrictMode initialization", async () => {
         const { result, unmount } = renderHook(() => useBoardSnapshot(board), { wrapper: StrictMode });
         await waitFor(() => expect(result.current.canEdit).toBe(true));
-        const lease = vi.mocked(fetch).mock.calls.find(([url, options]) => url === "/api/editor-lease" && options?.method === "POST");
-        expect(JSON.parse(lease?.[1]?.body as string)).toEqual({ tabId: "persisted-tab-identifier-1234" });
         unmount();
-        await waitFor(() => expect(held).toBe(false));
     });
 
-    it("does not open a database or acquire a server lease in a second tab", async () => {
-        held = true;
-        const { result, unmount } = renderHook(() => useBoardSnapshot(board));
-        await waitFor(() => expect(result.current.status).toBe("blocked"));
-        expect(mocks.createDatabase).not.toHaveBeenCalled();
-        expect(vi.mocked(fetch).mock.calls.some(([url]) => url === "/api/editor-lease")).toBe(false);
-        unmount();
+    it("opens a second view of the same board instead of refusing it", async () => {
+        const first = renderHook(() => useBoardSnapshot(board));
+        await waitFor(() => expect(first.result.current.canEdit).toBe(true));
+        const second = renderHook(() => useBoardSnapshot(board));
+        await waitFor(() => expect(second.result.current.canEdit).toBe(true));
+        expect(second.result.current.status).not.toBe("blocked");
+        first.unmount();
+        second.unmount();
     });
 
     it("preserves conflicting local data until explicit server restore", async () => {
@@ -84,7 +69,6 @@ describe("Plus snapshot lifecycle", () => {
         expect(database.import).not.toHaveBeenCalled();
         expect(database.replace).not.toHaveBeenCalled();
         unmount();
-        await waitFor(() => expect(held).toBe(false));
     });
 
     it("acknowledges a previously accepted upload whose response was lost", async () => {
@@ -100,6 +84,5 @@ describe("Plus snapshot lifecycle", () => {
         expect(database.acknowledge).toHaveBeenCalledWith(3, 1);
         expect(database.import).not.toHaveBeenCalled();
         unmount();
-        await waitFor(() => expect(held).toBe(false));
     });
 });

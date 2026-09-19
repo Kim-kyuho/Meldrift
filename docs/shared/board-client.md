@@ -21,7 +21,7 @@ type BoardClientProps = {
 | Prop | 기본값 | 의미 |
 | --- | --- | --- |
 | `initialSnapshot` | 필수 | 화면을 채울 초기 보드. 이미 읽혀 있는 값이어야 한다 |
-| `canEdit` | `true` | 카드 편집 허용 여부. Free는 넘기지 않고, Plus는 계정 권한과 편집 리스를 곱해 넘긴다 |
+| `canEdit` | `true` | 카드 편집 허용 여부. Free는 넘기지 않고, Plus는 계정 권한과 보드가 열린 상태인지를 곱해 넘긴다 |
 | `permissionMessage` | `Please sign in before editing cards.` | `canEdit`이 false일 때 띄울 문구 |
 | `viewportRef` | 내부 ref | 보드 스크롤 레이어. Plus가 미리보기 캡처에 쓰려고 밖에서 받아 간다 |
 | `renderControls` | 필수 | 메뉴와 저장 계층을 Edition이 그린다 |

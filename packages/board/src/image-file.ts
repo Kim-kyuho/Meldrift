@@ -2,7 +2,8 @@ export const imageInputAccept = "image/jpeg,image/png,image/webp";
 export const maxImageSourceBytes = 25 * 1024 * 1024;
 export const maxStoredImageBytes = 5 * 1024 * 1024;
 export const maxImageDimension = 1920;
-export const imageCompressionQuality = 0.82;
+export const imageCompressionQualities = [0.82, 0.7, 0.6, 0.5];
+export const imageFitRounds = 12;
 
 export const supportedImageMimeTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 export type SupportedImageMimeType = (typeof supportedImageMimeTypes)[number];
@@ -148,32 +149,40 @@ export async function prepareImageFile(file: File): Promise<PreparedImage> {
         const context = canvas.getContext("2d");
         if (!context) throw new Error("Image compression is not available in this browser.");
 
-        let quality = imageCompressionQuality;
         let compressed: Blob | null = null;
         let transparent = false;
 
-        for (let attempt = 0; attempt < 10; attempt += 1) {
+        // The budget decides the picture, not the other way round. Quality is spent first because
+        // it costs no pixels; resolution goes only once quality has nothing left to give. A
+        // lossless encoder ignores quality, so there the first answer already settles the round.
+        for (let round = 0; round < imageFitRounds && !compressed; round += 1) {
             canvas.width = outputSize.width;
             canvas.height = outputSize.height;
             context.clearRect(0, 0, canvas.width, canvas.height);
             context.drawImage(image, 0, 0, canvas.width, canvas.height);
-            if (attempt === 0 && file.type !== "image/jpeg") {
+            if (round === 0 && file.type !== "image/jpeg") {
                 transparent = hasTransparency(context, canvas.width, canvas.height);
             }
 
-            compressed = await encodeCanvas(canvas, transparent, quality);
-            if (!compressed) throw new Error("The image could not be compressed.");
-            if (compressed.size <= maxStoredImageBytes) break;
+            for (const quality of imageCompressionQualities) {
+                const encoded = await encodeCanvas(canvas, transparent, quality);
+                if (!encoded) throw new Error("The image could not be compressed.");
+                if (encoded.size <= maxStoredImageBytes) {
+                    compressed = encoded;
+                    break;
+                }
+                if (encoded.type === "image/png") break;
+            }
 
-            outputSize = {
-                width: Math.max(1, Math.round(outputSize.width * 0.82)),
-                height: Math.max(1, Math.round(outputSize.height * 0.82)),
-            };
-            quality = Math.max(0.55, quality - 0.04);
-            compressed = null;
+            if (!compressed) {
+                outputSize = {
+                    width: Math.max(1, Math.round(outputSize.width * 0.8)),
+                    height: Math.max(1, Math.round(outputSize.height * 0.8)),
+                };
+            }
         }
 
-        if (!compressed || compressed.size > maxStoredImageBytes) {
+        if (!compressed) {
             throw new Error("The image is still too large after compression.");
         }
         if (!isSupportedImageMimeType(compressed.type)) {

@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
         RETURNING chunk_index`);
     if (!result.rows.length) {
         return NextResponse.json(
-            { message: "The session or editor lease changed. Reload to recover." }, { status: 409 });
+            { message: "The session changed. Reload to recover." }, { status: 409 });
     }
 
     return NextResponse.json({ ok: true, index });

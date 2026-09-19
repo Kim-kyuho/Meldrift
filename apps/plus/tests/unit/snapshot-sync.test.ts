@@ -19,7 +19,7 @@ function setup() {
         close: vi.fn(),
     };
     const status = vi.fn();
-    const manager = new SnapshotSync(database as unknown as BoardDatabaseClient, "/api/boards/1/snapshot", "tab", status);
+    const manager = new SnapshotSync(database as unknown as BoardDatabaseClient, "/api/boards/1/snapshot", status);
     return { manager, database, status, record: () => record, setBytes: (bytes: ArrayBuffer) => { record.bytes = bytes; } };
 }
 

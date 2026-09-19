@@ -50,7 +50,7 @@ return <BoardSnapshotClient key={boardId} board={{ boardId, title, width, height
 | Prop | 의미 |
 | --- | --- |
 | `initialSnapshot` | 동기화 계층이 확정한 초기 보드 |
-| `editingAllowed` | 편집 리스를 쥐고 있는가 |
+| `editingAllowed` | 보드가 편집 가능한 상태인가 |
 | `onSnapshotChange` | 스냅샷이 바뀌었을 때 부를 저장 함수 |
 | `serverSaveVersion` | 서버 저장이 성공한 횟수. 미리보기 갱신 트리거 |
 
@@ -60,7 +60,7 @@ return <BoardSnapshotClient key={boardId} board={{ boardId, title, width, height
 const canEdit = canEditCard && editingAllowed;
 ```
 
-두 가지를 곱한다. `canEditCard`는 계정이 승인됐는가(`useBoardAuth`), `editingAllowed`는 이 탭이 편집 자리를 쥐고 있는가다. 둘 중 하나라도 없으면 공유 BoardClient가 카드 조작을 막고 권한 문구를 띄운다.
+두 가지를 곱한다. `canEditCard`는 계정이 승인됐는가(`useBoardAuth`), `editingAllowed`는 보드가 편집 가능한 상태인가다(`blocked`이면 false). 둘 중 하나라도 없으면 공유 BoardClient가 카드 조작을 막고 권한 문구를 띄운다.
 
 문구도 상황에 따라 갈린다.
 
@@ -98,4 +98,4 @@ useEffect(() => {
 ## 변경 시 확인 지점
 
 - 공유 BoardClient의 `BoardControls` 계약이 바뀌면 Free의 `BoardControls`와 여기의 `renderControls`를 함께 고쳐야 한다.
-- `canEdit`은 계정 권한과 편집 리스의 곱이다. 한쪽만 보고 판단하는 코드를 새로 넣지 않는다.
+- `canEdit`은 계정 권한과 보드 상태의 곱이다. 한쪽만 보고 판단하는 코드를 새로 넣지 않는다.

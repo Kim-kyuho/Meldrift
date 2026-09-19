@@ -26,19 +26,17 @@ async function send(input: string, init: RequestInit) {
 
 export type AssetUpload = {
     boardEndpoint: string;
-    tabId: string;
     assetId: string;
     data: ArrayBuffer;
     mimeType: string;
     signal?: AbortSignal;
 };
 
-export async function uploadAsset({ boardEndpoint, tabId, assetId, data, mimeType, signal }: AssetUpload) {
-    const editor = { "X-Editor-Tab": tabId };
+export async function uploadAsset({ boardEndpoint, assetId, data, mimeType, signal }: AssetUpload) {
     const digest = await hexDigest(data);
     const started = await send(`${boardEndpoint}/uploads`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...editor },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assetId, digest, byteLength: data.byteLength, mimeType }),
         signal,
     });
@@ -53,14 +51,11 @@ export async function uploadAsset({ boardEndpoint, tabId, assetId, data, mimeTyp
             headers: {
                 "Content-Type": "application/octet-stream",
                 "X-Chunk-Digest": await hexDigest(chunk),
-                ...editor,
             },
             body: chunk,
             signal,
         });
     }
 
-    await send(`${boardEndpoint}/uploads/${started.uploadId}/complete`, {
-        method: "POST", headers: editor, signal,
-    });
+    await send(`${boardEndpoint}/uploads/${started.uploadId}/complete`, { method: "POST", signal });
 }

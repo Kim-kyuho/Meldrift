@@ -55,7 +55,8 @@ type State = {
     canEdit: boolean;
 };
 
-// Route transitions in this tab must finish releasing the previous editor first.
+// Route transitions in this tab must finish closing the previous worker before the next opens
+// the same browser database.
 let editorCleanup = Promise.resolve();
 
 export function useBoardSnapshot(board: BoardInfo) {
@@ -68,12 +69,8 @@ export function useBoardSnapshot(board: BoardInfo) {
     useEffect(() => {
         let active = true;
         let blocked = false;
-        let renewing = false;
-        let releaseLock: (() => void) | undefined;
-        let heartbeat: ReturnType<typeof setTimeout> | undefined;
         let database: BoardDatabaseClient | undefined;
         let manager: BoardSync | undefined;
-        let tabId = "";
         const controller = new AbortController();
         const update = (status: SyncStatus, message = "") => {
             if (blocked && status !== "blocked") return;
@@ -84,30 +81,6 @@ export function useBoardSnapshot(board: BoardInfo) {
             manager?.stop();
             update("blocked", message);
         };
-        const lease = async () => {
-            const response = await fetch("/api/editor-lease", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tabId }),
-                signal: controller.signal,
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message ?? "The editor session is no longer active.");
-            }
-        };
-        const renew = async () => {
-            if (renewing || blocked || !active) return;
-            renewing = true;
-            try { await lease(); }
-            catch (error) {
-                if (active) block(error instanceof Error ? error.message : "Editor verification failed.");
-                return;
-            } finally {
-                renewing = false;
-            }
-            if (active) heartbeat = setTimeout(() => { void renew(); }, 20000);
-        };
 
         async function initialize() {
             await editorCleanup;
@@ -116,21 +89,6 @@ export function useBoardSnapshot(board: BoardInfo) {
             if (!authResponse.ok) throw new Error("Authentication could not be checked.");
             const { user } = await authResponse.json();
             const canEdit = user?.isApproved === true;
-            if (canEdit) {
-                if (!navigator.locks) throw new Error("This browser requires HTTPS and Web Locks to edit.");
-                const acquired = await new Promise<boolean>((resolve, reject) => {
-                    navigator.locks.request(`meldrift-plus-editor:${user.email}`, { ifAvailable: true }, async (lock) => {
-                        if (!lock || !active) { resolve(false); return; }
-                        await new Promise<void>((release) => { releaseLock = release; resolve(true); });
-                    }).catch(reject);
-                });
-                if (!acquired) throw new Error("This account is already editing in another tab.");
-                const tabKey = `meldrift-plus-editor:${user.email}`;
-                tabId = sessionStorage.getItem(tabKey) ?? crypto.randomUUID();
-                sessionStorage.setItem(tabKey, tabId);
-                await lease();
-                heartbeat = setTimeout(() => { void renew(); }, 20000);
-            }
             if (!active) return;
             database = createBoardDatabase(`meldrift-plus:${encodeURIComponent(user?.email ?? "guest")}:${board.boardId}`, board);
             databaseRef.current = database;
@@ -183,8 +141,8 @@ export function useBoardSnapshot(board: BoardInfo) {
             if (canEdit) {
                 const onSaved = () => { if (active) setServerSaveVersion((value) => value + 1); };
                 manager = storageMode === "delta"
-                    ? new ChangeSync(database, boardEndpoint, tabId, update, onSaved)
-                    : new SnapshotSync(database, `${boardEndpoint}/snapshot`, tabId, update, onSaved);
+                    ? new ChangeSync(database, boardEndpoint, update, onSaved)
+                    : new SnapshotSync(database, `${boardEndpoint}/snapshot`, update, onSaved);
                 managerRef.current = manager;
                 const pending = await database.record();
                 const queued = storageMode === "delta" ? await database.outbox() : null;
@@ -197,18 +155,9 @@ export function useBoardSnapshot(board: BoardInfo) {
         void initialize().catch((error) => {
             if (active) block(error instanceof Error ? error.message : "Board initialization failed.");
         });
-        const onFocus = () => {
-            if (tabId && active) {
-                clearTimeout(heartbeat);
-                void renew();
-            }
-        };
-        window.addEventListener("focus", onFocus);
         return () => {
             active = false;
             controller.abort();
-            clearTimeout(heartbeat);
-            window.removeEventListener("focus", onFocus);
             managerRef.current = null;
             databaseRef.current = null;
             const previousCleanup = editorCleanup;
@@ -216,14 +165,7 @@ export function useBoardSnapshot(board: BoardInfo) {
                 await previousCleanup;
                 if (manager) await manager.close();
                 else database?.close();
-                if (tabId) {
-                    await fetch("/api/editor-lease", {
-                        method: "DELETE", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ tabId }), keepalive: true,
-                        signal: AbortSignal.timeout(5000),
-                    }).catch(() => {});
-                }
-            })().finally(() => { releaseLock?.(); }).catch(() => {});
+            })().catch(() => {});
         };
     }, [board, attempt]);
 

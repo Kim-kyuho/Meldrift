@@ -1,6 +1,6 @@
 # Route Handler 상세설계
 
-소스: `app/api/boards/route.ts`, `app/api/boards/[boardId]/route.ts`, `app/api/boards/[boardId]/markdown/route.ts`, `app/api/boards/[boardId]/snapshot/route.ts`, `app/api/boards/[boardId]/snapshot/images/[imageId]/route.ts`, `app/api/boards/[boardId]/state/route.ts`, `app/api/boards/[boardId]/changes/route.ts`, `app/api/boards/[boardId]/uploads/**`, `app/api/boards/[boardId]/assets/**`, `app/api/boards/[boardId]/transition/route.ts`, `app/api/editor-lease/route.ts`, `proxy.ts`
+소스: `app/api/boards/route.ts`, `app/api/boards/[boardId]/route.ts`, `app/api/boards/[boardId]/markdown/route.ts`, `app/api/boards/[boardId]/snapshot/route.ts`, `app/api/boards/[boardId]/snapshot/images/[imageId]/route.ts`, `app/api/boards/[boardId]/state/route.ts`, `app/api/boards/[boardId]/changes/route.ts`, `app/api/boards/[boardId]/uploads/**`, `app/api/boards/[boardId]/assets/**`, `app/api/boards/[boardId]/transition/route.ts`
 
 Free Edition에는 이 계층이 없다. 브라우저 SQLite 워커가 같은 자리를 대신한다.
 
@@ -13,24 +13,23 @@ Free Edition에는 이 계층이 없다. 브라우저 SQLite 워커가 같은 �
 | `/api/boards` | POST | 관리자 |
 | `/api/boards/[boardId]` | PATCH, DELETE | 관리자 |
 | `/api/boards/[boardId]/snapshot` | GET | 없음 |
-| `/api/boards/[boardId]/snapshot` | PUT | 카드 편집 + 편집 리스 |
+| `/api/boards/[boardId]/snapshot` | PUT | 카드 편집 |
 | `/api/boards/[boardId]/snapshot/images/[imageId]` | GET | 없음 |
 | `/api/boards/[boardId]/state` | GET | 없음 |
 | `/api/boards/[boardId]/changes` | GET | 없음 |
-| `/api/boards/[boardId]/changes` | POST | 카드 편집 + 편집 리스 |
-| `/api/boards/[boardId]/uploads` | POST | 카드 편집 + 편집 리스 |
-| `/api/boards/[boardId]/uploads/[uploadId]` | GET | 카드 편집 + 편집 리스 |
-| `/api/boards/[boardId]/uploads/[uploadId]/chunks/[index]` | PUT | 카드 편집 + 편집 리스 |
-| `/api/boards/[boardId]/uploads/[uploadId]/complete` | POST | 카드 편집 + 편집 리스 |
+| `/api/boards/[boardId]/changes` | POST | 카드 편집 |
+| `/api/boards/[boardId]/uploads` | POST | 카드 편집 |
+| `/api/boards/[boardId]/uploads/[uploadId]` | GET | 카드 편집 |
+| `/api/boards/[boardId]/uploads/[uploadId]/chunks/[index]` | PUT | 카드 편집 |
+| `/api/boards/[boardId]/uploads/[uploadId]/complete` | POST | 카드 편집 |
 | `/api/boards/[boardId]/assets/[assetId]` | GET | 없음 |
 | `/api/boards/[boardId]/assets/[assetId]/bytes` | GET | 없음 |
 | `/api/boards/[boardId]/assets/[assetId]/chunks/[index]` | GET | 없음 |
 | `/api/boards/[boardId]/markdown` | GET | 없음 |
 | `/api/boards/[boardId]/transition` | POST | 관리자 |
 | `/api/boards/[boardId]/preview` | PUT | 카드 편집 |
-| `/api/editor-lease` | POST, DELETE | 카드 편집 |
 
-보드 내용을 읽는 경로에는 권한 검사가 없다. 쓰기 경로와 업로드 진행 상태 조회만 `getCardPermissionMessage`와 편집 리스를 통과해야 한다. 업로드 상태는 그 업로드를 시작한 계정에게만 보인다.
+보드 내용을 읽는 경로에는 권한 검사가 없다. 쓰기 경로와 업로드 진행 상태 조회만 `getCardPermissionMessage`와 살아 있는 세션을 통과해야 한다. 업로드 상태는 그 업로드를 시작한 계정에게만 보인다.
 
 ## 410으로 막힌 경로
 
@@ -100,7 +99,6 @@ Cache-Control: no-store
 | --- | --- |
 | `X-Snapshot-Revision` | 0 이상의 안전한 정수 |
 | `X-Snapshot-Mutation` | `^[a-zA-Z0-9:-]{1,160}$` |
-| `X-Editor-Tab` | `^[a-zA-Z0-9-]{20,80}$` |
 
 크기는 `Content-Length`와 실제 바이트 길이를 모두 본다. 헤더만 믿지 않는다.
 
@@ -158,7 +156,6 @@ Cache-Control: no-store
 
 | 항목 | 검증 |
 | --- | --- |
-| `X-Editor-Tab` | `^[a-zA-Z0-9-]{20,80}$` |
 | `mutationId` | `^[a-zA-Z0-9:-]{1,160}$` |
 | `operations` | 1개 이상 500개 이하 |
 | 본문 크기 | `Content-Length`와 실제 바이트 길이 모두 1 MiB 이하 |
@@ -234,15 +231,6 @@ Cache-Control: no-store
 스냅샷 경로는 Free 화면이 쓰는 것과 **같은 함수**를 쓴다. 두 Edition의 문서가 갈라질 여지가 없어졌다.
 
 구버전 SQL 경로는 메모의 네 꼭짓점을 `CROSS JOIN LATERAL VALUES`로 펼치고, 카드를 `UNION ALL`로 모아 포함 여부로 조인한 뒤, `ROW_NUMBER() OVER (PARTITION BY memo_id, corner_order ORDER BY z DESC, card_type ASC, card_id ASC)`로 꼭짓점마다 한 장만 남긴다. 스냅샷으로 옮긴 보드에서는 더 이상 실행되지 않는다.
-
-## `/api/editor-lease`
-
-| 메서드 | 동작 |
-| --- | --- |
-| POST | `{ tabId }`로 60초 리스를 발급하거나 갱신한다. 남이 쥐고 있으면 409 |
-| DELETE | `{ tabId }`로 자기 리스를 반납한다. 항상 204 |
-
-`tabId`는 `^[a-zA-Z0-9-]{20,80}$`여야 한다. 자세한 판정 규칙은 [보드 스냅샷](./board-snapshot.md#리스)에 있다.
 
 ## `/api/boards`, `/api/boards/[boardId]`
 
