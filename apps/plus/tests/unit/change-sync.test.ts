@@ -8,6 +8,8 @@ import type { OutboxBatch, StoredBoard } from "@meldrift/board/browser-db/protoc
 const move: BoardOperation = { type: "memo", syncId: "memo-1", action: "update", changes: { x: 40 } };
 const resize: BoardOperation = { type: "memo", syncId: "memo-2", action: "update", changes: { width: 400 } };
 
+const managers: ChangeSync[] = [];
+
 function setup() {
     let record: StoredBoard = {
         bytes: new ArrayBuffer(0),
@@ -53,6 +55,7 @@ function setup() {
     const manager = new ChangeSync(
         database as unknown as BoardDatabaseClient, "/api/boards/1", "tab-abcdefghijklmnopqrst", status,
     );
+    managers.push(manager);
     return {
         manager, database, status,
         queue: (...operations: BoardOperation[]) => { pending = [...pending, ...operations]; },
@@ -68,7 +71,7 @@ const imageOperation = (assetId: string): BoardOperation => ({
     type: "image", syncId: "image-1", action: "update", asset: true, changes: { assetId },
 });
 
-const settle = async () => { for (let turn = 0; turn < 80; turn += 1) await vi.advanceTimersByTimeAsync(1); };
+const settle = () => Promise.all(managers.map((manager) => manager.settled()));
 
 function respondByUrl(handlers: Record<string, unknown>) {
     vi.mocked(fetch).mockImplementation(async (input) => {
@@ -83,7 +86,11 @@ describe("변경분 전송", () => {
         vi.useFakeTimers();
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, revision: 5 }) }));
     });
-    afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+    afterEach(async () => {
+        await Promise.all(managers.splice(0).map((manager) => manager.pause()));
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+    });
 
     it("마지막 로컬 저장 3초 뒤에 밀린 변경만 보낸다", async () => {
         const { manager, queue, database } = setup();

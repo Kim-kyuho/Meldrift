@@ -171,10 +171,14 @@ export class ChangeSync {
         this.controller?.abort();
     }
 
-    async pause() {
-        this.stop();
+    async settled() {
         await this.queue;
         await this.flight;
+    }
+
+    async pause() {
+        this.stop();
+        await this.settled();
     }
 
     async close() {
