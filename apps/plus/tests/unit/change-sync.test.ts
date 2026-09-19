@@ -53,7 +53,7 @@ function setup() {
 
     const status = vi.fn();
     const manager = new ChangeSync(
-        database as unknown as BoardDatabaseClient, "/api/boards/1", "tab-abcdefghijklmnopqrst", status,
+        database as unknown as BoardDatabaseClient, "/api/boards/1", status,
     );
     managers.push(manager);
     return {

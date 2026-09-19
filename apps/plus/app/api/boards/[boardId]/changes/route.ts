@@ -40,8 +40,7 @@ export async function POST(request: NextRequest, { params }: Context) {
     if (message || !user) return NextResponse.json({ message }, { status: 403 });
 
     const boardId = Number((await params).boardId);
-    const tabId = request.headers.get("X-Editor-Tab") ?? "";
-    if (!Number.isSafeInteger(boardId) || boardId <= 0 || !/^[a-zA-Z0-9-]{20,80}$/.test(tabId)) {
+    if (!Number.isSafeInteger(boardId) || boardId <= 0) {
         return NextResponse.json({ message: "Invalid change request." }, { status: 400 });
     }
     if (Number(request.headers.get("Content-Length")) > maxChangeBytes) return tooLarge();
@@ -79,7 +78,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         changeRequest = parseChangeRequest(payload, staged ? maxStagedOperations : maxOperationsPerRequest);
         digest = changeRequestDigest(changeRequest);
         statements = buildCommitStatements(changeRequest, {
-            boardId, userId: user.id, sessionHash: hash, tabId,
+            boardId, userId: user.id, sessionHash: hash,
             baseRevision: changeRequest.baseRevision, mutationId: changeRequest.mutationId, digest,
         });
     } catch (error) {
@@ -116,7 +115,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         return NextResponse.json({ ok: true, revision: applied.revision });
     }
     return NextResponse.json(
-        { message: "The session, editor lease, board version or storage mode changed. Reload to recover." },
+        { message: "The session, board version or storage mode changed. Reload to recover." },
         { status: 409 },
     );
 }

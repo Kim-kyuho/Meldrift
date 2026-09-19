@@ -80,7 +80,7 @@
 
 ```text
 1. board_sync 행을 만들고 잠근다      INSERT ... ON CONFLICT DO UPDATE
-2. 카드 문장들                        조건: revision = baseRevision AND 세션·리스 AND 미적용 mutationId
+2. 카드 문장들                        조건: revision = baseRevision AND 살아 있는 세션 AND 미적용 mutationId
 3. 판 번호 증가 + mutation 기록        같은 조건, 한 문장(CTE)
 ```
 
@@ -97,7 +97,7 @@
 | 커밋 성공 | `200 { ok: true, revision }` |
 | 같은 `mutationId`·같은 digest가 이미 적용됨 | `200 { ok: true, revision }` (그때의 판 번호) |
 | 같은 `mutationId`·다른 digest | `409` |
-| 판 번호·세션·리스가 어긋남 | `409` |
+| 판 번호·세션이 어긋남 | `409` |
 
 마지막 문장이 행을 돌려주지 않았을 때만 `sync_mutations`를 다시 읽어 재전송과 충돌을 가른다. 정상 경로는 왕복이 한 번이다.
 

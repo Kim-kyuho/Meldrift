@@ -82,4 +82,52 @@ describe("useMermaidRenderer", () => {
         expect(mermaidMock.render).toHaveBeenCalledTimes(2);
         expect(mermaidMock.parse).not.toHaveBeenCalled();
     });
+
+    it("keeps the rendered SVG while removing Mermaid temporary elements", async () => {
+        mermaidMock.render.mockImplementation(async (id: string) => {
+            const preview = document.createElement("div");
+            preview.className = "mermaid-rendered";
+            const renderedSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            renderedSvg.id = id;
+            preview.appendChild(renderedSvg);
+            document.body.appendChild(preview);
+
+            const temporaryContainer = document.createElement("div");
+            temporaryContainer.id = `d${id}`;
+            document.body.appendChild(temporaryContainer);
+
+            return { svg: `<svg id="${id}"></svg>` };
+        });
+
+        const { result } = renderHook(() => useMermaidRenderer({ source: "flowchart LR\nA-->B", mermaidId: 11 }));
+
+        await waitFor(() => expect(result.current.svg).toContain("<svg"));
+        expect(document.querySelector(".mermaid-rendered svg")?.isConnected).toBe(true);
+        expect(document.querySelector("[id^='dmeldrift-mermaid-11-']")).toBeNull();
+    });
+
+
+    it("updates the displayed SVG when only the source changes", async () => {
+        mermaidMock.render.mockImplementation(async (id: string, source: string) => ({
+            svg: `<svg id="${id}" data-source="${source}"></svg>`,
+        }));
+
+        const MermaidPreview = ({ source }: { source: string }) => {
+            const { svg } = useMermaidRenderer({ source, mermaidId: 12 });
+
+            return createElement("div", {
+                className: "mermaid-rendered",
+                dangerouslySetInnerHTML: { __html: svg },
+            });
+        };
+        const { container, rerender } = render(createElement(MermaidPreview, { source: "flowchart LR; A-->B" }));
+
+        await waitFor(() => expect(container.querySelector("svg")?.getAttribute("data-source"))
+            .toBe("flowchart LR; A-->B"));
+
+        rerender(createElement(MermaidPreview, { source: "flowchart LR; B-->C" }));
+
+        await waitFor(() => expect(container.querySelector("svg")?.getAttribute("data-source"))
+            .toBe("flowchart LR; B-->C"));
+    });
 });

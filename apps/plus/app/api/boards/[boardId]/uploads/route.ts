@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         RETURNING upload_id`);
     if (!result.rows.length) {
         return NextResponse.json(
-            { message: "The session, editor lease or board is no longer available." }, { status: 409 });
+            { message: "The session or board is no longer available." }, { status: 409 });
     }
 
     return NextResponse.json({ ok: true, uploadId, chunkSize: assetChunkBytes, chunkCount, received: [] });

@@ -49,9 +49,8 @@ export async function PUT(request: NextRequest, { params }: Context) {
     const revisionHeader = request.headers.get("X-Snapshot-Revision");
     const revision = Number(revisionHeader);
     const mutationId = request.headers.get("X-Snapshot-Mutation") ?? "";
-    const tabId = request.headers.get("X-Editor-Tab") ?? "";
     if (!Number.isSafeInteger(boardId) || boardId <= 0 || revisionHeader === null || !Number.isSafeInteger(revision) || revision < 0
-        || !/^[a-zA-Z0-9:-]{1,160}$/.test(mutationId) || !/^[a-zA-Z0-9-]{20,80}$/.test(tabId)) {
+        || !/^[a-zA-Z0-9:-]{1,160}$/.test(mutationId)) {
         return NextResponse.json({ message: "Invalid snapshot request." }, { status: 400 });
     }
     if (Number(request.headers.get("Content-Length")) > maxSnapshotBytes) {
@@ -71,11 +70,9 @@ export async function PUT(request: NextRequest, { params }: Context) {
         INSERT INTO board_snapshots (board_id, snapshot, format_version, revision, mutation_id)
         SELECT b.board_id, decode(${Buffer.from(bytes).toString("hex")}, 'hex'), ${snapshotFormatVersion},
             ${revision + 1}, ${mutationId}
-        FROM (SELECT board_id FROM boards WHERE board_id = ${boardId} FOR UPDATE) b,
-            users u JOIN editor_leases e ON e.user_id = u.id
+        FROM (SELECT board_id FROM boards WHERE board_id = ${boardId} FOR UPDATE) b, users u
         WHERE b.board_id = ${boardId} AND u.id = ${user.id} AND u.permission_flg = true
             AND u.session_token_hash = ${hash} AND u.session_expires_at > now()
-            AND e.session_hash = u.session_token_hash AND e.tab_id = ${tabId} AND e.expires_at > now()
             AND (${revision} = 0 OR EXISTS (SELECT 1 FROM board_snapshots WHERE board_id = ${boardId}))
             AND NOT EXISTS (SELECT 1 FROM board_sync WHERE board_id = ${boardId} AND mode <> 'snapshot')
         ON CONFLICT (board_id) DO UPDATE SET
@@ -86,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
         RETURNING revision
     `);
     if (!result.rows.length) {
-        return NextResponse.json({ message: "The session, editor lease, board version or storage mode changed. Reload to recover." }, { status: 409 });
+        return NextResponse.json({ message: "The session, board version or storage mode changed. Reload to recover." }, { status: 409 });
     }
     return NextResponse.json({ ok: true, revision: Number(result.rows[0].revision) });
 }

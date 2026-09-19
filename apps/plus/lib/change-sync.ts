@@ -35,7 +35,6 @@ export class ChangeSync {
     constructor(
         private database: BoardDatabaseClient,
         private boardEndpoint: string,
-        private tabId: string,
         private onStatus: (status: SyncStatus, message?: string) => void,
         private onCommitted: () => void = () => {},
     ) {}
@@ -72,7 +71,7 @@ export class ChangeSync {
             const asset = assetId ? await this.database.asset(assetId) : null;
             if (!asset) throw new Error("The image bytes are missing from local storage.");
             await uploadAsset({
-                boardEndpoint: this.boardEndpoint, tabId: this.tabId, assetId,
+                boardEndpoint: this.boardEndpoint, assetId,
                 data: asset.data, mimeType: asset.mimeType, signal: this.controller?.signal,
             });
         }
@@ -94,7 +93,7 @@ export class ChangeSync {
 
     private async stage(mutationId: string, encoded: Uint8Array) {
         await uploadAsset({
-            boardEndpoint: this.boardEndpoint, tabId: this.tabId, assetId: mutationId,
+            boardEndpoint: this.boardEndpoint, assetId: mutationId,
             data: encoded.buffer.slice(
                 encoded.byteOffset, encoded.byteOffset + encoded.byteLength) as ArrayBuffer,
             mimeType: stagedChangeMimeType, signal: this.controller?.signal,
@@ -124,7 +123,7 @@ export class ChangeSync {
 
             const response = await fetch(`${this.boardEndpoint}/changes`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "X-Editor-Tab": this.tabId },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(staged
                     ? { baseRevision: record.sync.revision, mutationId: batch.mutationId, staged: true }
                     : {

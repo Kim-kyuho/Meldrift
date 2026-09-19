@@ -14,7 +14,8 @@
 | `maxImageSourceBytes` | 25 MiB | 받아들이는 원본 상한 |
 | `maxStoredImageBytes` | 5 MiB | DB에 넣는 결과물 상한 |
 | `maxImageDimension` | 1920 | 긴 변 상한 |
-| `imageCompressionQuality` | 0.82 | 손실 인코딩 첫 품질 |
+| `imageCompressionQualities` | 0.82 → 0.5 | 손실 인코딩 품질 사다리 |
+| `imageFitRounds` | 12 | 해상도를 줄이는 최대 회차 |
 
 `supportedImageMimeTypes`는 JPEG·PNG·WebP 셋이다. `board-state.ts`의 이미지 검증도 이 목록과 `maxStoredImageBytes`를 그대로 쓴다.
 
@@ -34,15 +35,19 @@
 ```text
 canvas를 outputSize로 맞추고 다시 그린다
 첫 회차에 알파 유무를 한 번 판정한다 (원본이 JPEG이면 생략)
-encodeCanvas(canvas, transparent, quality)
-  → toBlob("image/webp", quality)
-  → 돌아온 타입이 webp가 아니고 알파가 없으면 toBlob("image/jpeg", quality)
-  → 그래도 아니면 앞서 받은 blob, 마지막으로 toBlob("image/png")
-결과가 5 MiB 이하면 끝
-아니면 outputSize를 0.82배, quality를 0.04 낮춤(하한 0.55) 후 반복
+품질 사다리를 0.82부터 내려가며:
+  encodeCanvas(canvas, transparent, quality)
+    → toBlob("image/webp", quality)
+    → 돌아온 타입이 webp가 아니고 알파가 없으면 toBlob("image/jpeg", quality)
+    → 그래도 아니면 앞서 받은 blob, 마지막으로 toBlob("image/png")
+  예산 안에 들어오면 끝
+  결과가 PNG면 품질 인자가 먹지 않으므로 사다리를 더 내려가지 않는다
+사다리를 다 써도 안 들어오면 outputSize를 0.8배로 줄이고 다음 회차
 ```
 
 **요청한 타입이 돌아왔는지 직접 확인한다.** 브라우저는 지원하지 않는 타입을 받으면 `null`이 아니라 PNG를 돌려준다. Safari에는 캔버스 WebP 인코더가 없어서 `null` 검사만으로는 폴백이 영원히 실행되지 않고, 사진이 무손실 PNG로 다시 싸여 5~10배로 부푼다. 그러면 품질 인자가 없어 크기 축소가 해상도 축소로만 이뤄지고, 루프는 5 MiB 밑에 들어오는 즉시 멈추므로 결과가 3.35~5 MiB 구간에 착지한다.
+
+**예산이 그림을 정한다. 그림에 맞춰 예산을 늘리지 않는다.** 먼저 쓰는 레버는 품질이다. 품질은 픽셀을 버리지 않는다. 해상도는 품질이 더 내놓을 것이 없을 때만 내준다. 사진은 대개 첫 인코딩 한 번으로 1920을 유지한 채 들어오고, 품질 인자가 없는 PNG 경로만 회차를 돈다.
 
 알파가 있으면 JPEG로 내려가지 않는다. JPEG는 투명도를 담지 못한다. 캔버스를 읽을 수 없으면(tainted 등) 알파가 있다고 보고 PNG를 유지한다.
 

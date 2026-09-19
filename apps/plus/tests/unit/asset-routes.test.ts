@@ -31,7 +31,6 @@ vi.mock("@/lib/db", () => ({ getDb: () => ({
     delete: () => ({ where: mocks.deleteWhere }),
 }) }));
 
-const tabId = "editor-tab-identifier-1234";
 const dialect = new PgDialect();
 const rendered = (call = 0) =>
     dialect.sqlToQuery(mocks.execute.mock.calls[call][0] as SQL).sql.replace(/\s+/g, " ").trim();
@@ -45,7 +44,7 @@ const session = {
 const start = (body: unknown) => startUpload(
     new NextRequest("http://localhost/api/boards/7/uploads", {
         method: "POST", body: JSON.stringify(body),
-        headers: { "Content-Type": "application/json", "X-Editor-Tab": tabId },
+        headers: { "Content-Type": "application/json" },
     }),
     { params: Promise.resolve({ boardId: "7" }) },
 );
@@ -53,7 +52,7 @@ const start = (body: unknown) => startUpload(
 const chunk = (bytes: Buffer, digest = createHash("sha256").update(bytes).digest("hex")) => putChunk(
     new NextRequest("http://localhost/api/boards/7/uploads/u1/chunks/0", {
         method: "PUT", body: new Uint8Array(bytes),
-        headers: { "X-Editor-Tab": tabId, "X-Chunk-Digest": digest },
+        headers: { "X-Chunk-Digest": digest },
     }),
     { params: Promise.resolve({ boardId: "7", uploadId: "u1", index: "0" }) },
 );
@@ -74,7 +73,7 @@ describe("asset upload routes", () => {
 
         expect(await response.json()).toMatchObject({ ok: true, chunkSize: 1024 * 1024, chunkCount: 4 });
         expect(rendered()).toContain("INSERT INTO upload_sessions");
-        expect(rendered()).toContain("e.tab_id = $");
+        expect(rendered()).toContain("u.session_token_hash = $");
         expect(rendered()).toContain("EXISTS (SELECT 1 FROM boards WHERE board_id = $");
     });
 
@@ -195,7 +194,7 @@ describe("asset upload routes", () => {
         mocks.rows.mockImplementation((table: string) => table === "upload_sessions" ? [session] : []);
 
         const response = await completeUpload(
-            new NextRequest("http://localhost", { method: "POST", headers: { "X-Editor-Tab": tabId } }),
+            new NextRequest("http://localhost", { method: "POST" }),
             { params: Promise.resolve({ boardId: "7", uploadId: "u1" }) },
         );
 
@@ -214,7 +213,7 @@ describe("asset upload routes", () => {
         mocks.execute.mockResolvedValue({ rows: [] });
 
         const response = await completeUpload(
-            new NextRequest("http://localhost", { method: "POST", headers: { "X-Editor-Tab": tabId } }),
+            new NextRequest("http://localhost", { method: "POST" }),
             { params: Promise.resolve({ boardId: "7", uploadId: "u1" }) },
         );
 

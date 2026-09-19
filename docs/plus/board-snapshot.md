@@ -1,6 +1,6 @@
 # 보드 스냅샷 상세설계
 
-소스: `components/BoardSnapshotClient.tsx`, `hooks/useBoardSnapshot.ts`, `lib/snapshot.ts`, `lib/snapshot-sync.ts`, `lib/snapshot-codec.ts`, `lib/saved-board-snapshot.ts`, `lib/legacy-board-snapshot.ts`, `app/api/boards/[boardId]/snapshot/route.ts`, `app/api/editor-lease/route.ts`, `proxy.ts`
+소스: `components/BoardSnapshotClient.tsx`, `hooks/useBoardSnapshot.ts`, `lib/snapshot.ts`, `lib/snapshot-sync.ts`, `lib/snapshot-codec.ts`, `lib/saved-board-snapshot.ts`, `lib/legacy-board-snapshot.ts`, `app/api/boards/[boardId]/snapshot/route.ts`
 
 ## 무엇이 바뀌었나
 
@@ -27,34 +27,11 @@ Free와 같은 코드가 화면과 브라우저 DB를 담당하고([브라우저
 | `snapshotDelayMs` | 3000 | 마지막 변경 후 업로드까지 기다리는 시간 |
 | `snapshotFormatVersion` | 3 | 저장된 스냅샷의 형식 판 |
 
-## 단일 편집자
+## 편집 자격
 
-같은 계정이 두 곳에서 같은 보드를 고치면 나중 것이 앞선 것을 덮는다. 그래서 편집 자리를 하나로 묶는다. 세 겹이다.
+계정 하나에 살아 있는 세션은 하나다. 로그인하면 `users.session_token_hash`가 갈리므로 앞선 기기는 그 순간부터 쓰기 조건을 통과하지 못한다. **보드에는 잠금을 걸지 않는다.** 같은 세션이면 탭이 몇 개든 열 수 있고, 카드는 객체 하나씩 커밋되므로 서로 다른 카드를 고친 저장은 서로를 지우지 않는다.
 
-| 겹 | 수단 | 막는 것 |
-| --- | --- | --- |
-| 브라우저 | Web Locks `meldrift-plus-editor:{이메일}` | 같은 브라우저의 다른 탭 |
-| 서버 | `editor_leases` 테이블 (60초) | 다른 기기·다른 브라우저 |
-| 쓰기 | `PUT`의 SQL 한 문장 | 위 둘을 통과했더라도 만료된 리스 |
-
-### 리스
-
-```text
-POST /api/editor-lease   { tabId }   → 60초 리스 발급/갱신
-DELETE /api/editor-lease { tabId }   → 반납
-```
-
-`tabId`는 `sessionStorage`에 계정별로 보관하는 UUID다. 탭을 새로고침해도 같은 값이 유지되므로, 새로고침이 자기 자신과 충돌하지 않는다.
-
-발급은 upsert 한 문장이고, 다음 중 하나일 때만 남의 리스를 가져온다.
-
-- 기존 리스가 만료됐다
-- 세션 해시가 다르다 (로그인을 다시 했다)
-- `tab_id`가 같다 (자기 자신의 갱신이다)
-
-어느 것도 아니면 아무 행도 돌아오지 않고 `409`와 함께 `This account is already editing in another tab.`이 된다.
-
-클라이언트는 20초마다 갱신하고, 창이 포커스를 받으면 즉시 한 번 더 갱신한다. 절전으로 타이머가 밀린 탭이 돌아왔을 때 만료된 리스로 계속 쓰는 것을 막는다.
+같은 보드를 두 탭에서 열면 두 탭이 같은 브라우저 DB(`meldrift-plus:{이메일}:{boardId}`)를 공유한다. 워커가 저장마다 파일 전체를 다시 쓰므로 로컬에서는 나중에 저장한 탭이 이긴다.
 
 ## 동기화 (`SnapshotSync`)
 
@@ -85,7 +62,7 @@ upload()
 | `error` | Server save failed | 올리기 실패. 10초 뒤 재시도 |
 | `blocked` | 사유 문구 | 편집 자격을 잃었다. 재시도하지 않는다 |
 
-`401`·`403`·`409`·`404`는 재시도하지 않고 `blocked`로 간다. 권한이나 리스나 판 번호가 어긋난 것이라 같은 요청을 다시 보내도 결과가 같다. 그 밖의 실패(네트워크, 5xx)만 10초 간격으로 재시도한다.
+`401`·`403`·`409`·`404`는 재시도하지 않고 `blocked`로 간다. 권한이나 판 번호가 어긋난 것이라 같은 요청을 다시 보내도 결과가 같다. 그 밖의 실패(네트워크, 5xx)만 10초 간격으로 재시도한다.
 
 ## 판 번호와 멱등성
 
@@ -94,7 +71,6 @@ upload()
 ```text
 X-Snapshot-Revision   내가 알고 있는 마지막 판 번호
 X-Snapshot-Mutation   이 변경의 식별자
-X-Editor-Tab          이 탭의 id
 ```
 
 서버는 `INSERT ... ON CONFLICT DO UPDATE` 한 문장으로 판정한다.
@@ -129,15 +105,12 @@ WHERE board_snapshots.revision = {보낸 판 번호}
 
 ## 권한은 쓰기 한 문장 안에서 본다
 
-`PUT`은 권한을 따로 조회하지 않는다. 세션·승인·리스·판 번호를 전부 INSERT의 `WHERE`에 넣는다.
+`PUT`은 권한을 따로 조회하지 않는다. 세션·승인·판 번호를 전부 INSERT의 `WHERE`에 넣는다.
 
 ```sql
-FROM (SELECT board_id FROM boards WHERE board_id = ? FOR UPDATE) b,
-     users u JOIN editor_leases e ON e.user_id = u.id
+FROM (SELECT board_id FROM boards WHERE board_id = ? FOR UPDATE) b, users u
 WHERE u.id = ? AND u.permission_flg = true
   AND u.session_token_hash = ? AND u.session_expires_at > now()
-  AND e.session_hash = u.session_token_hash AND e.tab_id = ?
-  AND e.expires_at > now()
 ```
 
 확인과 쓰기 사이에 권한이 바뀔 틈이 없다. 조건이 하나라도 어긋나면 행이 돌아오지 않고 `409`가 된다.
@@ -145,13 +118,12 @@ WHERE u.id = ? AND u.permission_flg = true
 ## 불러오기 (`useBoardSnapshot`)
 
 ```text
-1. 앞선 탭의 정리가 끝나기를 기다린다 (editorCleanup)
+1. 이 탭의 앞선 워커가 닫히기를 기다린다 (editorCleanup)
 2. GET /api/me 로 편집 가능 여부를 본다
-3. 편집 가능하면: Web Lock 획득 → tabId 확보 → 리스 발급 → 20초 하트비트
-4. 브라우저 DB를 연다 (meldrift-plus:{이메일}:{boardId})
-5. GET /api/boards/{id}/snapshot
-6. 로컬과 서버를 맞춘다
-7. 보드 메타데이터는 서버 값으로 덮는다
+3. 브라우저 DB를 연다 (meldrift-plus:{이메일}:{boardId})
+4. GET /api/boards/{id}/snapshot
+5. 로컬과 서버를 맞춘다
+6. 보드 메타데이터는 서버 값으로 덮는다
 ```
 
 6번의 세 갈래는 이렇다.
@@ -218,4 +190,3 @@ GET /api/boards/{boardId}/snapshot/images/{imageId}
 - 이미지 한 장을 내주려고 **스냅샷 전체를 해독한다.** 캐시도 없다(`no-store`). 서버가 만든 문서의 이미지 링크를 N개 따라가면 해독도 N번이다. 보드 화면은 이 경로를 쓰지 않으므로(로컬 스냅샷을 그대로 컴파일하고 Blob URL을 쓴다) 지금은 드러나지 않는다.
 - 업로드마다 서버가 최대 4 MiB SQLite를 asm.js로 열고 `integrity_check`를 돌린다. 저장된 스냅샷을 읽을 때도 같은 검사를 다시 한다 — 쓸 때 이미 통과시킨 바이트인데도.
 - 업로드는 **마지막 로컬 저장 기준 3초 디바운스**다. 고정 주기가 아니라 타이머가 매번 리셋되므로, 3초보다 짧은 간격으로 조작이 이어지면 업로드가 계속 밀린다. 손을 멈춰야 나간다.
-- 리스는 계정당 하나다(`editor_leases.user_id`가 기본키). 같은 계정으로 **다른 보드**를 두 탭에서 여는 것도 막힌다.

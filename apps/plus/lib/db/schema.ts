@@ -85,13 +85,6 @@ export const db_drawingStrokes = pgTable("drawing_strokes", {
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [primaryKey({ columns: [table.boardId, table.syncId] })]);
 
-export const db_editorLeases = pgTable("editor_leases", {
-    userId: integer("user_id").primaryKey(),
-    sessionHash: text("session_hash").notNull(),
-    tabId: text("tab_id").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-});
-
 export const db_users = pgTable("users", {
     id: serial("id").primaryKey(),
     email: varchar("email", { length: 254 }).notNull().unique(),

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { GET, PUT } from "@/app/api/boards/[boardId]/snapshot/route";
-import { POST as acquireLease } from "@/app/api/editor-lease/route";
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(), permission: vi.fn(), execute: vi.fn(), limit: vi.fn(), decode: vi.fn(), legacy: vi.fn(),
@@ -20,7 +19,7 @@ const context = { params: Promise.resolve({ boardId: "7" }) };
 function request(headers: Record<string, string> = {}) {
     return new NextRequest("http://localhost/api/boards/7/snapshot", { method: "PUT", body: new Uint8Array(16), headers: {
         "X-Snapshot-Revision": "2", "X-Snapshot-Mutation": "change-3",
-        "X-Editor-Tab": "editor-tab-identifier-1234", ...headers,
+        ...headers,
     } });
 }
 
@@ -40,7 +39,7 @@ describe("snapshot API", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it.each([["X-Snapshot-Revision", "-1"], ["X-Editor-Tab", "bad"], ["X-Snapshot-Mutation", ""]])("rejects invalid write metadata", async (name, value) => {
+    it.each([["X-Snapshot-Revision", "-1"], ["X-Snapshot-Mutation", ""]])("rejects invalid write metadata", async (name, value) => {
         expect((await PUT(request({ [name]: value }), context)).status).toBe(400);
         expect(mocks.execute).not.toHaveBeenCalled();
     });
@@ -62,18 +61,15 @@ describe("snapshot API", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("checks revision, live session and editor lease in the atomic write", async () => {
+    it("checks revision and the live session in the atomic write", async () => {
         const response = await PUT(request(), context);
         expect(await response.json()).toEqual({ ok: true, revision: 3 });
         const query = new PgDialect().sqlToQuery(mocks.execute.mock.calls[0][0]);
         expect(query.sql).toContain("FOR UPDATE");
         expect(query.sql).toContain("u.session_expires_at > now()");
-        expect(query.sql).toContain("e.session_hash = u.session_token_hash");
-        expect(query.sql).toContain("e.expires_at > now()");
         expect(query.sql).toContain("WHERE board_snapshots.revision =");
         expect(query.sql).toContain("OR board_snapshots.mutation_id = excluded.mutation_id");
         expect(query.params).toContain("current-session");
-        expect(query.params).toContain("editor-tab-identifier-1234");
         expect(mocks.execute).toHaveBeenCalledOnce();
     });
 
@@ -127,10 +123,4 @@ describe("snapshot API", () => {
         expect(query.sql).toContain("mode <> 'snapshot'");
     });
 
-    it("refuses a second editor lease and malformed lease requests", async () => {
-        mocks.execute.mockResolvedValue({ rows: [] });
-        const make = (body: string) => new NextRequest("http://localhost/api/editor-lease", { method: "POST", body });
-        expect((await acquireLease(make(JSON.stringify({ tabId: "another-editor-identifier" })))).status).toBe(409);
-        expect((await acquireLease(make("{"))).status).toBe(400);
-    });
 });

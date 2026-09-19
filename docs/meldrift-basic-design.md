@@ -483,7 +483,6 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 | `tables` | source JSONB, x/y/z, size | `board_id` 보유 |
 | `drawings` | 보드별 획 배열 JSONB | `board_id` unique |
 | `board_snapshots` | SQLite 파일(bytea), revision, mutation_id | `board_id` 기본키 |
-| `editor_leases` | session_hash, tab_id, expires_at | `user_id` 기본키 |
 
 **보드 내용의 정본은 `board_snapshots`다.** 카드 테이블 다섯은 스냅샷으로 옮기지 않은 구버전 보드를 위해 남아 있고, 쓰기는 `proxy.ts`가 410으로 막는다.
 
@@ -503,7 +502,6 @@ Markdown 컴파일이 메모 꼭짓점 포함 여부로 카드를 고르므로 �
 | PATCH/DELETE | `/api/boards/[boardId]` | 이름 변경, 보드 삭제 |
 | GET/PUT | `/api/boards/[boardId]/snapshot` | 보드 스냅샷 내려받기, 올리기 |
 | GET | `/api/boards/[boardId]/snapshot/images/[imageId]` | 스냅샷 안 이미지 바이트 |
-| POST/DELETE | `/api/editor-lease` | 편집 자리 확보, 반납 |
 | GET | `/api/boards/[boardId]/markdown` | Markdown 컴파일 |
 | PUT | `/api/boards/[boardId]/preview` | 보드 미리보기 WebP 덮어쓰기 |
 | GET | `/api/ai/status` | AI 어시스턴트 사용 가능 여부 |

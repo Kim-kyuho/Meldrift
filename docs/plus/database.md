@@ -24,7 +24,6 @@ neon(process.env.NEON_CONNECTION_STRING) → drizzle(client)
 | `drawings` | `drawing_id` | `board_id`가 **유일** — 보드당 한 행 |
 | `tables` | `table_id` | `source`가 `jsonb` |
 | `board_snapshots` | `board_id` | 보드 하나가 한 행. SQLite 파일을 `bytea`로 담는다 |
-| `editor_leases` | `user_id` | 계정당 한 행. 편집 자리 하나를 표시한다 |
 
 카드 테이블은 전부 `board_id`로 `boards`를 참조하고 `ON DELETE CASCADE`다. 보드를 지우면 카드와 드로잉이 함께 사라진다.
 
@@ -45,35 +44,3 @@ neon(process.env.NEON_CONNECTION_STRING) → drizzle(client)
 
 판정 규칙은 [보드 스냅샷](./board-snapshot.md)에 있다.
 
-### `editor_leases`
-
-`user_id`가 기본키다. 계정 하나가 동시에 쥘 수 있는 편집 자리가 하나라는 뜻이고, **보드별이 아니라 계정별**이다. `expires_at`은 발급 시점 + 60초다.
-
-`z`는 네 카드 테이블 모두 `integer NOT NULL DEFAULT 1`이고 유일 제약이 없다. 따라서 새 카드는 전부 `z = 1`이고, 정렬 동률이 기본 상태다. 순서를 못박는 것은 `@meldrift/core`의 `cardTypeOrder`다.
-
-`tables.source`는 `jsonb`에 `$type<TableSource>()`가 붙어 있다. 조회하면 문자열이 아니라 객체로 돌아온다.
-
-## 인덱스
-
-```text
-memos_board_id_sort_order_idx  (board_id, sort_order)
-```
-
-메모 재정렬이 한 보드의 `sort_order` 구간만 읽고 쓰기 때문에 둔 복합 인덱스다.
-
-## 마이그레이션
-
-`drizzle-kit`으로 관리한다.
-
-| 스크립트 | 동작 |
-| --- | --- |
-| `npm run db:generate` | 스키마 변경분으로 SQL 생성 |
-| `npm run db:migrate` | 적용 |
-| `npm run db:check` | 스키마와 마이그레이션 일치 확인 |
-| `npm run db:studio` | 브라우저 탐색기 |
-
-`docs/DB/schema.sql`은 현재 스키마의 참조 사본이다. 실행 대상이 아니라 읽기용이다.
-
-브라우저 SQLite는 이 스키마와 테이블 구성이 같되 `users`가 없고 이미지가 URL 대신 BLOB을 가진다. 버전 관리도 drizzle이 아니라 `PRAGMA user_version`을 직접 올리는 방식이다. [브라우저 데이터베이스](../shared/browser-database.md)를 참조한다.
-
-`board_snapshots.snapshot`에 들어가는 바이트가 바로 그 브라우저 SQLite 파일이다. 서버는 그것을 행으로 풀어 담지 않고 파일째 보관한다.

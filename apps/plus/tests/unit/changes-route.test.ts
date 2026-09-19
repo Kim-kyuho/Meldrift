@@ -27,7 +27,7 @@ vi.mock("@/lib/db", () => ({ getDb: () => ({
     select: mocks.select,
 }) }));
 
-const tabId = "editor-tab-identifier-1234";
+const mutationId = "mutation-identifier-1234";
 const context = { params: Promise.resolve({ boardId: "7" }) };
 const dialect = new PgDialect();
 
@@ -36,14 +36,14 @@ const memoFields = {
     content: "<p>memo</p>", color: "#fffadc", sortOrder: 1,
 };
 const body = (operations: unknown[], overrides: Record<string, unknown> = {}) => ({
-    baseRevision: 2, mutationId: `${tabId}:4`, operations, ...overrides,
+    baseRevision: 2, mutationId, operations, ...overrides,
 });
 
 function request(payload: unknown, headers: Record<string, string> = {}) {
     return new NextRequest("http://localhost/api/boards/7/changes?mutationId=m-1", {
         method: "POST",
         body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json", "X-Editor-Tab": tabId, ...headers },
+        headers: { "Content-Type": "application/json", ...headers },
     });
 }
 
@@ -76,14 +76,6 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
-    it.each([["X-Editor-Tab", "short"], ["X-Editor-Tab", ""]])("rejects an invalid editor tab", async (name, value) => {
-        const response = await POST(request(body([
-            { type: "memo", syncId: "memo-1", action: "update", changes: { x: 1 } },
-        ]), { [name]: value }), context);
-
-        expect(response.status).toBe(400);
-        expect(mocks.batch).not.toHaveBeenCalled();
-    });
 
     it("rejects a request over the byte limit before parsing it", async () => {
         const oversized = request(body([{
@@ -171,7 +163,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
             expect(sql).toContain("s.revision = $");
             expect(sql).toContain("s.mode = 'delta'");
             expect(sql).toContain("u.permission_flg = true");
-            expect(sql).toContain("e.tab_id = $");
+            expect(sql).toContain("u.session_token_hash = $");
             expect(sql).toContain("NOT EXISTS ( SELECT 1 FROM sync_mutations m");
         }
     });
@@ -204,7 +196,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         const payload = body([{ type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } }]);
         const digest = changeRequestDigest(parseChangeRequest(payload));
         mocks.batch.mockImplementation(async (queries: SQL[]) => queries.map(() => ({ rows: [] })));
-        mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: `${tabId}:4`, digest, revision: 3 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: mutationId, digest, revision: 3 }]);
 
         const response = await POST(request(payload), context);
 
@@ -214,7 +206,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
 
     it("refuses to reuse a request id for different changes", async () => {
         mocks.batch.mockImplementation(async (queries: SQL[]) => queries.map(() => ({ rows: [] })));
-        mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: `${tabId}:4`, digest: "other", revision: 3 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: mutationId, digest: "other", revision: 3 }]);
 
         const response = await POST(request(body([
             { type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } },
@@ -230,24 +222,24 @@ describe("POST /api/boards/[boardId]/changes", () => {
             mimeType: "application/json", bytes: Buffer.from(JSON.stringify(operations), "utf8"),
         });
 
-        const response = await POST(request({ baseRevision: 2, mutationId: `${tabId}:4`, staged: true }), context);
+        const response = await POST(request({ baseRevision: 2, mutationId: mutationId, staged: true }), context);
 
         expect(await response.json()).toEqual({ ok: true, revision: 3 });
         expect(statements()[1]).toContain("UPDATE memos SET x = $");
-        expect(mocks.discardAsset).toHaveBeenCalledWith(expect.anything(), 7, `${tabId}:4`);
+        expect(mocks.discardAsset).toHaveBeenCalledWith(expect.anything(), 7, mutationId);
     });
 
     it("answers a resend once the staged payload is gone", async () => {
-        mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: `${tabId}:4`, digest: "x", revision: 9 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: mutationId, digest: "x", revision: 9 }]);
 
-        const response = await POST(request({ baseRevision: 2, mutationId: `${tabId}:4`, staged: true }), context);
+        const response = await POST(request({ baseRevision: 2, mutationId: mutationId, staged: true }), context);
 
         expect(await response.json()).toEqual({ ok: true, revision: 9 });
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
     it("refuses a staged commit whose payload never arrived", async () => {
-        const response = await POST(request({ baseRevision: 2, mutationId: `${tabId}:4`, staged: true }), context);
+        const response = await POST(request({ baseRevision: 2, mutationId: mutationId, staged: true }), context);
 
         expect(response.status).toBe(409);
         expect((await response.json()).message).toContain("no longer available");
@@ -256,11 +248,11 @@ describe("POST /api/boards/[boardId]/changes", () => {
     it("tells a client whether an unfinished save landed", async () => {
         mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: "m-1", revision: 12 }]);
 
-        const found = await GET(request({}, { "X-Editor-Tab": tabId }), context);
+        const found = await GET(request({}), context);
         expect(await found.json()).toEqual({ ok: true, applied: true, revision: 12 });
 
         mocks.limit.mockResolvedValue([]);
-        const missing = await GET(request({}, { "X-Editor-Tab": tabId }), context);
+        const missing = await GET(request({}), context);
         expect(await missing.json()).toEqual({ ok: true, applied: false, revision: null });
     });
 
