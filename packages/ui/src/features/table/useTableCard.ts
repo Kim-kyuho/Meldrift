@@ -4,20 +4,20 @@ import { noop } from "../../internal/noop";
 import type { TableCardData as BoardTable } from "@meldrift/core/cards";
 import { TableSource } from "@meldrift/core/table-card";
 
-type UseTableCardOptions = {
-    table: BoardTable;
+type UseTableCardOptions<T extends BoardTable> = {
+    table: T;
     /** 권한 개념이 없는 앱은 기본값을 그대로 쓴다. */
     canEdit?: boolean;
     isEditing: boolean;
     onEditing: () => void;
     onEditingClear: () => void;
     onPermissionDenied?: () => void;
-    onInsert: (table: BoardTable) => void;
-    onUpdate: (table: BoardTable) => void;
+    onInsert: (table: T) => void;
+    onUpdate: (table: T) => void;
     onDelete: (id: number) => void;
 };
 
-export function useTableCard({
+export function useTableCard<T extends BoardTable>({
     table,
     canEdit = true,
     isEditing,
@@ -27,7 +27,7 @@ export function useTableCard({
     onInsert,
     onUpdate,
     onDelete,
-}: UseTableCardOptions) {
+}: UseTableCardOptions<T>) {
     const [source, setSource] = useState<TableSource>(table.source);
     const [cardState, setCardState] = useState({
         x: table.x,
@@ -53,7 +53,7 @@ export function useTableCard({
 
     const saveTable = useCallback(() => {
         const current = cardStateRef.current;
-        const nextTable: BoardTable = {
+        const nextTable: T = {
             ...table,
             source: sourceRef.current,
             x: Math.round(current.x),

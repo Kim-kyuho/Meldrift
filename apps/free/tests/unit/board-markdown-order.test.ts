@@ -6,6 +6,7 @@ import { createEmptyBoardSnapshot, type BoardMemo, type BoardSnapshot } from "@/
 
 const memo = (id: number, sortOrder: number, text: string): BoardMemo => ({
     id,
+    syncId: `memo-${id}`,
     boardId: 1,
     content: `<p>${text}</p>`,
     // 좌표를 순서와 반대로 흩어 놓아, 배치가 문서 순서에 끼어들지 않는지도 함께 본다.

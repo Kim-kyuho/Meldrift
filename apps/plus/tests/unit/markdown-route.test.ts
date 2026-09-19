@@ -11,10 +11,12 @@ const mocks = vi.hoisted(() => ({
     execute: vi.fn(),
     limit: vi.fn(),
     loadSnapshot: vi.fn(),
+    loadBoardState: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
 vi.mock("@/lib/saved-board-snapshot", () => ({ loadSavedBoardSnapshot: mocks.loadSnapshot }));
+vi.mock("@/lib/board-state-store", () => ({ loadBoardState: mocks.loadBoardState }));
 
 const params = (boardId: string) => Promise.resolve({ boardId });
 
@@ -25,7 +27,7 @@ describe("GET /api/boards/[boardId]/markdown", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.loadSnapshot.mockResolvedValue(null);
-        mocks.limit.mockResolvedValue([{ boardId: 7 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, title: "Board", width: 100, height: 80 }]);
         mocks.execute.mockResolvedValue({ rows: [] });
         mocks.getDb.mockReturnValue({
             select: vi.fn(() => ({
@@ -77,13 +79,29 @@ describe("GET /api/boards/[boardId]/markdown", () => {
     it("compiles the saved snapshot instead of reading obsolete card tables", async () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.board.boardId = 7;
-        snapshot.memos = [{ id: 1, boardId: 7, content: "<p>Snapshot memo</p>", sortOrder: 1, x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fff" }];
-        snapshot.images = [{ imageId: 2, boardId: 7, x: 0, y: 0, width: 30, height: 30, z: 2, data: new Uint8Array([1]), mimeType: "image/png", label: "Binary", url: "" }];
+        snapshot.memos = [{ id: 1, syncId: "memo-1", boardId: 7, content: "<p>Snapshot memo</p>", sortOrder: 1, x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fff" }];
+        snapshot.images = [{ imageId: 2, syncId: "image-2", assetId: "asset-1", boardId: 7, x: 0, y: 0, width: 30, height: 30, z: 2, data: new Uint8Array([1]), mimeType: "image/png", label: "Binary", url: "" }];
         mocks.loadSnapshot.mockResolvedValue(snapshot);
         const response = await GET(new Request("http://localhost"), { params: params("7") });
         const data = await response.json();
         expect(data.markdown).toContain("Snapshot memo");
         expect(data.markdown).toContain("/api/boards/7/snapshot/images/2");
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it("전환한 보드는 카드 테이블에서 만들고 이미지를 자산 주소로 건다", async () => {
+        mocks.limit.mockResolvedValue([{ boardId: 7, title: "Board", width: 100, height: 80, mode: "delta" }]);
+        const snapshot = createEmptyBoardSnapshot();
+        snapshot.board.boardId = 7;
+        snapshot.memos = [{ id: 1, syncId: "memo-1", boardId: 7, content: "<p>Moved memo</p>", sortOrder: 1, x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fff" }];
+        snapshot.images = [{ imageId: 2, syncId: "image-2", assetId: "asset-9", boardId: 7, x: 0, y: 0, width: 30, height: 30, z: 2, data: null, mimeType: null, label: "Binary", url: "" }];
+        mocks.loadBoardState.mockResolvedValue(snapshot);
+
+        const data = await (await GET(new Request("http://localhost"), { params: params("7") })).json();
+
+        expect(data.markdown).toContain("Moved memo");
+        expect(data.markdown).toContain("/api/boards/7/assets/asset-9/bytes");
+        expect(mocks.loadSnapshot).not.toHaveBeenCalled();
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 

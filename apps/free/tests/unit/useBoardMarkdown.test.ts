@@ -28,11 +28,11 @@ function markdownSnapshot(): BoardSnapshot {
     return {
         ...createEmptyBoardSnapshot(),
         memos: [{
-            id: 1, boardId: 1, content: "<h1>Title</h1><p>End</p>",
+            id: 1, syncId: "memo-1", boardId: 1, content: "<h1>Title</h1><p>End</p>",
             x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fffadc", sortOrder: 1,
         }],
         mermaids: [{
-            id: 1, boardId: 1, source: "flowchart LR\nA-->B",
+            id: 1, syncId: "mermaid-1", boardId: 1, source: "flowchart LR\nA-->B",
             x: 0, y: 0, z: 2, width: 50, height: 50,
         }],
     };
@@ -57,7 +57,7 @@ describe("useBoardMarkdown", () => {
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
         snapshot.images = [{
-            imageId: 1, boardId: 1, url: "https://example.com/a.png", label: "A",
+            imageId: 1, syncId: "image-1", assetId: "", boardId: 1, url: "https://example.com/a.png", label: "A",
             data: null, mimeType: null,
             x: 0, y: 0, z: 2, width: 50, height: 50,
         }];
@@ -74,7 +74,7 @@ describe("useBoardMarkdown", () => {
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
         snapshot.images = [{
-            imageId: 1, boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
+            imageId: 1, syncId: "image-1", assetId: "asset-1", boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
             mimeType: "image/png", label: "Local",
             x: 0, y: 0, z: 2, width: 50, height: 50,
         }];
@@ -94,7 +94,7 @@ describe("useBoardMarkdown", () => {
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
         snapshot.images = [{
-            imageId: 2, boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
+            imageId: 2, syncId: "image-2", assetId: "asset-1", boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
             mimeType: "image/webp", label: "Local preview",
             x: 0, y: 0, z: 2, width: 50, height: 50,
         }];
@@ -114,7 +114,7 @@ describe("useBoardMarkdown", () => {
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
         snapshot.images = [{
-            imageId: 4, boardId: 1, url: "", data: new Uint8Array([137, 80, 78, 71]),
+            imageId: 4, syncId: "image-4", assetId: "asset-1", boardId: 1, url: "", data: new Uint8Array([137, 80, 78, 71]),
             mimeType: "image/png", label: "Saved image",
             x: 0, y: 0, z: 2, width: 50, height: 50,
         }];

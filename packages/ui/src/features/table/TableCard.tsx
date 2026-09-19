@@ -11,8 +11,8 @@ import TableToolBar from "./TableToolBar";
 
 const TABLE_CARD_MIN_HEIGHT = 128;
 
-type TableCardProps = {
-    table: BoardTable;
+type TableCardProps<T extends BoardTable> = {
+    table: T;
     zoom: number;
     /** 권한 개념이 없는 앱은 기본값을 그대로 쓴다. */
     canEdit?: boolean;
@@ -20,14 +20,14 @@ type TableCardProps = {
     onEditing: () => void;
     onEditingClear: () => void;
     onPermissionDenied?: () => void;
-    onInsert: (table: BoardTable) => void;
-    onUpdate: (table: BoardTable) => void;
+    onInsert: (table: T) => void;
+    onUpdate: (table: T) => void;
     onDelete: (id: number) => void;
     onBringToFront: () => void;
     onSendToBack: () => void;
 };
 
-export default function TableCard({
+export default function TableCard<T extends BoardTable>({
     table,
     zoom,
     canEdit = true,
@@ -40,7 +40,7 @@ export default function TableCard({
     onDelete,
     onBringToFront,
     onSendToBack,
-}: TableCardProps) {
+}: TableCardProps<T>) {
     const {
         source,
         setSource,

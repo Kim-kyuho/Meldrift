@@ -1,5 +1,5 @@
 import { RefObject, useState } from "react";
-import { nextPositiveId, type BoardMemo } from "@meldrift/board/board-state";
+import { createSyncId, nextPositiveId, type BoardMemo } from "@meldrift/board/board-state";
 import { nextMemoOrder } from "@meldrift/core/memo-order";
 
 export type { BoardMemo } from "@meldrift/board/board-state";
@@ -39,6 +39,7 @@ export function useBoardMemos({
         const z = getTopmostZ ? getTopmostZ() : 1;
         const tempMemo: BoardMemo = {
             id: -Date.now(),
+            syncId: createSyncId(),
             boardId,
             content: "",
             x: Math.round(x),

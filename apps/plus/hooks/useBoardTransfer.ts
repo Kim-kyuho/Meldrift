@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { createEmptyBoardSnapshot, type BoardSnapshot } from "@meldrift/board/board-state";
+import { createEmptyBoardSnapshot, reissueSyncIds, type BoardSnapshot } from "@meldrift/board/board-state";
 import { maxSnapshotBytes } from "@/lib/snapshot";
 
 export type BoardFileActions = {
@@ -76,12 +76,13 @@ export function useBoardTransfer(options: Options) {
             }
             if (!window.confirm("Importing this save file will replace the current board contents. Continue?")) return;
             const board = latest.current.snapshot.board;
+            const copy = reissueSyncIds(imported);
             latest.current.replaceSnapshot({
-                ...imported, board,
-                memos: imported.memos.map((card) => ({ ...card, boardId: board.boardId })),
-                images: imported.images.map((card) => ({ ...card, boardId: board.boardId })),
-                mermaids: imported.mermaids.map((card) => ({ ...card, boardId: board.boardId })),
-                tables: imported.tables.map((card) => ({ ...card, boardId: board.boardId })),
+                ...copy, board,
+                memos: copy.memos.map((card) => ({ ...card, boardId: board.boardId })),
+                images: copy.images.map((card) => ({ ...card, boardId: board.boardId })),
+                mermaids: copy.mermaids.map((card) => ({ ...card, boardId: board.boardId })),
+                tables: copy.tables.map((card) => ({ ...card, boardId: board.boardId })),
             });
         } catch (error) { reportError(error); }
         finally { finish(); }

@@ -50,6 +50,7 @@ Plus의 카드별 Route Handler와 Cloudinary 이미지 업로드는 [보드 스
 | --- | --- |
 | 보드 화면이 어떻게 조립되나 | [shared/board-client.md](./shared/board-client.md) |
 | Plus가 어떻게 저장하나 | [plus/board-snapshot.md](./plus/board-snapshot.md) |
+| Plus가 변경분만 어떻게 올리나 | [plus/change-sync.md](./plus/change-sync.md) |
 | 브라우저 SQLite가 어떻게 도나 | [shared/browser-database.md](./shared/browser-database.md) |
 | 보드 값의 형태와 검증 | [shared/board-state.md](./shared/board-state.md) |
 

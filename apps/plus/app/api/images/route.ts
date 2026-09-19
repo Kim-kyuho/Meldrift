@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
         const newImage = await db
             .insert(db_images)
             .values({
+                syncId: crypto.randomUUID(),
                 boardId: boardId,
                 publicId: uploadResult.public_id,
                 secureUrl: uploadResult.secure_url,

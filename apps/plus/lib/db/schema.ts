@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, text, integer, boolean, timestamp, varchar, check, index, jsonb, customType } from "drizzle-orm/pg-core";
+import { pgTable, serial, bigserial, text, integer, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
 import type { TableSource } from "@meldrift/core/table-card";
-import type { BoardStroke } from "@meldrift/core/board-stroke";
+import type { BoardStroke, StrokePoint } from "@meldrift/core/board-stroke";
 
 const bytea = customType<{ data: Buffer; driverData: Buffer | string }>({
     dataType: () => "bytea",
@@ -17,6 +17,73 @@ export const db_boardSnapshots = pgTable("board_snapshots", {
     mutationId: text("mutation_id").notNull(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const db_boardSync = pgTable("board_sync", {
+    boardId: integer("board_id").primaryKey(),
+    revision: integer("revision").notNull().default(0),
+    formatVersion: integer("format_version").notNull().default(1),
+    mode: varchar("mode", { length: 16 }).notNull().default("snapshot"),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+    check("board_sync_mode_check", sql`${table.mode} IN ('snapshot', 'migrating', 'delta')`),
+]);
+
+export const db_syncMutations = pgTable("sync_mutations", {
+    boardId: integer("board_id").notNull(),
+    mutationId: text("mutation_id").notNull(),
+    digest: text("digest").notNull(),
+    revision: integer("revision").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+    primaryKey({ columns: [table.boardId, table.mutationId] }),
+    index("sync_mutations_created_at_idx").on(table.createdAt),
+]);
+
+export const db_assets = pgTable("assets", {
+    boardId: integer("board_id").notNull(),
+    assetId: text("asset_id").notNull(),
+    digest: text("digest").notNull(),
+    byteLength: integer("byte_length").notNull(),
+    mimeType: text("mime_type").notNull(),
+    chunkSize: integer("chunk_size").notNull(),
+    chunkCount: integer("chunk_count").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.boardId, table.assetId] })]);
+
+export const db_assetChunks = pgTable("asset_chunks", {
+    boardId: integer("board_id").notNull(),
+    assetId: text("asset_id").notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    bytes: bytea("bytes").notNull(),
+}, (table) => [primaryKey({ columns: [table.boardId, table.assetId, table.chunkIndex] })]);
+
+export const db_uploadSessions = pgTable("upload_sessions", {
+    uploadId: text("upload_id").primaryKey(),
+    boardId: integer("board_id").notNull(),
+    userId: integer("user_id").notNull(),
+    assetId: text("asset_id").notNull(),
+    digest: text("digest").notNull(),
+    byteLength: integer("byte_length").notNull(),
+    mimeType: text("mime_type").notNull(),
+    chunkSize: integer("chunk_size").notNull(),
+    chunkCount: integer("chunk_count").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+    uniqueIndex("upload_sessions_asset_idx").on(table.boardId, table.assetId),
+    index("upload_sessions_expires_at_idx").on(table.expiresAt),
+]);
+
+export const db_drawingStrokes = pgTable("drawing_strokes", {
+    boardId: integer("board_id").notNull(),
+    syncId: text("sync_id").notNull(),
+    seq: bigserial("seq", { mode: "number" }).notNull(),
+    color: text("color").notNull(),
+    width: doublePrecision("width").notNull(),
+    points: jsonb("points").$type<StrokePoint[]>().notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.boardId, table.syncId] })]);
 
 export const db_editorLeases = pgTable("editor_leases", {
     userId: integer("user_id").primaryKey(),
@@ -52,6 +119,7 @@ export const db_boards = pgTable("boards", {
 export const db_memos = pgTable("memos", {
     id: serial("id").primaryKey(),
     boardId : integer("board_id").notNull(),
+    syncId: text("sync_id").notNull(),
     content: text("content").notNull(),
     x: integer("x").notNull().default(0),
     y: integer("y").notNull().default(0),
@@ -66,13 +134,16 @@ export const db_memos = pgTable("memos", {
 }, (table) => [
     // 재정렬은 보드 하나의 sort_order 구간만 읽고 쓴다.
     index("memos_board_id_sort_order_idx").on(table.boardId, table.sortOrder),
+    uniqueIndex("memos_sync_id_idx").on(table.boardId, table.syncId),
 ]);
 
 export const db_images = pgTable("images", {
     imageId: serial("image_id").primaryKey(),
     boardId: integer("board_id").notNull(),
-    publicId: text("public_id").notNull().unique(),
-    secureUrl: text("secure_url").notNull(),
+    syncId: text("sync_id").notNull(),
+    assetId: text("asset_id"),
+    publicId: text("public_id").unique(),
+    secureUrl: text("secure_url"),
     fileName: text("filename"),
     x: integer("x").notNull().default(0),
     y: integer("y").notNull().default(0),
@@ -81,11 +152,14 @@ export const db_images = pgTable("images", {
     height: integer("height").notNull().default(200),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+    uniqueIndex("images_sync_id_idx").on(table.boardId, table.syncId),
+]);
 
 export const db_mermaids = pgTable("mermaids", {
     mermaidId: serial("mermaid_id").primaryKey(),
     boardId: integer("board_id").notNull(),
+    syncId: text("sync_id").notNull(),
     source: text("source").notNull(),
     x: integer("x").notNull().default(0),
     y: integer("y").notNull().default(0),
@@ -94,7 +168,9 @@ export const db_mermaids = pgTable("mermaids", {
     height: integer("height").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+    uniqueIndex("mermaids_sync_id_idx").on(table.boardId, table.syncId),
+]);
 
 export const db_drawings = pgTable("drawings", {
     drawingId: serial("drawing_id").primaryKey(),
@@ -107,6 +183,7 @@ export const db_drawings = pgTable("drawings", {
 export const db_tables = pgTable("tables", {
     tableId: serial("table_id").primaryKey(),
     boardId: integer("board_id").notNull(),
+    syncId: text("sync_id").notNull(),
     source: jsonb("source").$type<TableSource>().notNull(),
     x: integer("x").notNull().default(0),
     y: integer("y").notNull().default(0),
@@ -115,4 +192,6 @@ export const db_tables = pgTable("tables", {
     height: integer("height").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+    uniqueIndex("tables_sync_id_idx").on(table.boardId, table.syncId),
+]);

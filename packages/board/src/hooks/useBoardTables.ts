@@ -1,6 +1,6 @@
 import { RefObject, useState } from "react";
 import { defaultTableSource } from "@meldrift/core/table-card";
-import { nextPositiveId, type BoardTable } from "@meldrift/board/board-state";
+import { createSyncId, nextPositiveId, type BoardTable } from "@meldrift/board/board-state";
 
 export type { BoardTable } from "@meldrift/board/board-state";
 
@@ -35,6 +35,7 @@ export function useBoardTables({
         const z = getTopmostZ ? getTopmostZ() : 1;
         const tempTable: BoardTable = {
             id: -Date.now(),
+            syncId: createSyncId(),
             boardId,
             source: structuredClone(defaultTableSource),
             x: Math.round(x),

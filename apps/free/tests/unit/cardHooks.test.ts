@@ -28,7 +28,7 @@ const mermaid: MermaidCardData = {
     width: 480, height: 360,
 };
 const table: BoardTable = {
-    id: 4, boardId: 5, source: { columns: [{ id: "c", name: "C" }], rows: [] },
+    id: 4, syncId: "table-4", boardId: 5, source: { columns: [{ id: "c", name: "C" }], rows: [] },
     x: 10, y: 20, z: 6, width: 560, height: 360,
 };
 

@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
         const newMermaid = await db
             .insert(db_mermaids)
             .values({
+                syncId: crypto.randomUUID(),
                 boardId: body.boardId,
                 source: body.source,
                 x: body.x,

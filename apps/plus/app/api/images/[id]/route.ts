@@ -136,7 +136,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             );
         }
 
-        await cloudinary.uploader.destroy(targetImage[0].publicId);
+        const { publicId } = targetImage[0];
+        if (publicId) await cloudinary.uploader.destroy(publicId);
 
         await db.delete(db_images).where(eq(db_images.imageId, imageId));
 
