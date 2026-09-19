@@ -22,6 +22,10 @@ export async function gotoHydratedPage(page: Page, path: string) {
     await navigateAndWaitForUser(page, () => page.goto(plusPath));
 }
 
+// 보드 화면이 뜨기까지 dev 서버의 첫 컴파일, SQLite 워커 부팅, delta 보드의 상태·자산 내려받기가
+// 차례로 들어간다. 기본 expect 타임아웃(5초)으로는 모자란다.
+const boardOpenTimeoutMs = 20000;
+
 // 테스트 전용 보드 ID가 있으면 그것을 사용하고, 없으면 목록의 첫 번째 보드로 이동한다.
 // CI에서 고정 fixture 보드를 사용할 때는 E2E_BOARD_ID를 지정한다.
 export async function openTestBoard(page: Page) {
@@ -29,7 +33,7 @@ export async function openTestBoard(page: Page) {
 
     if (configuredBoardId) {
         await gotoHydratedPage(page, `/boards/${configuredBoardId}`);
-        await expect(page.locator(".board-scroll-layer")).toBeVisible();
+        await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: boardOpenTimeoutMs });
         return true;
     }
 
@@ -45,7 +49,7 @@ export async function openTestBoard(page: Page) {
     }
 
     await navigateAndWaitForUser(page, () => firstBoardLink.click());
-    await expect(page.locator(".board-scroll-layer")).toBeVisible();
+    await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: boardOpenTimeoutMs });
     return true;
 }
 
