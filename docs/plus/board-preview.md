@@ -4,7 +4,7 @@
 
 ## 목적
 
-보드 목록에서 각 보드 페이지를 `iframe`으로 다시 실행하지 않고, 현재 보드 뷰포트의 정적 WebP 스냅샷을 표시한다. 보드별 Cloudinary 파일명을 고정해 갱신 시 기존 파일을 덮어쓴다.
+보드 목록에서 각 보드 페이지를 `iframe`으로 다시 실행하지 않고, 현재 보드 뷰포트의 정적 WebP 스냅샷을 표시한다. 보드별 Cloudinary 파일명을 고정해 갱신 시 기존 파일을 덮어쓰고, 업로드 version을 URL에 넣어 브라우저·CDN 캐시가 옛 이미지를 쓰지 않게 한다.
 
 ## 클라이언트 입력
 
@@ -64,14 +64,15 @@ folder: meldrift/boards/{boardId}
 public_id: PreviewIMG
 format: webp
 overwrite: true
-invalidate: true
 ```
 
-성공 응답은 `publicId`, `secureUrl`, 크기, bytes, format을 반환한다. 미리보기 메타데이터는 DB에 저장하지 않는다.
+6. 업로드 결과의 `version`을 `boards.preview_version`에 저장한다. URL이 업로드마다 바뀌므로 CDN 무효화(`invalidate`)는 요청하지 않는다.
+
+성공 응답은 `publicId`, `version`, `secureUrl`, 크기, bytes, format을 반환한다. 업로드가 실패하면 `preview_version`은 바뀌지 않는다.
 
 ## 목록 표시
 
-`app/page.tsx`는 DB에서 보드만 한 번 조회하고 보드 ID로 미리보기 URL을 계산한다. `BoardList`는 파일 로드 실패 시 점 패턴 fallback을 표시한다. 따라서 목록의 DB 조회 횟수는 미리보기 개수에 따라 증가하지 않는다.
+`app/page.tsx`는 DB에서 보드와 `preview_version`을 한 번 조회하고 `boardPreviewUrl()`로 미리보기 URL을 계산한다. version이 있으면 `.../image/upload/v{version}/meldrift/boards/{boardId}/PreviewIMG.webp`, 없으면(컬럼 추가 전 업로드) version 없는 고정 URL을 쓴다. `BoardList`는 파일 로드 실패 시 점 패턴 fallback을 표시한다. 따라서 목록의 DB 조회 횟수는 미리보기 개수에 따라 증가하지 않는다.
 
 ## 현재 갱신 트리거
 

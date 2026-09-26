@@ -18,7 +18,8 @@ CREATE TABLE public.boards (
     height integer NOT NULL,
     owner_id text NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
-    updated_at timestamp without time zone DEFAULT now()
+    updated_at timestamp without time zone DEFAULT now(),
+    preview_version bigint
 );
 
 CREATE TABLE public.memos (

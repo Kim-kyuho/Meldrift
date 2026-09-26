@@ -12,10 +12,10 @@
 | --- | --- | --- |
 | `boards` | `BoardListBoard[]` | `useBoardList`의 초기 목록 |
 
-`BoardListBoard`는 `boardId`, `title`, `width`, `height`, `previewUrl`을 가진다. `app/page.tsx`는 DB에서 보드 목록을 조회한 뒤 Cloudinary cloud name이 있으면 다음 고정 URL을 조립한다.
+`BoardListBoard`는 `boardId`, `title`, `width`, `height`, `previewUrl`을 가진다. `app/page.tsx`는 DB에서 보드 목록을 조회한 뒤 Cloudinary cloud name이 있으면 `boardPreviewUrl()`로 다음 URL을 조립한다. `{version}`은 `boards.preview_version`이고, 값이 없으면 `v{version}/` 구간을 뺀다.
 
 ```text
-https://res.cloudinary.com/{cloudName}/image/upload/meldrift/boards/{boardId}/PreviewIMG.webp
+https://res.cloudinary.com/{cloudName}/image/upload/v{version}/meldrift/boards/{boardId}/PreviewIMG.webp
 ```
 
 ## 로컬 State

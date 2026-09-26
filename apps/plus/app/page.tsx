@@ -1,4 +1,5 @@
 import BoardList from "@/components/BoardList";
+import { boardPreviewUrl } from "@/lib/board-preview";
 import { getDb } from "@/lib/db";
 import { db_boards } from "@/lib/db/schema";
 import { asc } from "drizzle-orm";
@@ -14,15 +15,14 @@ export default async function Home() {
           title: db_boards.title,
           width: db_boards.width,
           height: db_boards.height,
+          previewVersion: db_boards.previewVersion,
       })
       .from(db_boards)
       .orderBy(asc(db_boards.boardId));
 
-  const boardsWithPreview = boards.map((board) => ({
+  const boardsWithPreview = boards.map(({ previewVersion, ...board }) => ({
       ...board,
-      previewUrl: cloudName
-          ? `https://res.cloudinary.com/${cloudName}/image/upload/meldrift/boards/${board.boardId}/PreviewIMG.webp`
-          : null,
+      previewUrl: cloudName ? boardPreviewUrl(cloudName, board.boardId, previewVersion) : null,
   }));
 
   return <BoardList boards={boardsWithPreview} />;
