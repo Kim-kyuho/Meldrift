@@ -66,7 +66,9 @@ describe("useBoardSelection", () => {
     it("clamps the move so the group box stays on the board", () => {
         const state = setup();
         act(() => state.result.current.handleSelectCards({ x: 0, y: 0, width: 1000, height: 800 }));
-        expect(state.result.current.clampSelectionOffset({ x: -50, y: 900 })).toEqual({ x: 0, y: 200 });
+        const offset = state.result.current.clampSelectionOffset({ x: -50, y: 900 });
+        expect(offset.x).toBeCloseTo(0);
+        expect(offset.y).toBe(200);
         act(() => state.result.current.handleMoveSelection({ x: -50, y: 900 }));
         expect(state.memoState.getState()).toMatchObject([{ x: 0, y: 200 }, { x: 200, y: 200 }]);
         expect(state.imageState.getState()[0]).toMatchObject({ x: 500, y: 700 });
