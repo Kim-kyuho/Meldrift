@@ -122,6 +122,7 @@ describe("Beta board toolbar layout", () => {
         <BoardToolBar
             cardEditing={cardEditing}
             drawingMode={drawingMode}
+            selectionMode={false}
             searchBarOpen={false}
             boardNavigatorOpen={false}
             boardZoom={1}
@@ -134,6 +135,7 @@ describe("Beta board toolbar layout", () => {
             onMermaidCreateClick={vi.fn()}
             onTableCreateClick={vi.fn()}
             onDrawingToggleClick={vi.fn()}
+            onSelectionToggleClick={vi.fn()}
         />
     );
 
@@ -147,6 +149,7 @@ describe("Beta board toolbar layout", () => {
             <BoardToolBar
                 cardEditing
                 drawingMode
+                selectionMode={false}
                 searchBarOpen={false}
                 boardNavigatorOpen={false}
                 boardZoom={1}
@@ -159,6 +162,7 @@ describe("Beta board toolbar layout", () => {
                 onMermaidCreateClick={vi.fn()}
                 onTableCreateClick={vi.fn()}
                 onDrawingToggleClick={vi.fn()}
+                onSelectionToggleClick={vi.fn()}
             />
         );
 
@@ -203,6 +207,7 @@ describe("BoardToolBar panel controls", () => {
     const toolbarProps = {
         cardEditing: false,
         drawingMode: false,
+        selectionMode: false,
         boardZoom: 1,
         setBoardZoom: vi.fn(),
         setMenuOpen: vi.fn(),
@@ -213,6 +218,7 @@ describe("BoardToolBar panel controls", () => {
         onMermaidCreateClick: vi.fn(),
         onTableCreateClick: vi.fn(),
         onDrawingToggleClick: vi.fn(),
+        onSelectionToggleClick: vi.fn(),
     };
 
     it("marks the open search or navigator button with the active color", () => {

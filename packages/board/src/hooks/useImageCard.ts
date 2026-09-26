@@ -52,10 +52,19 @@ export function useImageCard({
         width: image.width,
         height: image.height,
     });
+    const [syncedPosition, setSyncedPosition] = useState({ x: image.x, y: image.y });
+    if (!isEditing && (syncedPosition.x !== image.x || syncedPosition.y !== image.y)) {
+        setSyncedPosition({ x: image.x, y: image.y });
+        setImageState((prev) => ({ ...prev, x: image.x, y: image.y }));
+    }
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const lastImageTapRef = useRef(0);
     const imageStateRef = useRef(imageState);
+
+    useEffect(() => {
+        imageStateRef.current = imageState;
+    }, [imageState]);
     
     const saveImageDraft = useCallback(() => {
         const latestImageState = imageStateRef.current;

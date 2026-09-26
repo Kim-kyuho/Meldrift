@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | `cardEditing` | `boolean` | 일반 도구 목록 전체의 렌더 조건 (`!cardEditing`, 46줄) |
 | `drawingMode` | `boolean` | 왼쪽 아래 버튼의 시작/완료 상태와 아이콘 결정 |
+| `selectionMode` | `boolean` | `MousePointer` 버튼의 활성색과 `aria-pressed` 결정 |
 | `searchBarOpen` | `boolean` | 검색 버튼의 활성색과 `aria-pressed` 결정 |
 | `boardNavigatorOpen` | `boolean` | Compass 버튼의 활성색과 `aria-pressed` 결정 |
 | `boardZoom` / `setBoardZoom` | `number` / setter | `BoardZoomControl`에 그대로 전달 (157~160줄) |
@@ -19,6 +20,7 @@
 | `onMermaidCreateClick` | `() => void` | Mermaid 버튼 (126줄) |
 | `onTableCreateClick` | `() => void` | 표 버튼 (114줄) |
 | `onDrawingToggleClick` | `() => void` | 드로잉 버튼 (145줄) |
+| `onSelectionToggleClick` | `() => void` | 선택 모드 버튼. 동작은 [보드 다중 선택](./board-selection.md) |
 
 ## State
 
@@ -28,6 +30,7 @@
 
 | 순서 | 아이콘 | 콜백 | 클릭 시 함께 실행 |
 | --- | --- | --- | --- |
+| 0 | `MousePointer` | `onSelectionToggleClick` | 검색 패널·메모 네비게이터·보드 메뉴 닫기 |
 | 1 | `Compass` | `setBoardNavigatorOpen(prev => !prev)` | 검색 패널과 보드 메뉴 닫기 |
 | 2 | `Search` | `setSearchBarOpen(prev => !prev)` | 메모 네비게이터와 보드 메뉴 닫기 |
 | 3 | `SquarePen` | `onMemoCreateClick` | `setMenuOpen(false)` |

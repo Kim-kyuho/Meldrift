@@ -4,7 +4,7 @@ import { Rnd } from "react-rnd";
 import { noop } from "../../internal/noop";
 import type { TableCardData as BoardTable } from "@meldrift/core/cards";
 import { useTableCard } from "./useTableCard";
-import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
+import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import TableGrid from "./TableGrid";
 import TableToolBar from "./TableToolBar";
@@ -17,6 +17,7 @@ type TableCardProps<T extends BoardTable> = {
     /** 권한 개념이 없는 앱은 기본값을 그대로 쓴다. */
     canEdit?: boolean;
     isEditing: boolean;
+    groupOffset?: SelectionOffset;
     onEditing: () => void;
     onEditingClear: () => void;
     onPermissionDenied?: () => void;
@@ -32,6 +33,7 @@ export default function TableCard<T extends BoardTable>({
     zoom,
     canEdit = true,
     isEditing,
+    groupOffset,
     onEditing,
     onEditingClear,
     onPermissionDenied = noop,
@@ -72,7 +74,10 @@ export default function TableCard<T extends BoardTable>({
             <Rnd
                 data-editing={isEditing}
                 className={`table-rnd-${table.id} select-none rounded-xl ${isEditing ? "card-editing" : ""}`}
-                style={{ zIndex: isEditing ? ACTIVE_CARD_Z : table.z }}
+                style={{
+                    zIndex: isEditing ? ACTIVE_CARD_Z : table.z,
+                    translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,
+                }}
                 position={{ x: cardState.x, y: cardState.y }}
                 size={{ width: cardState.width, height: cardState.height }}
                 bounds="parent"

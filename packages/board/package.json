@@ -18,6 +18,7 @@
     "./useBoardMermaids": "./src/hooks/useBoardMermaids.ts",
     "./useBoardTables": "./src/hooks/useBoardTables.ts",
     "./useCardLayer": "./src/hooks/useCardLayer.ts",
+    "./useBoardSelection": "./src/hooks/useBoardSelection.ts",
     "./useMemoReorder": "./src/hooks/useMemoReorder.ts",
     "./useImageCard": "./src/hooks/useImageCard.ts",
     "./useBoardMarkdown": "./src/hooks/useBoardMarkdown.ts",

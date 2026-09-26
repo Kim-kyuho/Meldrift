@@ -53,6 +53,11 @@ export function useMermaidCard({
         width: mermaid.width,
         height: mermaid.height,
     });
+    const [syncedPosition, setSyncedPosition] = useState({ x: mermaid.x, y: mermaid.y });
+    if (!isEditing && (syncedPosition.x !== mermaid.x || syncedPosition.y !== mermaid.y)) {
+        setSyncedPosition({ x: mermaid.x, y: mermaid.y });
+        setCardState((prev) => ({ ...prev, x: mermaid.x, y: mermaid.y }));
+    }
     const [dragHandlePressed, setDragHandlePressed] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 

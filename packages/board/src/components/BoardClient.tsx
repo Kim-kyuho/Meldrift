@@ -17,13 +17,18 @@ import MermaidCard from "@meldrift/ui/MermaidCard";
 import TableCard from "@meldrift/ui/TableCard";
 import DrawingLayer from "@meldrift/ui/DrawingLayer";
 import DrawingToolBar from "@meldrift/ui/DrawingToolBar";
+import SelectionLayer from "@meldrift/ui/SelectionLayer";
+import SelectionToolBar from "@meldrift/ui/SelectionToolBar";
+import { useSelectionPointer } from "@meldrift/ui/useSelectionPointer";
 import BoardImageDropOverlay from "@meldrift/ui/BoardImageDropOverlay";
 import { useBoardImageDrop } from "@meldrift/ui/useBoardImageDrop";
 import { useBoardDrawing } from "@meldrift/ui/useBoardDrawing";
 import { useCardLayer } from "@meldrift/board/useCardLayer";
+import { useBoardSelection } from "@meldrift/board/useBoardSelection";
 import { useBoardImages } from "@meldrift/board/useBoardImages";
 import { imageInputAccept } from "@meldrift/board/image-file";
 import type { BoardSnapshot } from "@meldrift/board/board-state";
+import type { CardType } from "@meldrift/core/cards";
 import { useBoardMermaids } from "@meldrift/board/useBoardMermaids";
 import { useBoardTables } from "@meldrift/board/useBoardTables";
 import { useBoardMemoFocus } from "@meldrift/ui/useBoardMemoFocus";
@@ -334,6 +339,52 @@ export default function BoardClient({
         setTables,
     });
 
+    const {
+        selectionMode,
+        selectedCards,
+        selectionBounds,
+        clampSelectionOffset,
+        handleToggleSelectionMode,
+        handleSelectCards,
+        handleClearSelection,
+        handleMoveSelection,
+        handleDeleteSelection,
+    } = useBoardSelection({
+        boardWidth,
+        boardHeight,
+        memos, images, mermaids, tables,
+        setMemos,
+        setImages,
+        setMermaids,
+        setTables,
+        onDeleteMemo: handleDeleteMemo,
+        onDeleteImage: handleDeleteImage,
+        onDeleteMermaid: handleDeleteMermaid,
+        onDeleteTable: handleDeleteTable,
+    });
+
+    const {
+        marqueeRect,
+        selectionOffset,
+        handleSelectionPointerDown,
+        handleSelectionPointerMove,
+        handleSelectionPointerUp,
+        handleSelectionPointerCancel,
+    } = useSelectionPointer({
+        zoom: boardZoom,
+        selectionBounds,
+        onSelectCards: handleSelectCards,
+        onMoveSelection: handleMoveSelection,
+        onClearSelection: handleClearSelection,
+    });
+
+    const selectionActive = selectionMode && !isEditing && !hasPendingAiCards;
+    const cardsSelected = selectionActive && selectedCards.length > 0;
+    const groupOffset = selectionOffset ? clampSelectionOffset(selectionOffset) : null;
+    const selectedCardKeys = new Set(selectedCards.map((card) => `${card.type}:${card.id}`));
+    const groupOffsetOf = (type: CardType, id: number) =>
+        groupOffset && selectedCardKeys.has(`${type}:${id}`) ? groupOffset : undefined;
+
     const snapshot = useMemo<BoardSnapshot>(() => ({ board: currentBoard, memos, images, mermaids, tables, strokes }), [currentBoard, memos, images, mermaids, tables, strokes]);
     const savePaused = isEditing || drawingMode || hasPendingAiCards;
     const withPermission = (action: () => void) => () => {
@@ -376,11 +427,13 @@ export default function BoardClient({
                 setEditingMermaidId(null);
                 setEditingTableId(null);
                 setFocusedMemoId(null);
+                handleClearSelection();
             },
         })}
         <BoardToolBar
-            cardEditing={isEditing || drawingMode}
+            cardEditing={isEditing || drawingMode || cardsSelected}
             drawingMode={drawingMode}
+            selectionMode={selectionMode}
             searchBarOpen={searchBarOpen}
             boardNavigatorOpen={boardNavigatorOpen}
             boardZoom={boardZoom}
@@ -392,8 +445,24 @@ export default function BoardClient({
             onImageUploadClick={withPermission(handleImageUploadClick)}
             onMermaidCreateClick={withPermission(handleCreateTempMermaid)}
             onTableCreateClick={withPermission(handleCreateTempTable)}
-            onDrawingToggleClick={withPermission(handleToggleDrawingMode)}
+            onDrawingToggleClick={withPermission(() => {
+                if (selectionMode) handleToggleSelectionMode();
+                handleToggleDrawingMode();
+            })}
+            onSelectionToggleClick={withPermission(() => {
+                if (!selectionMode && hasPendingAiCards) {
+                    setBoardMessage("Save or discard the assistant's changes first.");
+                    return;
+                }
+                handleToggleSelectionMode();
+            })}
         />
+        {cardsSelected && (
+            <SelectionToolBar
+                selectedCount={selectedCards.length}
+                onDelete={handleDeleteSelection}
+            />
+        )}
         {drawingMode && (
             <DrawingToolBar
                 drawingTool={drawingTool}
@@ -493,9 +562,11 @@ export default function BoardClient({
             <div
                 ref={cardLocationRef}
                 className="board-scroll-layer h-full w-full overflow-auto"
-                onPointerDown={handleBoardPanStart}
-                onPointerMove={handleBoardPanMove}
-                onPointerUp={handleBoardPanEnd}
+                style={selectionActive ? { touchAction: "none" } : undefined}
+                onPointerDown={selectionActive ? handleSelectionPointerDown : handleBoardPanStart}
+                onPointerMove={selectionActive ? handleSelectionPointerMove : handleBoardPanMove}
+                onPointerUp={selectionActive ? handleSelectionPointerUp : handleBoardPanEnd}
+                onPointerCancel={selectionActive ? handleSelectionPointerCancel : undefined}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -520,7 +591,7 @@ export default function BoardClient({
                             WebkitUserSelect: "none",
                             userSelect: "none",
                             WebkitTouchCallout: "none",
-                            cursor: boardPanning ? "grabbing" : "grab",
+                            cursor: selectionActive ? "default" : boardPanning ? "grabbing" : "grab",
                         }}
                 >
                     {images.map((image) => (
@@ -529,9 +600,11 @@ export default function BoardClient({
                             image={image}
                             zoom={boardZoom}
                             isEditing={editingImageId === image.imageId}
+                            groupOffset={groupOffsetOf("image", image.imageId)}
                             onEditing={() => {
                                 if (!canEditCard) { showPermissionMessage(); return; }
                                 setEditingImageId(image.imageId);
+                                handleClearSelection();
                                 setEditingMemoId(null);
                                 setEditingMermaidId(null);
                                 setEditingTableId(null);
@@ -552,11 +625,13 @@ export default function BoardClient({
                             canEdit={canEditCard}
                             isEditing={editingMemoId === memo.id}
                             isFocused={focusedMemoId === memo.id}
+                            groupOffset={groupOffsetOf("memo", memo.id)}
                             onFocus={() => setFocusedMemoId(memo.id)}
                             onFocusClear={() => setFocusedMemoId(null)}
                             onEditing={() => {
                                 if (!canEditCard) { showPermissionMessage(); return; }
                                 setEditingMemoId(memo.id);
+                                handleClearSelection();
                                 setEditingImageId(null);
                                 setEditingMermaidId(null);
                                 setEditingTableId(null);
@@ -577,9 +652,11 @@ export default function BoardClient({
                             zoom={boardZoom}
                             canEdit={canEditCard}
                             isEditing={editingMermaidId === mermaid.id}
+                            groupOffset={groupOffsetOf("mermaid", mermaid.id)}
                             onEditing={() => {
                                 if (!canEditCard) { showPermissionMessage(); return; }
                                 setEditingMermaidId(mermaid.id);
+                                handleClearSelection();
                                 setEditingMemoId(null);
                                 setEditingImageId(null);
                                 setEditingTableId(null);
@@ -601,9 +678,11 @@ export default function BoardClient({
                             zoom={boardZoom}
                             canEdit={canEditCard}
                             isEditing={editingTableId === table.id}
+                            groupOffset={groupOffsetOf("table", table.id)}
                             onEditing={() => {
                                 if (!canEditCard) { showPermissionMessage(); return; }
                                 setEditingTableId(table.id);
+                                handleClearSelection();
                                 setEditingMemoId(null);
                                 setEditingImageId(null);
                                 setEditingMermaidId(null);
@@ -629,6 +708,13 @@ export default function BoardClient({
                         onStrokeEnd={handleStrokeEnd}
                         onErase={handleErase}
                     />
+                    {selectionActive && (
+                        <SelectionLayer
+                            marqueeRect={marqueeRect}
+                            selectionBounds={selectionBounds}
+                            selectionOffset={groupOffset ?? { x: 0, y: 0 }}
+                        />
+                    )}
                 </div>
             </div>
             </div>
