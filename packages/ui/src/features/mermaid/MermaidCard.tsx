@@ -7,7 +7,7 @@ import { noop } from "../../internal/noop";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import { MermaidCardData, useMermaidCard } from "./useMermaidCard";
 import { useMermaidRenderer } from "./useMermaidRenderer";
-import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
+import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
 import {
     detectMermaidDiagramType,
     getMermaidTemplate,
@@ -26,6 +26,7 @@ type MermaidCardProps = {
     /** 권한 개념이 없는 앱은 기본값을 그대로 쓴다. */
     canEdit?: boolean;
     isEditing: boolean;
+    groupOffset?: SelectionOffset;
     onEditing: () => void;
     onEditingClear: () => void;
     onPermissionDenied?: () => void;
@@ -58,6 +59,7 @@ export default function MermaidCard({
     zoom,
     canEdit = true,
     isEditing,
+    groupOffset,
     onEditing,
     onEditingClear,
     onPermissionDenied = noop,
@@ -106,6 +108,7 @@ export default function MermaidCard({
                 className={`mermaid-rnd-${mermaid.id} select-none rounded-xl ${isEditing ? "card-editing" : ""}`}
                 style={{
                     zIndex: isEditing ? ACTIVE_CARD_Z : mermaid.z,
+                    translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,
                 }}
                 default={{
                     x: mermaid.x,

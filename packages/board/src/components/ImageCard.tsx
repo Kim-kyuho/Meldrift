@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import ImageCardView from "@meldrift/ui/ImageCard";
 import { ImageCardData, useImageCard } from "@meldrift/board/useImageCard";
 import { imageBytesToBlob } from "@meldrift/board/image-file";
+import type { SelectionOffset } from "@meldrift/core/cards";
 
 type ImageCardProps = {
     image: ImageCardData;
     zoom: number;
     isEditing: boolean;
+    groupOffset?: SelectionOffset;
     onEditing: () => void;
     onEditingClear: () => void;
     onUpdate: (
@@ -28,6 +30,7 @@ export default function ImageCard({
     image,
     zoom,
     isEditing,
+    groupOffset,
     onEditing,
     onEditingClear,
     onUpdate,
@@ -71,6 +74,7 @@ export default function ImageCard({
             z={image.z}
             zoom={zoom}
             isEditing={isEditing}
+            groupOffset={groupOffset}
             imageState={imageState}
             deleteDialogOpen={deleteDialogOpen}
             onPress={handleImagePress}

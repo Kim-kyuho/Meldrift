@@ -10,6 +10,23 @@ export type CardLayer = {
     z: number;
 };
 
+export type SelectedCard = {
+    type: CardType;
+    id: number;
+};
+
+export type SelectionRect = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+export type SelectionOffset = {
+    x: number;
+    y: number;
+};
+
 export const cardTypeOrder: Record<CardType, number> = {
     memo: 0,
     image: 1,

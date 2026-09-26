@@ -10,7 +10,7 @@ import {
     type RndDragCallback,
     type RndResizeCallback,
 } from "react-rnd";
-import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
+import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import ImageToolBar from "./ImageToolBar";
 
@@ -26,6 +26,7 @@ type ImageCardViewProps = {
     z: number;
     zoom: number;
     isEditing: boolean;
+    groupOffset?: SelectionOffset;
     imageState: ImageCardState;
     deleteDialogOpen: boolean;
     onPress: MouseEventHandler<HTMLDivElement>;
@@ -47,6 +48,7 @@ export default function ImageCardView({
     z,
     zoom,
     isEditing,
+    groupOffset,
     imageState,
     deleteDialogOpen,
     onPress,
@@ -69,6 +71,7 @@ export default function ImageCardView({
                 className={`image-rnd-${imageId} select-none ${isEditing ? "card-editing" : ""}`}
                 style={{
                     zIndex: isEditing ? ACTIVE_CARD_Z : z,
+                    translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,
                     WebkitTouchCallout: "none",
                     WebkitUserSelect: "none",
                     userSelect: "none",

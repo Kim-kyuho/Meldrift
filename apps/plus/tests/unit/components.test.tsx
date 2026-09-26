@@ -111,6 +111,7 @@ describe("BoardToolBar panel feedback", () => {
             <BoardToolBar
                 cardEditing={false}
                 drawingMode={false}
+                selectionMode={false}
                 searchBarOpen
                 boardNavigatorOpen={false}
                 boardZoom={1}
@@ -123,6 +124,7 @@ describe("BoardToolBar panel feedback", () => {
                 onMermaidCreateClick={vi.fn()}
                 onTableCreateClick={vi.fn()}
                 onDrawingToggleClick={vi.fn()}
+                onSelectionToggleClick={vi.fn()}
             />
         );
 
@@ -133,6 +135,7 @@ describe("BoardToolBar panel feedback", () => {
             <BoardToolBar
                 cardEditing={false}
                 drawingMode={false}
+                selectionMode={false}
                 searchBarOpen={false}
                 boardNavigatorOpen
                 boardZoom={1}
@@ -145,6 +148,7 @@ describe("BoardToolBar panel feedback", () => {
                 onMermaidCreateClick={vi.fn()}
                 onTableCreateClick={vi.fn()}
                 onDrawingToggleClick={vi.fn()}
+                onSelectionToggleClick={vi.fn()}
             />
         );
 

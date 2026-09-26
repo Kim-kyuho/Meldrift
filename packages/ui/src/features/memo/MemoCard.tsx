@@ -3,7 +3,7 @@ import { Rnd } from "react-rnd";
 import { noop } from "../../internal/noop";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import { MemoCardData, useMemoCard } from "./useMemoCard";
-import { ACTIVE_CARD_Z } from "@meldrift/core/cards";
+import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
 import MemoEditor from "./MemoEditor";
 import type { MemoEditorHandle } from "./MemoEditor";
 import MemoToolBar from "./MemoToolBar";
@@ -15,6 +15,7 @@ type MemoCardProps = {
     canEdit?: boolean;
     isEditing: boolean;
     isFocused: boolean;
+    groupOffset?: SelectionOffset;
     onFocus: () => void;
     onFocusClear: () => void;
     onEditing: () => void;
@@ -53,6 +54,7 @@ export default function MemoCard(props: MemoCardProps) {
         canEdit = true,
         isEditing,
         isFocused,
+        groupOffset,
         onFocus,
         onFocusClear,
         onEditing,
@@ -106,6 +108,7 @@ export default function MemoCard(props: MemoCardProps) {
                 className={`memo-rnd-${memo.id} select-none rounded-xl ${isEditing ? "card-editing" : isFocused ? "memo-focused" : ""}`}
                 style={{
                     zIndex: isEditing ? ACTIVE_CARD_Z : memo.z,
+                    translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,
                 }}
                 default={{
                     x: memo.x,

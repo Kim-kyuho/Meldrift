@@ -2,12 +2,13 @@
 
 import PressableButton from "../../shared/PressableButton";
 import { Dispatch, SetStateAction } from "react";
-import { Camera, Check, Compass, Pencil, Search, SquarePen, Table2, Workflow } from "lucide-react";
+import { Camera, Check, Compass, MousePointer, Pencil, Search, SquarePen, Table2, Workflow } from "lucide-react";
 import BoardZoomControl from "./BoardZoomControl";
 
 type BoardToolBarProps = {
     cardEditing: boolean;
     drawingMode: boolean;
+    selectionMode: boolean;
     searchBarOpen: boolean;
     boardNavigatorOpen: boolean;
     boardZoom: number;
@@ -20,11 +21,13 @@ type BoardToolBarProps = {
     onMermaidCreateClick: () => void;
     onTableCreateClick: () => void;
     onDrawingToggleClick: () => void;
+    onSelectionToggleClick: () => void;
 };
 
 export default function BoardToolBar({ 
     cardEditing,
     drawingMode,
+    selectionMode,
     searchBarOpen,
     boardNavigatorOpen,
     boardZoom,
@@ -37,6 +40,7 @@ export default function BoardToolBar({
     onMermaidCreateClick,
     onTableCreateClick,
     onDrawingToggleClick,
+    onSelectionToggleClick,
 }: BoardToolBarProps){
     const toolbarButtonClassName = "flex h-10 w-10 items-center justify-center px-0 py-0 hover:pl-0 hover:bg-white/80 hover:shadow-sm active:scale-90 active:bg-white active:shadow-inner";
     const toolbarIconClassName = "h-5 w-5 transition duration-150 ease-out";
@@ -45,6 +49,25 @@ export default function BoardToolBar({
         <>
             {!cardEditing && (
             <div className="board-toolbar toolbar-reveal fixed bottom-16 right-5 z-50000 flex flex-col items-end gap-1">
+                <div>
+                    <PressableButton
+                        variant="menu"
+                        className={toolbarButtonClassName}
+                        onClick={() => {
+                            setSearchBarOpen(false);
+                            setBoardNavigatorOpen(false);
+                            onSelectionToggleClick();
+                            setMenuOpen(false);
+                        }}
+                        aria-label="Select cards"
+                        aria-pressed={selectionMode}
+                    >
+                        <MousePointer
+                            className={toolbarIconClassName}
+                            style={selectionMode ? { color: "#ec4899" } : undefined}
+                        />
+                    </PressableButton>
+                </div>
                 <div>
                     <PressableButton
                         variant="menu"

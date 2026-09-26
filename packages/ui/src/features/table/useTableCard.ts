@@ -35,6 +35,11 @@ export function useTableCard<T extends BoardTable>({
         width: table.width,
         height: table.height,
     });
+    const [syncedPosition, setSyncedPosition] = useState({ x: table.x, y: table.y });
+    if (!isEditing && (syncedPosition.x !== table.x || syncedPosition.y !== table.y)) {
+        setSyncedPosition({ x: table.x, y: table.y });
+        setCardState((prev) => ({ ...prev, x: table.x, y: table.y }));
+    }
     const [dragHandlePressed, setDragHandlePressed] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const sourceRef = useRef(source);

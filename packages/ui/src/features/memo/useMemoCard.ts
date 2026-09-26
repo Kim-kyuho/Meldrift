@@ -65,6 +65,11 @@ export function useMemoCard({
         width: memo.width ?? 300,
         height: memo.height ?? 200,
     });
+    const [syncedPosition, setSyncedPosition] = useState({ x: memo.x, y: memo.y });
+    if (!isEditing && (syncedPosition.x !== memo.x || syncedPosition.y !== memo.y)) {
+        setSyncedPosition({ x: memo.x, y: memo.y });
+        setMemoState((prev) => ({ ...prev, x: memo.x, y: memo.y }));
+    }
 
     const [memoContent, setMemoContent] = useState(memo.content);
     const [memoColor, setMemoColor] = useState(memo.color);
