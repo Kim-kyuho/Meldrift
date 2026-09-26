@@ -194,9 +194,7 @@ test("sends one operation per edit and never resends an untouched card", async (
     const committed = server.changes.length;
 
     await page.getByText("Rewritten delta memo", { exact: true }).dblclick();
-    // TipTap keeps the existing document, so fill() would append to it.
-    await page.locator('.card-editing [contenteditable="true"]').click();
-    await page.keyboard.press("ControlOrMeta+a");
+    await page.locator('.card-editing [contenteditable="true"]').selectText();
     await page.keyboard.type("Rewritten delta memo, second pass");
     await finishEditing(page);
 
