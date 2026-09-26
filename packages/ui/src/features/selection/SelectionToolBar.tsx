@@ -19,7 +19,7 @@ export default function SelectionToolBar({
     return (
         <>
             <CardToolPortal>
-                <CardToolButton label="Delete selected cards" onClick={() => setDeleteDialogOpen(true)}>
+                <CardToolButton label="Delete selected cards" onClick={() => setDeleteDialogOpen(true)} className="text-rose-600">
                     <Trash2 />
                 </CardToolButton>
             </CardToolPortal>
