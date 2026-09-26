@@ -1,4 +1,5 @@
 import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
+import { boardPreviewFolder } from "@/lib/board-preview";
 import { getDb } from "@/lib/db";
 import { db_boards } from "@/lib/db/schema";
 import { v2 as cloudinary } from "cloudinary";
@@ -113,11 +114,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
-                    folder: `meldrift/boards/${boardId}`,
+                    folder: boardPreviewFolder(boardId),
                     public_id: "PreviewIMG",
                     format: "webp",
                     overwrite: true,
-                    invalidate: true,
                 },
                 (error, result) => {
                     if (error || !result) {
@@ -132,11 +132,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             uploadStream.end(buffer);
         });
 
+        await db
+            .update(db_boards)
+            .set({ previewVersion: uploadResult.version })
+            .where(eq(db_boards.boardId, boardId));
+
         return NextResponse.json(
             {
                 ok: true,
                 preview: {
                     publicId: uploadResult.public_id,
+                    version: uploadResult.version,
                     secureUrl: uploadResult.secure_url,
                     width: uploadResult.width,
                     height: uploadResult.height,

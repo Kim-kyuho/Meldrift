@@ -43,6 +43,13 @@
       "when": 1789787652837,
       "tag": "0005_storage_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790410009713,
+      "tag": "0006_board_preview_version",
+      "breakpoints": true
     }
   ]
 }

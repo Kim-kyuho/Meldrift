@@ -1,4 +1,5 @@
 import { getCurrentUserFromRequest } from "@/lib/auth/current-user";
+import { boardPreviewPublicId } from "@/lib/board-preview";
 import { getDb } from "@/lib/db";
 import {
     db_assetChunks, db_assets, db_boards, db_boardSnapshots, db_boardSync, db_drawings, db_drawingStrokes,
@@ -139,7 +140,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             .from(db_images)
             .where(eq(db_images.boardId, boardId));
 
-        const previewPublicId = `meldrift/boards/${boardId}/PreviewIMG`;
+        const previewPublicId = boardPreviewPublicId(boardId);
 
         await Promise.all([
             ...boardImages.flatMap((image) => image.publicId ? [cloudinary.uploader.destroy(image.publicId)] : []),

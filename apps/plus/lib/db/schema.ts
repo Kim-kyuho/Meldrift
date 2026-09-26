@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, bigserial, text, integer, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
+import { pgTable, serial, bigint, bigserial, text, integer, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
 import type { TableSource } from "@meldrift/core/table-card";
 import type { BoardStroke, StrokePoint } from "@meldrift/core/board-stroke";
 
@@ -107,6 +107,7 @@ export const db_boards = pgTable("boards", {
     ownerId : text("owner_id").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
+    previewVersion: bigint("preview_version", { mode: "number" }),
 });
 
 export const db_memos = pgTable("memos", {
