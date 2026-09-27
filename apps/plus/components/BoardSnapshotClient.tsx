@@ -33,7 +33,11 @@ export default function BoardSnapshotClient({ board }: { board: BoardInfo }) {
                     </div>
                 </div>
             ) : canEdit && (
-                <p role="status" className="fixed bottom-3 left-24 z-50000 max-w-sm text-xs text-neutral-600">
+                <p
+                    role="status"
+                    className="pointer-events-none fixed bottom-3 left-24 z-50000 max-w-sm select-none text-xs text-neutral-600"
+                    style={{ WebkitTouchCallout: "none" }}
+                >
                     {message || ({ saved: "Saved", local: "Saved locally", saving: "Saving...", error: "Server save failed" }[status])}
                 </p>
             )}
