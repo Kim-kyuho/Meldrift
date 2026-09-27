@@ -14,7 +14,9 @@ type Context = { params: Promise<{ boardId: string }> };
 export async function POST(request: NextRequest, { params }: Context) {
     const boardId = Number((await params).boardId);
     const gate = await editorFromRequest(request, boardId);
-    if (!gate.identity) return gate.failure;
+    if (!gate.identity) {
+        return gate.failure;
+    }
 
     const parsed = uploadRequestSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {

@@ -37,7 +37,9 @@ function setup() {
         }),
         releaseOutbox: vi.fn(async (claim: number) => {
             const batch = claimed.find((entry) => entry.claim === claim);
-            if (batch) pending = [...batch.operations, ...pending];
+            if (batch) {
+                pending = [...batch.operations, ...pending];
+            }
             claimed = claimed.filter((entry) => entry.claim !== claim);
         }),
         clearOutbox: vi.fn(async (claim: number) => {

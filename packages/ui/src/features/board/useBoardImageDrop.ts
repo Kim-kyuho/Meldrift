@@ -43,7 +43,9 @@ export function useBoardImageDrop({
         const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
             file.type.startsWith("image/"),
         );
-        if (droppedFiles.length === 0) return;
+        if (droppedFiles.length === 0) {
+            return;
+        }
 
         const container = boardScrollRef.current;
         let dropCoords: { x: number; y: number } | undefined;

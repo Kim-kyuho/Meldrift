@@ -31,9 +31,15 @@ export const boardOperationFields = {
 } as const satisfies Record<BoardOperationType, readonly string[]>;
 
 const sameJsonValue = (left: unknown, right: unknown): boolean => {
-    if (left === right) return true;
-    if (typeof left !== "object" || typeof right !== "object" || !left || !right) return false;
-    if (Array.isArray(left) !== Array.isArray(right)) return false;
+    if (left === right) {
+        return true;
+    }
+    if (typeof left !== "object" || typeof right !== "object" || !left || !right) {
+        return false;
+    }
+    if (Array.isArray(left) !== Array.isArray(right)) {
+        return false;
+    }
     const keys = Object.keys(left);
     return keys.length === Object.keys(right).length && keys.every((key) =>
         key in right && sameJsonValue(
@@ -70,7 +76,9 @@ function diffCollection<T extends Record<string, unknown>>({
 
         if (!before) {
             const changes: Record<string, unknown> = {};
-            for (const field of fields) changes[field] = item[field];
+            for (const field of fields) {
+                changes[field] = item[field];
+            }
             operations.push({
                 type, syncId, action: "create", changes,
                 ...(hasAsset?.(item) ? { asset: true } : {}),
@@ -80,10 +88,14 @@ function diffCollection<T extends Record<string, unknown>>({
 
         const changes: Record<string, unknown> = {};
         for (const field of fields) {
-            if (!equals(field, before[field], item[field])) changes[field] = item[field];
+            if (!equals(field, before[field], item[field])) {
+                changes[field] = item[field];
+            }
         }
         const asset = assetChanged?.(before, item) ?? false;
-        if (Object.keys(changes).length === 0 && !asset) continue;
+        if (Object.keys(changes).length === 0 && !asset) {
+            continue;
+        }
         operations.push({ type, syncId, action: "update", changes, ...(asset ? { asset: true } : {}) });
     }
 
@@ -153,8 +165,12 @@ export function mergeBoardOperations(pending: BoardOperation[], incoming: BoardO
         }
 
         if (operation.action === "delete") {
-            if (existing.action === "create") merged.delete(key);
-            else merged.set(key, operation);
+            if (existing.action === "create") {
+                merged.delete(key);
+            }
+            else {
+                merged.set(key, operation);
+            }
             continue;
         }
 

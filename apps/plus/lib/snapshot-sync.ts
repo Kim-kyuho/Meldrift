@@ -23,7 +23,9 @@ export class SnapshotSync {
         this.queue = this.queue.then(async () => {
             await this.database.replace(snapshot, true);
             this.lastChange = Date.now();
-            if (!this.stopped) this.onStatus("local");
+            if (!this.stopped) {
+                this.onStatus("local");
+            }
             this.schedule(snapshotDelayMs);
         }).catch((error: unknown) => {
             this.onStatus("error", error instanceof Error ? error.message : "Local save failed.");
@@ -39,21 +41,32 @@ export class SnapshotSync {
 
     private schedule(delay: number) {
         clearTimeout(this.timer);
-        if (!this.stopped) this.timer = setTimeout(() => {
-            if (!this.uploading) this.flight = this.upload();
-        }, delay);
+        if (!this.stopped) {
+            this.timer = setTimeout(() => {
+                if (!this.uploading) {
+                    this.flight = this.upload();
+                }
+            }, delay);
+        }
     }
 
     private async upload() {
-        if (this.stopped || this.uploading) return;
+        if (this.stopped || this.uploading) {
+            return;
+        }
         this.uploading = true;
         let retryDelay = snapshotDelayMs;
         try {
             await this.queue;
             const record = await this.database.record();
-            if (!record.sync.dirty || this.stopped) return;
+            if (!record.sync.dirty || this.stopped) {
+                return;
+            }
             const remaining = record.sync.changedAt + snapshotDelayMs - Date.now();
-            if (remaining > 0) { this.schedule(remaining); return; }
+            if (remaining > 0) {
+                this.schedule(remaining);
+                return;
+            }
             if (record.bytes.byteLength > maxSnapshotBytes) {
                 this.onStatus("error", "Saved locally. The board exceeds the 4 MiB server snapshot limit.");
                 return;
@@ -83,15 +96,21 @@ export class SnapshotSync {
             const latest = await this.database.record();
             this.onStatus(latest.sync.dirty ? "local" : "saved");
             this.onSaved();
-            if (latest.sync.dirty) this.schedule(Math.max(0, this.lastChange + snapshotDelayMs - Date.now()));
+            if (latest.sync.dirty) {
+                this.schedule(Math.max(0, this.lastChange + snapshotDelayMs - Date.now()));
+            }
             retryDelay = 0;
         } catch (error) {
-            if (!this.stopped) this.onStatus("error", error instanceof Error ? error.message : "Server save failed.");
+            if (!this.stopped) {
+                this.onStatus("error", error instanceof Error ? error.message : "Server save failed.");
+            }
             retryDelay = 10000;
         } finally {
             this.uploading = false;
             // A pending local save owns its own timer; transient errors retry without discarding it.
-            if (retryDelay === 10000) this.schedule(retryDelay);
+            if (retryDelay === 10000) {
+                this.schedule(retryDelay);
+            }
         }
     }
 

@@ -20,7 +20,9 @@ export async function GET(_request: Request, { params }: Context) {
         eq(db_assetChunks.assetId, assetId),
         eq(db_assetChunks.chunkIndex, index),
     )).limit(1);
-    if (!chunk) return new NextResponse(null, { status: 404 });
+    if (!chunk) {
+        return new NextResponse(null, { status: 404 });
+    }
 
     return new NextResponse(new Uint8Array(chunk.bytes), {
         headers: {

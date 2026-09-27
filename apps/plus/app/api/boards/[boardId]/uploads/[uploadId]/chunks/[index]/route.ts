@@ -15,7 +15,9 @@ export async function PUT(request: NextRequest, { params }: Context) {
     const boardId = Number(rawBoardId);
     const index = Number(rawIndex);
     const gate = await editorFromRequest(request, boardId);
-    if (!gate.identity) return gate.failure;
+    if (!gate.identity) {
+        return gate.failure;
+    }
     if (!Number.isSafeInteger(index) || index < 0) {
         return NextResponse.json({ message: "Invalid chunk index." }, { status: 400 });
     }

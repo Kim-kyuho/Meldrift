@@ -93,7 +93,9 @@ export function useTableCard<T extends BoardTable>({
             currentTime - lastTapRef.current > 80 && 
             currentTime - lastTapRef.current < 300;
         lastTapRef.current = currentTime;
-        if (isDoubleTap) editTable();
+        if (isDoubleTap) {
+            editTable();
+        }
     };
 
     useEffect(() => {

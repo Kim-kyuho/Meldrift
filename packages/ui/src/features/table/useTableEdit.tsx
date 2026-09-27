@@ -63,7 +63,9 @@ function TableColumnHeader({ column, table }: HeaderContext<TableRow, unknown>) 
     const meta = getTableEditMeta(table.options.meta);
     const sourceColumn = meta.source.columns.find((item) => item.id === column.id);
 
-    if (!sourceColumn) return null;
+    if (!sourceColumn) {
+        return null;
+    }
 
     return (
         <div className="flex min-w-0 items-center gap-1">
@@ -99,7 +101,9 @@ function TableColumnCell({ row, column, table }: CellContext<TableRow, unknown>)
     useLayoutEffect(() => {
         const textarea = textareaRef.current;
 
-        if (!textarea || !meta.isEditing) return;
+        if (!textarea || !meta.isEditing) {
+            return;
+        }
 
         textarea.style.height = "0";
         textarea.style.height = `${textarea.scrollHeight}px`;
@@ -142,7 +146,9 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
             (column) => Math.round(columnSizing[column.id] ?? 160) !== Math.round(column.width ?? 160)
         );
 
-        if (!widthChanged) return;
+        if (!widthChanged) {
+            return;
+        }
 
         onChange({
             ...currentSource,
@@ -175,7 +181,9 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
 
     const deleteColumn = useCallback((columnId: string) => {
         const currentSource = sourceRef.current;
-        if (currentSource.columns.length === 1) return;
+        if (currentSource.columns.length === 1) {
+            return;
+        }
 
         onChange({
             columns: currentSource.columns.filter((column) => column.id !== columnId),
@@ -262,7 +270,9 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
         const selectedIds = new Set(tableInstance.getSelectedRowModel().rows.map((row) => row.original.id));
         const remainingRows = currentSource.rows.filter((row) => !selectedIds.has(row.id));
 
-        if (remainingRows.length === 0) return;
+        if (remainingRows.length === 0) {
+            return;
+        }
 
         onChange({ ...currentSource, rows: remainingRows });
         setRowSelection({});

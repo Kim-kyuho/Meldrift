@@ -28,11 +28,15 @@ export function useBoardImages({
     const [uploadingImage, setUploadingImage] = useState(false);
 
     const handleImageUploadClick = () => {
-        if (!uploadingImage) imageInputRef.current?.click();
+        if (!uploadingImage) {
+            imageInputRef.current?.click();
+        }
     };
 
     const handleUploadImageFile = async (file: File, targetCoords?: { x: number; y: number }, offsetIndex = 0) => {
-        if (uploadingImage) return;
+        if (uploadingImage) {
+            return;
+        }
 
         setUploadingImage(true);
         setMessage("");
@@ -85,7 +89,9 @@ export function useBoardImages({
     const handleUploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = "";
-        if (!file || uploadingImage) return;
+        if (!file || uploadingImage) {
+            return;
+        }
         await handleUploadImageFile(file);
     };
 

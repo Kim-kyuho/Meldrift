@@ -42,7 +42,9 @@ export default function BoardClient({
     });
 
     useEffect(() => {
-        if (serverSaveVersion > 0 && canEdit) schedulePreviewUpdate();
+        if (serverSaveVersion > 0 && canEdit) {
+            schedulePreviewUpdate();
+        }
     }, [serverSaveVersion, canEdit, schedulePreviewUpdate]);
 
     const renderControls = (controls: SharedBoardControls) => (

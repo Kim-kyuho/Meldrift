@@ -106,7 +106,9 @@ test("moving an image sends geometry only and captures its pixels in the preview
         const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
         let count = 0;
         for (let index = 0; index < data.length; index += 4) {
-            if (data[index] > 200 && data[index + 1] < 60 && data[index + 2] < 60) count++;
+            if (data[index] > 200 && data[index + 1] < 60 && data[index + 2] < 60) {
+                count++;
+            }
         }
         return count;
     }, { base64: preview.bytes.toString("base64"), mimeType: preview.mimeType });

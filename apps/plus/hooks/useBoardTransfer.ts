@@ -31,21 +31,29 @@ export function useBoardTransfer(options: Options) {
 
     const canModify = () => active.current && latest.current.canEdit && !latest.current.savePaused;
     const reportError = (error: unknown) => {
-        if (active.current) latest.current.setMessage(error instanceof Error ? error.message : "The board transfer failed.");
+        if (active.current) {
+            latest.current.setMessage(error instanceof Error ? error.message : "The board transfer failed.");
+        }
     };
     const finish = () => {
         busy.current = false;
-        if (active.current) setTransferring(false);
+        if (active.current) {
+            setTransferring(false);
+        }
     };
 
     const handleExport = async () => {
-        if (!latest.current.canExport || latest.current.savePaused || busy.current) return;
+        if (!latest.current.canExport || latest.current.savePaused || busy.current) {
+            return;
+        }
         busy.current = true;
         setTransferring(true);
         try {
             const snapshot = latest.current.snapshot;
             const bytes = await latest.current.exportSnapshot(snapshot);
-            if (!active.current || !latest.current.canExport) return;
+            if (!active.current || !latest.current.canExport) {
+                return;
+            }
             const url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.sqlite3" }));
             const link = document.createElement("a");
             link.href = url;
@@ -61,7 +69,9 @@ export function useBoardTransfer(options: Options) {
     const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = "";
-        if (!file || !canModify() || busy.current) return;
+        if (!file || !canModify() || busy.current) {
+            return;
+        }
         if (file.size > maxSnapshotBytes) {
             latest.current.setMessage("The SQLite save file must be 4 MiB or smaller.");
             return;
@@ -70,11 +80,15 @@ export function useBoardTransfer(options: Options) {
         setTransferring(true);
         try {
             const imported = await latest.current.readSnapshotFile(await file.arrayBuffer());
-            if (!canModify()) return;
+            if (!canModify()) {
+                return;
+            }
             if (imported.images.some((image) => !image.data)) {
                 throw new Error("The save file must include image binaries.");
             }
-            if (!window.confirm("Importing this save file will replace the current board contents. Continue?")) return;
+            if (!window.confirm("Importing this save file will replace the current board contents. Continue?")) {
+                return;
+            }
             const board = latest.current.snapshot.board;
             const copy = reissueSyncIds(imported);
             latest.current.replaceSnapshot({
@@ -94,12 +108,22 @@ export function useBoardTransfer(options: Options) {
         resetDialogOpen,
         handleExport,
         handleImport,
-        handleImportClick: () => { if (canModify() && !busy.current) importInputRef.current?.click(); },
-        handleResetClick: () => { if (canModify() && !busy.current) setResetDialogOpen(true); },
+        handleImportClick: () => {
+            if (canModify() && !busy.current) {
+                importInputRef.current?.click();
+            }
+        },
+        handleResetClick: () => {
+            if (canModify() && !busy.current) {
+                setResetDialogOpen(true);
+            }
+        },
         handleResetCancel: () => setResetDialogOpen(false),
         handleResetConfirm: () => {
             setResetDialogOpen(false);
-            if (!canModify() || busy.current) return;
+            if (!canModify() || busy.current) {
+                return;
+            }
             latest.current.replaceSnapshot({ ...createEmptyBoardSnapshot(), board: latest.current.snapshot.board });
         },
     };

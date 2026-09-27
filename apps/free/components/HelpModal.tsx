@@ -32,7 +32,9 @@ export default function HelpModal({ onClose }: HelpModalProps) {
             })
             .then(setMarkdown)
             .catch((error: unknown) => {
-                if (error instanceof DOMException && error.name === "AbortError") return;
+                if (error instanceof DOMException && error.name === "AbortError") {
+                    return;
+                }
                 setErrorMessage(error instanceof Error ? error.message : "The Help document could not be loaded.");
             });
 
@@ -41,7 +43,9 @@ export default function HelpModal({ onClose }: HelpModalProps) {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose();
+            if (event.key === "Escape") {
+                onClose();
+            }
         };
 
         document.addEventListener("keydown", handleKeyDown);

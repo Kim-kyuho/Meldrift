@@ -91,8 +91,12 @@ function deleteStatement(operation: BoardOperation, target: CommitTarget, contex
 
 function operationStatement(operation: BoardOperation, context: CommitContext, guard: SQL) {
     const target = commitTargets[operation.type] as CommitTarget;
-    if (operation.action === "create") return createStatement(operation, target, context, guard);
-    if (operation.action === "update") return updateStatement(operation, target, context, guard);
+    if (operation.action === "create") {
+        return createStatement(operation, target, context, guard);
+    }
+    if (operation.action === "update") {
+        return updateStatement(operation, target, context, guard);
+    }
     return deleteStatement(operation, target, context, guard);
 }
 

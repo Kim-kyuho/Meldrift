@@ -15,7 +15,9 @@ export async function lookupChange(boardEndpoint: string, mutationId: string, si
         `${boardEndpoint}/changes?mutationId=${encodeURIComponent(mutationId)}`,
         { signal, cache: "no-store" },
     );
-    if (!response.ok) throw new Error("The board could not be checked for unfinished saves.");
+    if (!response.ok) {
+        throw new Error("The board could not be checked for unfinished saves.");
+    }
     return await response.json() as { applied: boolean; revision: number | null };
 }
 const terminalStatuses = [400, 401, 403, 404, 409, 413];
@@ -43,7 +45,9 @@ export class ChangeSync {
         this.queue = this.queue.then(async () => {
             await this.database.replace(snapshot, true);
             this.lastChange = Date.now();
-            if (!this.stopped) this.onStatus("local");
+            if (!this.stopped) {
+                this.onStatus("local");
+            }
             this.schedule(snapshotDelayMs);
         }).catch((error: unknown) => {
             this.onStatus("error", error instanceof Error ? error.message : "Local save failed.");
@@ -59,17 +63,25 @@ export class ChangeSync {
 
     private schedule(delay: number) {
         clearTimeout(this.timer);
-        if (!this.stopped) this.timer = setTimeout(() => {
-            if (!this.committing) this.flight = this.commit();
-        }, delay);
+        if (!this.stopped) {
+            this.timer = setTimeout(() => {
+                if (!this.committing) {
+                    this.flight = this.commit();
+                }
+            }, delay);
+        }
     }
 
     private async uploadAssets(batch: OutboxBatch) {
         for (const operation of batch.operations) {
-            if (!operation.asset || this.stopped) continue;
+            if (!operation.asset || this.stopped) {
+                continue;
+            }
             const assetId = String(operation.changes.assetId ?? "");
             const asset = assetId ? await this.database.asset(assetId) : null;
-            if (!asset) throw new Error("The image bytes are missing from local storage.");
+            if (!asset) {
+                throw new Error("The image bytes are missing from local storage.");
+            }
             await uploadAsset({
                 boardEndpoint: this.boardEndpoint, assetId,
                 data: asset.data, mimeType: asset.mimeType, signal: this.controller?.signal,
@@ -79,8 +91,12 @@ export class ChangeSync {
 
     private async nextBatch(): Promise<OutboxBatch | undefined> {
         const outbox = await this.database.outbox();
-        if (outbox.claimed.length > 0) return outbox.claimed[0];
-        if (outbox.pending.length === 0) return undefined;
+        if (outbox.claimed.length > 0) {
+            return outbox.claimed[0];
+        }
+        if (outbox.pending.length === 0) {
+            return undefined;
+        }
 
         const record = await this.database.record();
         const remaining = record.sync.changedAt + snapshotDelayMs - Date.now();
@@ -101,7 +117,9 @@ export class ChangeSync {
     }
 
     private async commit() {
-        if (this.stopped || this.committing) return;
+        if (this.stopped || this.committing) {
+            return;
+        }
         this.committing = true;
         let retry = false;
         try {
@@ -109,7 +127,9 @@ export class ChangeSync {
             const record = await this.database.record();
             const batch = await this.nextBatch();
             if (!batch || batch.operations.length === 0 || this.stopped) {
-                if (batch) await this.database.clearOutbox(batch.claim);
+                if (batch) {
+                    await this.database.clearOutbox(batch.claim);
+                }
                 return;
             }
 
@@ -119,7 +139,9 @@ export class ChangeSync {
 
             const encoded = encoder.encode(JSON.stringify(batch.operations));
             const staged = encoded.byteLength > inlineBudget;
-            if (staged) await this.stage(batch.mutationId, encoded);
+            if (staged) {
+                await this.stage(batch.mutationId, encoded);
+            }
 
             const response = await fetch(`${this.boardEndpoint}/changes`, {
                 method: "POST",
@@ -149,18 +171,24 @@ export class ChangeSync {
             const pending = outbox.pending.length > 0;
             this.onStatus(pending ? "local" : "saved");
             this.onCommitted();
-            if (pending) this.schedule(0);
+            if (pending) {
+                this.schedule(0);
+            }
         } catch (error) {
             if (error instanceof AssetUploadError && terminalStatuses.includes(error.status)) {
                 this.stop();
                 this.onStatus("blocked", error.message);
                 return;
             }
-            if (!this.stopped) this.onStatus("error", error instanceof Error ? error.message : "Server save failed.");
+            if (!this.stopped) {
+                this.onStatus("error", error instanceof Error ? error.message : "Server save failed.");
+            }
             retry = true;
         } finally {
             this.committing = false;
-            if (retry) this.schedule(retryDelayMs);
+            if (retry) {
+                this.schedule(retryDelayMs);
+            }
         }
     }
 

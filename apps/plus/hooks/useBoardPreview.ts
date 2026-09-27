@@ -44,7 +44,9 @@ const buildLatinFontEmbedCSS = async () => {
     // cssText를 문자열 치환하지 않는다. 브라우저마다 따옴표와 공백을 다르게 정규화한다.
     const faces = await Promise.all(readLatinFontFaceRules().map(async (rule) => {
         const url = /url\(["']?([^"')]+)["']?\)/.exec(rule.style.getPropertyValue("src"))?.[1];
-        if (!url) return "";
+        if (!url) {
+            return "";
+        }
 
         try {
             const dataUrl = await toDataUrl(url);

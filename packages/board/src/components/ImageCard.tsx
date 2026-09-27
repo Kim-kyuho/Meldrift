@@ -61,7 +61,9 @@ export default function ImageCard({
 
     useEffect(() => {
         const imageElement = imageElementRef.current;
-        if (!imageElement || !image.data || !image.mimeType) return;
+        if (!imageElement || !image.data || !image.mimeType) {
+            return;
+        }
 
         const objectUrl = URL.createObjectURL(imageBytesToBlob(image.data, image.mimeType));
         imageElement.src = objectUrl;

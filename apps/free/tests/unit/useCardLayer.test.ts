@@ -78,9 +78,15 @@ describe("useCardLayer", () => {
         });
 
         act(() => {
-            if (type === "memo") result.current.memos.handleCreateTempMemo();
-            if (type === "mermaid") result.current.mermaids.handleCreateTempMermaid();
-            if (type === "table") result.current.tables.handleCreateTempTable();
+            if (type === "memo") {
+                result.current.memos.handleCreateTempMemo();
+            }
+            if (type === "mermaid") {
+                result.current.mermaids.handleCreateTempMermaid();
+            }
+            if (type === "table") {
+                result.current.tables.handleCreateTempTable();
+            }
         });
         const cards = () => ({
             memo: result.current.memos.memos,

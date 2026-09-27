@@ -14,11 +14,15 @@ async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 
     await context.route("**/api/**", async (route) => {
         const request = route.request();
         const path = new URL(request.url()).pathname.replace(/^\/plus/, "");
-        if (path === "/api/me") return route.fulfill({ json: { user: { email: "snapshot-e2e@example.test", isApproved: true, role: "user" } } });
+        if (path === "/api/me") {
+            return route.fulfill({ json: { user: { email: "snapshot-e2e@example.test", isApproved: true, role: "user" } } });
+        }
         const match = path.match(/^\/api\/boards\/(\d+)\/snapshot$/);
         if (match) {
             if (request.method() === "PUT") {
-                if (failUploads) return route.fulfill({ status: 503, json: { message: "Simulated offline storage" } });
+                if (failUploads) {
+                    return route.fulfill({ status: 503, json: { message: "Simulated offline storage" } });
+                }
                 expect(Number(request.headers()["x-snapshot-revision"])).toBe(revision);
                 bytes = request.postDataBuffer()!;
                 expect(bytes.subarray(0, 16).toString()).toBe("SQLite format 3\0");
@@ -27,9 +31,11 @@ async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 
                 uploads.push(bytes);
                 return route.fulfill({ json: { ok: true, revision } });
             }
-            if (bytes) return route.fulfill({ body: bytes, headers: {
-                "Content-Type": "application/vnd.sqlite3", "X-Snapshot-Revision": String(revision), "X-Snapshot-Mutation": mutation,
-            } });
+            if (bytes) {
+                return route.fulfill({ body: bytes, headers: {
+                    "Content-Type": "application/vnd.sqlite3", "X-Snapshot-Revision": String(revision), "X-Snapshot-Mutation": mutation,
+                } });
+            }
             if (initialLoadDelayMs > 0) {
                 await new Promise((resolve) => setTimeout(resolve, initialLoadDelayMs));
                 initialLoadDelayMs = 0;
@@ -39,8 +45,12 @@ async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 
                 memos: [], images: [], mermaids: [], tables: [], strokes: [],
             } } });
         }
-        if (path.endsWith("/preview")) return route.fulfill({ json: { ok: true } });
-        if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method())) legacyWrites.push(path);
+        if (path.endsWith("/preview")) {
+            return route.fulfill({ json: { ok: true } });
+        }
+        if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method())) {
+            legacyWrites.push(path);
+        }
         return route.fulfill({ json: { ok: true, unlocked: false } });
     });
     return { uploads, legacyWrites, setOffline: (value: boolean) => { failUploads = value; } };

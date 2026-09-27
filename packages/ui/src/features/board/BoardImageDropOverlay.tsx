@@ -5,7 +5,9 @@ export function BoardImageDropOverlay({
     isDragging: boolean;
     message?: string;
 }) {
-    if (!isDragging) return null;
+    if (!isDragging) {
+        return null;
+    }
 
     return (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-indigo-500/10 backdrop-blur-[1px] border-4 border-dashed border-indigo-500/60 m-3 rounded-2xl transition-all">

@@ -48,11 +48,17 @@ export function useCardLayer({
         ].sort((left, right) => left.z - right.z || cardTypeOrder[left.type] - cardTypeOrder[right.type] || left.id - right.id);
 
         const targetIndex = cards.findIndex((card) => card.type === type && card.id === id);
-        if (targetIndex < 0) return;
+        if (targetIndex < 0) {
+            return;
+        }
 
         const [target] = cards.splice(targetIndex, 1);
-        if (action === "front") cards.push(target);
-        else cards.unshift(target);
+        if (action === "front") {
+            cards.push(target);
+        }
+        else {
+            cards.unshift(target);
+        }
 
         applyCardLayers(cards.map((card, index) => ({ ...card, z: index + 1 })));
     };

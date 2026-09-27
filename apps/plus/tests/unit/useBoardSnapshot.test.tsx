@@ -31,7 +31,9 @@ describe("Plus snapshot lifecycle", () => {
         database = makeDatabase();
         mocks.createDatabase.mockReturnValue(database);
         vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-            if (url === "/api/me") return Response.json({ user: { email: "editor@example.com", isApproved: true } });
+            if (url === "/api/me") {
+                return Response.json({ user: { email: "editor@example.com", isApproved: true } });
+            }
             return new Response(new Uint8Array(16), { headers: { "Content-Type": "application/vnd.sqlite3", "X-Snapshot-Revision": "1" } });
         }));
     });
@@ -76,7 +78,9 @@ describe("Plus snapshot lifecycle", () => {
         const original = vi.mocked(fetch).getMockImplementation()!;
         vi.mocked(fetch).mockImplementation(async (...args) => {
             const response = await original(...args);
-            if (String(args[0]).endsWith("/snapshot")) response.headers.set("X-Snapshot-Mutation", "accepted-change");
+            if (String(args[0]).endsWith("/snapshot")) {
+                response.headers.set("X-Snapshot-Mutation", "accepted-change");
+            }
             return response;
         });
         const { result, unmount } = renderHook(() => useBoardSnapshot(board));

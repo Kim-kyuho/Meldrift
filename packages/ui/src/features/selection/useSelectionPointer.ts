@@ -151,11 +151,15 @@ export function useSelectionPointer({
         }
 
         if (press.insideSelection) {
-            if (offset) onMoveSelection(offset);
+            if (offset) {
+                onMoveSelection(offset);
+            }
             return;
         }
 
-        if (rect) onSelectCards(rect);
+        if (rect) {
+            onSelectCards(rect);
+        }
     };
 
     const handleSelectionPointerCancel = (event: ReactPointerEvent<HTMLElement>) => {

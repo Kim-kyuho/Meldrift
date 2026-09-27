@@ -125,7 +125,9 @@ export default function MermaidCodeEditor({ value, onChange }: MermaidCodeEditor
     }, [onChange]);
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        if (!containerRef.current) {
+            return;
+        }
 
         const editor = new EditorView({
             parent: containerRef.current,
@@ -166,7 +168,9 @@ export default function MermaidCodeEditor({ value, onChange }: MermaidCodeEditor
 
     useEffect(() => {
         const editor = editorRef.current;
-        if (!editor || editor.state.doc.toString() === value) return;
+        if (!editor || editor.state.doc.toString() === value) {
+            return;
+        }
 
         editor.dispatch({
             changes: { from: 0, to: editor.state.doc.length, insert: value },

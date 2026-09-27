@@ -37,16 +37,22 @@ export async function GET(request: NextRequest, { params }: Context) {
 export async function POST(request: NextRequest, { params }: Context) {
     const user = await getCurrentUserFromRequest(request);
     const message = getCardPermissionMessage(user);
-    if (message || !user) return NextResponse.json({ message }, { status: 403 });
+    if (message || !user) {
+        return NextResponse.json({ message }, { status: 403 });
+    }
 
     const boardId = Number((await params).boardId);
     if (!Number.isSafeInteger(boardId) || boardId <= 0) {
         return NextResponse.json({ message: "Invalid change request." }, { status: 400 });
     }
-    if (Number(request.headers.get("Content-Length")) > maxChangeBytes) return tooLarge();
+    if (Number(request.headers.get("Content-Length")) > maxChangeBytes) {
+        return tooLarge();
+    }
 
     const body = await request.text();
-    if (Buffer.byteLength(body, "utf8") > maxChangeBytes) return tooLarge();
+    if (Buffer.byteLength(body, "utf8") > maxChangeBytes) {
+        return tooLarge();
+    }
 
     const hash = getSessionTokenHash(request.cookies.get(sessionCookieName)?.value);
     const db = getDb();
@@ -63,7 +69,9 @@ export async function POST(request: NextRequest, { params }: Context) {
             const [applied] = await db.select().from(db_syncMutations)
                 .where(and(eq(db_syncMutations.boardId, boardId), eq(db_syncMutations.mutationId, stagedId)))
                 .limit(1);
-            if (applied) return NextResponse.json({ ok: true, revision: applied.revision });
+            if (applied) {
+                return NextResponse.json({ ok: true, revision: applied.revision });
+            }
             return NextResponse.json(
                 { message: "The staged changes are no longer available. Upload them again." }, { status: 409 });
         }
@@ -100,7 +108,9 @@ export async function POST(request: NextRequest, { params }: Context) {
     const results = await db.batch([lock, ...rest]);
     const committed = results[results.length - 1];
     if (committed.rows.length) {
-        if (staged) await discardAsset(db, boardId, stagedId);
+        if (staged) {
+            await discardAsset(db, boardId, stagedId);
+        }
         return NextResponse.json({ ok: true, revision: Number(committed.rows[0].revision) });
     }
 
@@ -108,7 +118,9 @@ export async function POST(request: NextRequest, { params }: Context) {
         .where(and(eq(db_syncMutations.boardId, boardId), eq(db_syncMutations.mutationId, changeRequest.mutationId)))
         .limit(1);
     if (applied) {
-        if (staged) await discardAsset(db, boardId, stagedId);
+        if (staged) {
+            await discardAsset(db, boardId, stagedId);
+        }
         if (applied.digest !== digest) {
             return NextResponse.json({ message: "This request id already committed different changes." }, { status: 409 });
         }

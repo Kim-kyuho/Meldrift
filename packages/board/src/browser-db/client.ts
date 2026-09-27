@@ -25,10 +25,16 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
                     worker.addEventListener("message", (event: MessageEvent<BrowserDbResponse>) => {
                         const response = event.data;
                         const entry = pending.get(response.id);
-                        if (!entry) return;
+                        if (!entry) {
+                            return;
+                        }
                         pending.delete(response.id);
-                        if (response.ok) entry.resolve(response.value);
-                        else entry.reject(new Error(response.error));
+                        if (response.ok) {
+                            entry.resolve(response.value);
+                        }
+                        else {
+                            entry.reject(new Error(response.error));
+                        }
                     });
                     worker.addEventListener("error", close);
                     void navigator.storage?.persist?.().catch(() => false);
@@ -65,7 +71,9 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
         releaseOutbox: (claim: number) => request<void>({ type: "releaseOutbox", claim }),
         clearOutbox: (claim: number) => request<void>({ type: "clearOutbox", claim }),
         reset: async () => {
-            if (resetInProgress) return;
+            if (resetInProgress) {
+                return;
+            }
             resetInProgress = true;
             try { await request<void>({ type: "reset" }); }
             catch (error) { resetInProgress = false; throw error; }

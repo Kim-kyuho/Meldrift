@@ -22,7 +22,9 @@ export default function BoardNavigator({
         const numericValue = input.value.replace(/\D/g, "");
         input.value = numericValue;
 
-        if (!numericValue) return;
+        if (!numericValue) {
+            return;
+        }
 
         onMemoNumberChange(Number(numericValue));
     };
