@@ -24,7 +24,9 @@ export function useBoardMarkdown(snapshot: BoardSnapshot) {
     const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
-        if (compiledDocument.imageAssets.length === 0) return;
+        if (compiledDocument.imageAssets.length === 0) {
+            return;
+        }
 
         const objectUrls: string[] = [];
         const urls: Record<string, string> = {};
@@ -51,7 +53,9 @@ export function useBoardMarkdown(snapshot: BoardSnapshot) {
         }
 
         queueMicrotask(() => {
-            if (active) setPreviewState(nextState);
+            if (active) {
+                setPreviewState(nextState);
+            }
         });
 
         return () => {

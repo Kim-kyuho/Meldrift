@@ -10,10 +10,14 @@ export function useBoardLoad() {
         let active = true;
         loadBoardState()
             .then((snapshot) => {
-                if (active) setInitialSnapshot(snapshot);
+                if (active) {
+                    setInitialSnapshot(snapshot);
+                }
             })
             .catch((error: unknown) => {
-                if (!active) return;
+                if (!active) {
+                    return;
+                }
                 setDatabaseError(error instanceof Error ? error.message : "Browser SQLite could not be opened.");
             });
         return () => { active = false; };

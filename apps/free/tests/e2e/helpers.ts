@@ -71,7 +71,9 @@ export function boardDatabaseContainsText(page: Page, text: string) {
                     break;
                 }
             }
-            if (matches) return true;
+            if (matches) {
+                return true;
+            }
         }
         return false;
     }, text);

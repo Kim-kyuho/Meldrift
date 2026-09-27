@@ -58,9 +58,11 @@ export function createDeltaServer() {
             const url = new URL(request.url());
             const path = url.pathname.replace(/^\/plus/, "");
             const method = request.method();
-            if (path === "/api/me") return route.fulfill({ json: {
-                user: { id: 1, email: "delta-e2e@example.test", isApproved: true, role: "user" },
-            } });
+            if (path === "/api/me") {
+                return route.fulfill({ json: {
+                    user: { id: 1, email: "delta-e2e@example.test", isApproved: true, role: "user" },
+                } });
+            }
             const match = path.match(/^\/api\/boards\/(\d+)\/(.*)$/);
             if (match) {
                 const boardId = Number(match[1]);
@@ -84,7 +86,9 @@ export function createDeltaServer() {
                 if (endpoint === "changes" && method === "POST") {
                     const change = request.postDataJSON() as Change;
                     attempts.push(change);
-                    if (offline) return route.fulfill({ status: 503, json: { message: "Simulated offline storage" } });
+                    if (offline) {
+                        return route.fulfill({ status: 503, json: { message: "Simulated offline storage" } });
+                    }
                     if (applied.has(change.mutationId)) {
                         return route.fulfill({ json: { ok: true, revision: applied.get(change.mutationId) } });
                     }
@@ -92,8 +96,13 @@ export function createDeltaServer() {
                     expect(change.operations.length).toBeGreaterThan(0);
                     for (const operation of change.operations) {
                         const key = `${operation.type}:${operation.syncId}`;
-                        if (operation.action === "delete") { cards.delete(key); continue; }
-                        if (operation.asset) expect(assets.get(String(operation.changes.assetId))?.complete).toBe(true);
+                        if (operation.action === "delete") {
+                            cards.delete(key);
+                            continue;
+                        }
+                        if (operation.asset) {
+                            expect(assets.get(String(operation.changes.assetId))?.complete).toBe(true);
+                        }
                         if (operation.action === "create") {
                             expect(cards.has(key)).toBe(false);
                             cards.set(key, {
@@ -110,7 +119,10 @@ export function createDeltaServer() {
                     revision += 1;
                     applied.set(change.mutationId, revision);
                     changes.push(change);
-                    if (loseResponse) { loseResponse = false; return route.abort("failed"); }
+                    if (loseResponse) {
+                        loseResponse = false;
+                        return route.abort("failed");
+                    }
                     return route.fulfill({ json: { ok: true, revision } });
                 }
                 if (endpoint === "uploads" && method === "POST") {
@@ -160,7 +172,9 @@ export function createDeltaServer() {
                     return route.fulfill({ json: { ok: true } });
                 }
             }
-            if (path.includes("/ai") && method === "GET") return route.fulfill({ json: { unlocked: false } });
+            if (path.includes("/ai") && method === "GET") {
+                return route.fulfill({ json: { unlocked: false } });
+            }
             unexpected.push(`${method} ${path}`);
             return route.fulfill({ status: 501, json: { message: `Unexpected test request: ${method} ${path}` } });
         });

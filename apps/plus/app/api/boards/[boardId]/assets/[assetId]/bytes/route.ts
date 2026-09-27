@@ -18,7 +18,9 @@ export async function GET(_request: Request, { params }: Context) {
         WHERE a.board_id = ${boardId} AND a.asset_id = ${assetId}
         GROUP BY a.mime_type`);
     const row = result.rows[0] as { mime_type: string; bytes: Buffer | string } | undefined;
-    if (!row) return new NextResponse(null, { status: 404 });
+    if (!row) {
+        return new NextResponse(null, { status: 404 });
+    }
 
     const bytes = typeof row.bytes === "string"
         ? Buffer.from(row.bytes.replace(/^\\x/, ""), "hex")

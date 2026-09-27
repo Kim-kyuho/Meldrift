@@ -259,7 +259,10 @@ export function useAiAssistant({
     }, []);
 
     const handleToggleAiPanel = async () => {
-        if (!canEdit) { onPermissionDenied?.(); return; }
+        if (!canEdit) {
+            onPermissionDenied?.();
+            return;
+        }
         if (aiPanelOpen) {
             // 안 정한 채로 닫으면 자동 저장이 멈춘 걸 모르고 넘어감 - 먼저 결정하게 함
             if (hasPendingCards) {
@@ -604,7 +607,10 @@ export function useAiAssistant({
     };
 
     const handleSendMessage = async (text: string) => {
-        if (!canEdit) { onPermissionDenied?.(); return; }
+        if (!canEdit) {
+            onPermissionDenied?.();
+            return;
+        }
         const content = text.trim();
 
         if (!content || sending) {
@@ -704,7 +710,10 @@ export function useAiAssistant({
     };
 
     const handleSavePendingCards = async () => {
-        if (!canEdit) { onPermissionDenied?.(); return; }
+        if (!canEdit) {
+            onPermissionDenied?.();
+            return;
+        }
         if (!hasPendingCards || saving) {
             return;
         }

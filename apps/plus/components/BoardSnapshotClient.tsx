@@ -23,7 +23,9 @@ export default function BoardSnapshotClient({ board }: { board: BoardInfo }) {
                             <div className="flex flex-wrap gap-4">
                                 <button onClick={() => void downloadLocal()}>Download local backup</button>
                                 <button onClick={() => {
-                                    if (window.confirm("Replace local unsaved changes with the server version?")) void restoreServer();
+                                    if (window.confirm("Replace local unsaved changes with the server version?")) {
+                                        void restoreServer();
+                                    }
                                 }}>Restore server version</button>
                                 <button onClick={() => window.location.reload()}>Reload</button>
                             </div>

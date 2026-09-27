@@ -40,11 +40,15 @@ export async function uploadAsset({ boardEndpoint, assetId, data, mimeType, sign
         body: JSON.stringify({ assetId, digest, byteLength: data.byteLength, mimeType }),
         signal,
     });
-    if (started.complete) return;
+    if (started.complete) {
+        return;
+    }
 
     const received = new Set<number>(started.received ?? []);
     for (let index = 0; index < started.chunkCount; index += 1) {
-        if (received.has(index)) continue;
+        if (received.has(index)) {
+            continue;
+        }
         const chunk = data.slice(index * assetChunkBytes, (index + 1) * assetChunkBytes);
         await send(`${boardEndpoint}/uploads/${started.uploadId}/chunks/${index}`, {
             method: "PUT",

@@ -27,7 +27,9 @@ export function useBoardTransfer({
     const [resetting, setResetting] = useState(false);
 
     const handleExport = async () => {
-        if (exportDisabled || transferring || resetting) return;
+        if (exportDisabled || transferring || resetting) {
+            return;
+        }
 
         setTransferring(true);
         try {
@@ -50,13 +52,17 @@ export function useBoardTransfer({
     };
 
     const handleImportClick = () => {
-        if (!transferring && !resetting) importInputRef.current?.click();
+        if (!transferring && !resetting) {
+            importInputRef.current?.click();
+        }
     };
 
     const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = "";
-        if (!file || resetting) return;
+        if (!file || resetting) {
+            return;
+        }
 
         if (file.size > 50 * 1024 * 1024) {
             setMessage("The SQLite save file must be 50 MiB or smaller.");
@@ -66,7 +72,9 @@ export function useBoardTransfer({
         const confirmed = window.confirm(
             "Importing this save file will replace the current board. Continue?",
         );
-        if (!confirmed) return;
+        if (!confirmed) {
+            return;
+        }
 
         setTransferring(true);
         try {
@@ -80,13 +88,17 @@ export function useBoardTransfer({
     };
 
     const handleResetClick = () => {
-        if (!transferring && !resetting) setResetDialogOpen(true);
+        if (!transferring && !resetting) {
+            setResetDialogOpen(true);
+        }
     };
 
     const handleResetCancel = () => setResetDialogOpen(false);
 
     const handleResetConfirm = async () => {
-        if (transferring || resetting) return;
+        if (transferring || resetting) {
+            return;
+        }
 
         setResetDialogOpen(false);
         setResetting(true);

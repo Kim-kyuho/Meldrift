@@ -11,7 +11,9 @@ export async function GET(request: NextRequest, { params }: Context) {
     const { boardId: rawBoardId, uploadId } = await params;
     const boardId = Number(rawBoardId);
     const gate = await editorFromRequest(request, boardId);
-    if (!gate.identity) return gate.failure;
+    if (!gate.identity) {
+        return gate.failure;
+    }
 
     const db = getDb();
     const [session] = await db.select().from(db_uploadSessions)

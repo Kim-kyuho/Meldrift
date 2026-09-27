@@ -145,10 +145,18 @@ describe("useBoardPreview", () => {
 
     it.each(["network", "server", "json", "capture"])("allows a new request after a %s failure", async (failure) => {
         const log = vi.spyOn(console, "error").mockImplementation(() => {});
-        if (failure === "network") vi.mocked(fetch).mockRejectedValueOnce(new Error("Offline"));
-        if (failure === "server") vi.mocked(fetch).mockResolvedValueOnce(Response.json({ message: "Rejected" }, { status: 500 }));
-        if (failure === "json") vi.mocked(fetch).mockResolvedValueOnce(new Response("Not JSON"));
-        if (failure === "capture") toCanvasMock.mockRejectedValueOnce(new Error("Capture failed"));
+        if (failure === "network") {
+            vi.mocked(fetch).mockRejectedValueOnce(new Error("Offline"));
+        }
+        if (failure === "server") {
+            vi.mocked(fetch).mockResolvedValueOnce(Response.json({ message: "Rejected" }, { status: 500 }));
+        }
+        if (failure === "json") {
+            vi.mocked(fetch).mockResolvedValueOnce(new Response("Not JSON"));
+        }
+        if (failure === "capture") {
+            toCanvasMock.mockRejectedValueOnce(new Error("Capture failed"));
+        }
         const { result } = renderHook(() => useBoardPreview({ boardId: 5, boardViewportRef }));
         act(() => result.current.schedulePreviewUpdate());
         await act(async () => { await vi.runAllTimersAsync(); });

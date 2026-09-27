@@ -48,7 +48,9 @@ const hasTransparency = (context: CanvasRenderingContext2D, width: number, heigh
     try {
         const { data } = context.getImageData(0, 0, width, height);
         for (let index = 3; index < data.length; index += 4) {
-            if (data[index] !== 255) return true;
+            if (data[index] !== 255) {
+                return true;
+            }
         }
         return false;
     } catch {
@@ -63,10 +65,14 @@ const hasTransparency = (context: CanvasRenderingContext2D, width: number, heigh
 // lever; it is skipped when the image carries alpha, which JPEG cannot store.
 const encodeCanvas = async (canvas: HTMLCanvasElement, transparent: boolean, quality: number) => {
     const webp = await canvasToBlob(canvas, "image/webp", quality);
-    if (webp?.type === "image/webp") return webp;
+    if (webp?.type === "image/webp") {
+        return webp;
+    }
     if (!transparent) {
         const jpeg = await canvasToBlob(canvas, "image/jpeg", quality);
-        if (jpeg?.type === "image/jpeg") return jpeg;
+        if (jpeg?.type === "image/jpeg") {
+            return jpeg;
+        }
     }
     return webp ?? await canvasToBlob(canvas, "image/png");
 };
@@ -111,7 +117,9 @@ export async function imageBytesToPng(data: Uint8Array, mimeType: string) {
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         const context = canvas.getContext("2d");
-        if (!context) throw new Error("PNG export is not available in this browser.");
+        if (!context) {
+            throw new Error("PNG export is not available in this browser.");
+        }
 
         context.drawImage(image, 0, 0);
         const png = await canvasToBlob(canvas, "image/png");
@@ -147,7 +155,9 @@ export async function prepareImageFile(file: File): Promise<PreparedImage> {
         );
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
-        if (!context) throw new Error("Image compression is not available in this browser.");
+        if (!context) {
+            throw new Error("Image compression is not available in this browser.");
+        }
 
         let compressed: Blob | null = null;
         let transparent = false;
@@ -166,12 +176,16 @@ export async function prepareImageFile(file: File): Promise<PreparedImage> {
 
             for (const quality of imageCompressionQualities) {
                 const encoded = await encodeCanvas(canvas, transparent, quality);
-                if (!encoded) throw new Error("The image could not be compressed.");
+                if (!encoded) {
+                    throw new Error("The image could not be compressed.");
+                }
                 if (encoded.size <= maxStoredImageBytes) {
                     compressed = encoded;
                     break;
                 }
-                if (encoded.type === "image/png") break;
+                if (encoded.type === "image/png") {
+                    break;
+                }
             }
 
             if (!compressed) {

@@ -51,24 +51,32 @@ function parseChanges(type: BoardOperationType, action: string, changes: Record<
     const shape = changeFieldSchemas[type] as Record<string, z.ZodType>;
 
     if (action === "delete") {
-        if (Object.keys(changes).length > 0) throw new ChangeRequestError("A delete carries no fields.");
+        if (Object.keys(changes).length > 0) {
+            throw new ChangeRequestError("A delete carries no fields.");
+        }
         return {};
     }
 
     const allowed = boardOperationFields[type] as readonly string[];
     for (const field of Object.keys(changes)) {
-        if (!allowed.includes(field)) throw new ChangeRequestError(`Unknown ${type} field: ${field}.`);
+        if (!allowed.includes(field)) {
+            throw new ChangeRequestError(`Unknown ${type} field: ${field}.`);
+        }
     }
     if (action === "create") {
         for (const field of allowed) {
-            if (!(field in changes)) throw new ChangeRequestError(`A new ${type} is missing ${field}.`);
+            if (!(field in changes)) {
+                throw new ChangeRequestError(`A new ${type} is missing ${field}.`);
+            }
         }
     }
 
     const parsed: Record<string, unknown> = {};
     for (const [field, value] of Object.entries(changes)) {
         const result = shape[field].safeParse(value);
-        if (!result.success) throw new ChangeRequestError(`Invalid ${type} field: ${field}.`);
+        if (!result.success) {
+            throw new ChangeRequestError(`Invalid ${type} field: ${field}.`);
+        }
         parsed[field] = result.data;
     }
     return parsed;
@@ -76,12 +84,16 @@ function parseChanges(type: BoardOperationType, action: string, changes: Record<
 
 export function parseChangeRequest(value: unknown, maxOperations = maxOperationsPerRequest): ChangeRequest {
     const result = requestSchema(maxOperations).safeParse(value);
-    if (!result.success) throw new ChangeRequestError("Invalid change request.");
+    if (!result.success) {
+        throw new ChangeRequestError("Invalid change request.");
+    }
 
     const seen = new Set<string>();
     const operations = result.data.operations.map((operation) => {
         const key = `${operation.type}:${operation.syncId}`;
-        if (seen.has(key)) throw new ChangeRequestError("A card appears twice in one request.");
+        if (seen.has(key)) {
+            throw new ChangeRequestError("A card appears twice in one request.");
+        }
         seen.add(key);
 
         if (operation.asset && operation.type !== "image") {

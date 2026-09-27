@@ -327,14 +327,18 @@ const declarationLine = (source: string) => {
 
     for (const rawLine of lines) {
         const line = rawLine.trim();
-        if (!line || line.startsWith("%%")) continue;
+        if (!line || line.startsWith("%%")) {
+            continue;
+        }
 
         if (line === "---") {
             insideFrontmatter = !insideFrontmatter;
             continue;
         }
 
-        if (!insideFrontmatter) return line;
+        if (!insideFrontmatter) {
+            return line;
+        }
     }
 
     return "";
@@ -394,7 +398,9 @@ const collectFlowchartSymbols = (source: string): MermaidSymbol[] => {
     const edgePattern = /\b([A-Za-z_][\w-]*)\s*(?:-->|---|-\.->|-\.-|==>|===|--o|--x)\s*([A-Za-z_][\w-]*)/g;
     for (const match of source.matchAll(edgePattern)) {
         [match[1], match[2]].forEach((id) => {
-            if (!symbols.has(id)) symbols.set(id, { id, label: id });
+            if (!symbols.has(id)) {
+                symbols.set(id, { id, label: id });
+            }
         });
     }
 
@@ -402,7 +408,9 @@ const collectFlowchartSymbols = (source: string): MermaidSymbol[] => {
 };
 
 const collectNamedSymbols = (source: string, type: MermaidDiagramType): MermaidSymbol[] => {
-    if (type === "flowchart") return collectFlowchartSymbols(source);
+    if (type === "flowchart") {
+        return collectFlowchartSymbols(source);
+    }
 
     const symbols = new Map<string, MermaidSymbol>();
     const patterns: Partial<Record<MermaidDiagramType, readonly RegExp[]>> = {
@@ -509,7 +517,9 @@ export const getMermaidCompletions = (
     }
 
     const { from, word } = currentWordRange(source, safeCursor);
-    if (!word) return null;
+    if (!word) {
+        return null;
+    }
 
     const keywordOptions: MermaidCompletion[] = definitionItem.keywords.map((keyword) => ({
         label: keyword,

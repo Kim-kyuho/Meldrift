@@ -115,7 +115,9 @@ export const isSupportedVersion = (version: number) =>
 
 function dropStaleOutbox(db: Database) {
     const columns = new Set(db.selectObjects("PRAGMA table_info(outbox)").map((row) => String(row.name)));
-    if (columns.size > 0 && !columns.has("type")) exec(db, "DROP TABLE outbox");
+    if (columns.size > 0 && !columns.has("type")) {
+        exec(db, "DROP TABLE outbox");
+    }
 }
 
 export function migrateDatabase(db: Database) {
@@ -190,7 +192,9 @@ export function readSnapshot(db: Database, boardId = 1): BoardSnapshot {
         "SELECT board_id, title, width, height FROM boards WHERE board_id = ?",
         [boardId],
     );
-    if (!boardRow) throw new Error("The default board is missing from the SQLite file.");
+    if (!boardRow) {
+        throw new Error("The default board is missing from the SQLite file.");
+    }
 
     // 배열 순서는 생성 순서(id)로 유지한다. 화면 순서와 문서 순서는 sort_order가 정한다.
     const columnsOf = (table: string) =>
@@ -227,7 +231,9 @@ export function readSnapshot(db: Database, boardId = 1): BoardSnapshot {
     const imageSyncId = readSyncId(imageColumns, "image");
     const imageAssetId = (row: Record<string, SqlValue>, id: number) => {
         const stored = imageColumns.has("asset_id") ? stringValue(row.asset_id) : "";
-        if (stored) return stored;
+        if (stored) {
+            return stored;
+        }
         return hasImageBlobColumns && row.image_data !== null ? fallbackSyncId("asset", id) : "";
     };
     const images = db.selectObjects(

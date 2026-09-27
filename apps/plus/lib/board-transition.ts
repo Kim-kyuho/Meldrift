@@ -114,7 +114,9 @@ export async function transitionBoard(board: BoardInfo): Promise<TransitionRepor
     if (saved) {
         await replaceTables(board, saved);
         for (const image of saved.images) {
-            if (!image.data || !image.assetId) continue;
+            if (!image.data || !image.assetId) {
+                continue;
+            }
             digests.set(image.assetId, await writeAsset(
                 boardId, image.assetId, image.data, image.mimeType ?? "application/octet-stream"));
         }

@@ -320,7 +320,10 @@ export default function BoardClient({
         boardScrollRef: cardLocationRef,
         boardZoom,
         onDropImages: async (files, coords) => {
-            if (!canEditCard) { showPermissionMessage(); return; }
+            if (!canEditCard) {
+                showPermissionMessage();
+                return;
+            }
             await handleDropImageFiles(files, coords);
         },
     });
@@ -388,7 +391,10 @@ export default function BoardClient({
     const snapshot = useMemo<BoardSnapshot>(() => ({ board: currentBoard, memos, images, mermaids, tables, strokes }), [currentBoard, memos, images, mermaids, tables, strokes]);
     const savePaused = isEditing || drawingMode || hasPendingAiCards;
     const withPermission = (action: () => void) => () => {
-        if (!canEditCard) { showPermissionMessage(); return; }
+        if (!canEditCard) {
+            showPermissionMessage();
+            return;
+        }
         action();
     };
 
@@ -414,8 +420,13 @@ export default function BoardClient({
             onAbout: () => setAboutOpen(true),
             closeOverlays,
             replaceSnapshot: (next) => {
-                if (!canEditCard) { showPermissionMessage(); return; }
-                if (next.board.boardId !== currentBoard.boardId) return;
+                if (!canEditCard) {
+                    showPermissionMessage();
+                    return;
+                }
+                if (next.board.boardId !== currentBoard.boardId) {
+                    return;
+                }
                 setMemos(next.memos);
                 setImages(next.images);
                 setMermaids(next.mermaids);
@@ -446,7 +457,9 @@ export default function BoardClient({
             onMermaidCreateClick={withPermission(handleCreateTempMermaid)}
             onTableCreateClick={withPermission(handleCreateTempTable)}
             onDrawingToggleClick={withPermission(() => {
-                if (selectionMode) handleToggleSelectionMode();
+                if (selectionMode) {
+                    handleToggleSelectionMode();
+                }
                 handleToggleDrawingMode();
             })}
             onSelectionToggleClick={withPermission(() => {
@@ -500,7 +513,10 @@ export default function BoardClient({
                 draggingMemoId={draggingMemoId}
                 dragOffsetY={dragOffsetY}
                 onDragStart={(event, memoId) => {
-                    if (!canEditCard) { showPermissionMessage(); return; }
+                    if (!canEditCard) {
+                        showPermissionMessage();
+                        return;
+                    }
                     handleReorderStart(event, memoId);
                 }}
                 onRowClick={handleRowClick}
@@ -602,7 +618,10 @@ export default function BoardClient({
                             isEditing={editingImageId === image.imageId}
                             groupOffset={groupOffsetOf("image", image.imageId)}
                             onEditing={() => {
-                                if (!canEditCard) { showPermissionMessage(); return; }
+                                if (!canEditCard) {
+                                    showPermissionMessage();
+                                    return;
+                                }
                                 setEditingImageId(image.imageId);
                                 handleClearSelection();
                                 setEditingMemoId(null);
@@ -629,7 +648,10 @@ export default function BoardClient({
                             onFocus={() => setFocusedMemoId(memo.id)}
                             onFocusClear={() => setFocusedMemoId(null)}
                             onEditing={() => {
-                                if (!canEditCard) { showPermissionMessage(); return; }
+                                if (!canEditCard) {
+                                    showPermissionMessage();
+                                    return;
+                                }
                                 setEditingMemoId(memo.id);
                                 handleClearSelection();
                                 setEditingImageId(null);
@@ -654,7 +676,10 @@ export default function BoardClient({
                             isEditing={editingMermaidId === mermaid.id}
                             groupOffset={groupOffsetOf("mermaid", mermaid.id)}
                             onEditing={() => {
-                                if (!canEditCard) { showPermissionMessage(); return; }
+                                if (!canEditCard) {
+                                    showPermissionMessage();
+                                    return;
+                                }
                                 setEditingMermaidId(mermaid.id);
                                 handleClearSelection();
                                 setEditingMemoId(null);
@@ -680,7 +705,10 @@ export default function BoardClient({
                             isEditing={editingTableId === table.id}
                             groupOffset={groupOffsetOf("table", table.id)}
                             onEditing={() => {
-                                if (!canEditCard) { showPermissionMessage(); return; }
+                                if (!canEditCard) {
+                                    showPermissionMessage();
+                                    return;
+                                }
                                 setEditingTableId(table.id);
                                 handleClearSelection();
                                 setEditingMemoId(null);

@@ -13,10 +13,14 @@ export const maxDuration = 60;
 
 export async function GET(_request: NextRequest, { params }: Context) {
     const boardId = Number((await params).boardId);
-    if (!Number.isSafeInteger(boardId) || boardId <= 0) return new NextResponse(null, { status: 404 });
+    if (!Number.isSafeInteger(boardId) || boardId <= 0) {
+        return new NextResponse(null, { status: 404 });
+    }
     const db = getDb();
     const [board] = await db.select().from(db_boards).where(eq(db_boards.boardId, boardId)).limit(1);
-    if (!board) return new NextResponse(null, { status: 404 });
+    if (!board) {
+        return new NextResponse(null, { status: 404 });
+    }
     const [sync] = await db.select().from(db_boardSync).where(eq(db_boardSync.boardId, boardId)).limit(1);
     const mode = sync?.mode ?? "snapshot";
     if (mode !== "snapshot") {
@@ -44,7 +48,9 @@ export async function GET(_request: NextRequest, { params }: Context) {
 export async function PUT(request: NextRequest, { params }: Context) {
     const user = await getCurrentUserFromRequest(request);
     const message = getCardPermissionMessage(user);
-    if (message || !user) return NextResponse.json({ message }, { status: 403 });
+    if (message || !user) {
+        return NextResponse.json({ message }, { status: 403 });
+    }
     const boardId = Number((await params).boardId);
     const revisionHeader = request.headers.get("X-Snapshot-Revision");
     const revision = Number(revisionHeader);

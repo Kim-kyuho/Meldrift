@@ -55,10 +55,14 @@ async function loadIndexedDbFile() {
             const request = storage.transaction("files", "readonly").objectStore("files").get("database");
             request.onsuccess = () => {
                 const value = request.result;
-                if (value instanceof ArrayBuffer) resolve(value);
+                if (value instanceof ArrayBuffer) {
+                    resolve(value);
+                }
                 else if (value instanceof Uint8Array) {
                     resolve(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer);
-                } else resolve(undefined);
+                } else {
+                    resolve(undefined);
+                }
             };
             request.onerror = () => reject(request.error ?? new Error("Browser database could not be read."));
         });
@@ -87,13 +91,17 @@ async function saveIndexedDbFile(bytes: Uint8Array) {
 }
 
 function exportDatabase(db: Database) {
-    if (!db.pointer) throw new Error("The SQLite database is closed.");
+    if (!db.pointer) {
+        throw new Error("The SQLite database is closed.");
+    }
     return sqlite3.capi.sqlite3_js_db_export(db.pointer);
 }
 
 function deserializeDatabase(bytes: ArrayBuffer, writable: boolean) {
     const db = new sqlite3.oo1.DB(":memory:");
-    if (!db.pointer) throw new Error("The SQLite database could not be created.");
+    if (!db.pointer) {
+        throw new Error("The SQLite database could not be created.");
+    }
 
     const pointer = sqlite3.wasm.allocFromTypedArray(bytes);
     const flags = sqlite3.capi.SQLITE_DESERIALIZE_FREEONCLOSE |
@@ -190,15 +198,21 @@ async function initialize() {
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
-        if (storedSync) sync = storedSync;
+        if (storedSync) {
+            sync = storedSync;
+        }
     } finally {
         storage.close();
     }
     database = savedFile
         ? deserializeDatabase(savedFile, true)
         : new sqlite3.oo1.DB(":memory:");
-    if (savedFile) migrateDatabase(database);
-    else database.exec(schemaSql);
+    if (savedFile) {
+        migrateDatabase(database);
+    }
+    else {
+        database.exec(schemaSql);
+    }
     exec(database, "INSERT OR IGNORE INTO boards (board_id, title, width, height) VALUES (?, ?, ?, ?)", [
         initialBoard.boardId, initialBoard.title, initialBoard.width, initialBoard.height,
     ]);
@@ -222,7 +236,9 @@ function decodeDatabase(bytes: ArrayBuffer, expectedBoardId?: number) {
     const imported = deserializeDatabase(bytes, false);
     try {
         const integrity = imported.selectValue("PRAGMA integrity_check");
-        if (integrity !== "ok") throw new Error("The SQLite save file failed its integrity check.");
+        if (integrity !== "ok") {
+            throw new Error("The SQLite save file failed its integrity check.");
+        }
 
         const tableNames = new Set(imported.selectValues(
             "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -285,13 +301,17 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
         case "load":
             return readSnapshot(database, initialBoard.boardId);
         case "replace": {
-            if (request.snapshot.board.boardId !== initialBoard.boardId) throw new Error("Board ID mismatch.");
+            if (request.snapshot.board.boardId !== initialBoard.boardId) {
+                throw new Error("Board ID mismatch.");
+            }
             const previous = lastSaved;
             replaceSnapshot(database, request.snapshot);
             if (request.dirty) {
                 const generation = sync.generation + 1;
                 const operations = previous ? diffBoardSnapshots(previous, request.snapshot) : [];
-                if (operations.length > 0) recordOutbox(generation, operations);
+                if (operations.length > 0) {
+                    recordOutbox(generation, operations);
+                }
                 sync = { ...sync, generation, dirty: true, changedAt: Date.now(), mutationId: crypto.randomUUID() };
             }
             lastSaved = request.snapshot;
@@ -335,7 +355,9 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
                 LIMIT 1`,
                 [request.assetId, request.assetId],
             );
-            if (!row || !(row.data instanceof Uint8Array)) return null;
+            if (!row || !(row.data instanceof Uint8Array)) {
+                return null;
+            }
             return { data: row.data.slice().buffer as ArrayBuffer, mimeType: String(row.mime_type) };
         }
         case "outbox":
@@ -382,7 +404,9 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
             await persistDatabase();
             return undefined;
         case "seed":
-            if (request.snapshot.board.boardId !== initialBoard.boardId) throw new Error("Board ID mismatch.");
+            if (request.snapshot.board.boardId !== initialBoard.boardId) {
+                throw new Error("Board ID mismatch.");
+            }
             await adoptSnapshot(request.snapshot, request.revision);
             return readSnapshot(database, initialBoard.boardId);
         case "reset":

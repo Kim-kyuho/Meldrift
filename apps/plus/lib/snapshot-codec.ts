@@ -12,7 +12,9 @@ function adapter(db: SqlDatabase): Database {
         try {
             statement.bind(bind as Parameters<typeof statement.bind>[0]);
             const rows = [];
-            while (statement.step()) rows.push(statement.getAsObject());
+            while (statement.step()) {
+                rows.push(statement.getAsObject());
+            }
             return rows;
         } finally { statement.free(); }
     };
@@ -23,7 +25,9 @@ function adapter(db: SqlDatabase): Database {
 }
 
 export async function decodeSnapshot(bytes: Uint8Array, boardId: number) {
-    if (bytes.byteLength > maxSnapshotBytes) throw new Error("Board snapshots must be 4 MiB or smaller.");
+    if (bytes.byteLength > maxSnapshotBytes) {
+        throw new Error("Board snapshots must be 4 MiB or smaller.");
+    }
     if (new TextDecoder().decode(bytes.slice(0, 16)) !== "SQLite format 3\0") {
         throw new Error("Invalid SQLite snapshot.");
     }
@@ -34,13 +38,17 @@ export async function decodeSnapshot(bytes: Uint8Array, boardId: number) {
         if (scalar("PRAGMA integrity_check") !== "ok" || !isSupportedVersion(Number(scalar("PRAGMA user_version")))) {
             throw new Error("Unsupported or corrupt snapshot.");
         }
-        if (scalar("SELECT count(*) FROM boards") !== 1) throw new Error("A snapshot must contain one board.");
+        if (scalar("SELECT count(*) FROM boards") !== 1) {
+            throw new Error("A snapshot must contain one board.");
+        }
         for (const table of ["memos", "images", "mermaids", "tables", "drawings"]) {
             const statement = db.prepare(`SELECT count(*) FROM ${table} WHERE board_id != ? OR board_id IS NULL`);
             try {
                 statement.bind([boardId]);
                 statement.step();
-                if (statement.get()[0] !== 0) throw new Error("Snapshot contains another board.");
+                if (statement.get()[0] !== 0) {
+                    throw new Error("Snapshot contains another board.");
+                }
             } finally { statement.free(); }
         }
         const snapshot = readSnapshot(adapter(db), boardId);

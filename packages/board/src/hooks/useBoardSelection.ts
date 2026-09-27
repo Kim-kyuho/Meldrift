@@ -66,7 +66,9 @@ export function useBoardSelection({
     })();
 
     const clampSelectionOffset = (offset: SelectionOffset): SelectionOffset => {
-        if (!selectionBounds) return { x: 0, y: 0 };
+        if (!selectionBounds) {
+            return { x: 0, y: 0 };
+        }
         return {
             x: Math.round(clamp(offset.x, -selectionBounds.x, boardWidth - selectionBounds.x - selectionBounds.width)),
             y: Math.round(clamp(offset.y, -selectionBounds.y, boardHeight - selectionBounds.y - selectionBounds.height)),
@@ -74,7 +76,9 @@ export function useBoardSelection({
     };
 
     const handleToggleSelectionMode = () => {
-        if (selectionMode) setSelectedCards([]);
+        if (selectionMode) {
+            setSelectedCards([]);
+        }
         setSelectionMode((prev) => !prev);
     };
 
@@ -90,7 +94,9 @@ export function useBoardSelection({
 
     const handleMoveSelection = (offset: SelectionOffset) => {
         const { x: dx, y: dy } = clampSelectionOffset(offset);
-        if (dx === 0 && dy === 0) return;
+        if (dx === 0 && dy === 0) {
+            return;
+        }
 
         const isSelected = (type: CardType, id: number) => selectedKeys.has(cardKey(type, id));
         const selectedTypes = new Set(selectedRects.map((card) => card.type));

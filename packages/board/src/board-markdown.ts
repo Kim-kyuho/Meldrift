@@ -94,7 +94,9 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
 
     sortMemosByOrder(snapshot.memos).forEach((memo) => {
         const memoMarkdown = turndown.turndown(memo.content).trim();
-        if (memoMarkdown) markdownParts.push(memoMarkdown);
+        if (memoMarkdown) {
+            markdownParts.push(memoMarkdown);
+        }
 
         const corners = [
             [memo.x, memo.y],
@@ -109,13 +111,19 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
                     candidate.x < cornerX && cornerX < candidate.x + candidate.width &&
                     candidate.y < cornerY && cornerY < candidate.y + candidate.height)
                 .sort((left, right) => right.z - left.z || cardTypeOrder[left.type] - cardTypeOrder[right.type] || left.id - right.id)[0];
-            if (!card) return;
+            if (!card) {
+                return;
+            }
 
             const key = `${card.type}:${card.id}`;
-            if (renderedCards.has(key)) return;
+            if (renderedCards.has(key)) {
+                return;
+            }
             renderedCards.add(key);
             markdownParts.push(renderCard(card));
-            if (card.imageAsset) imageAssets.push(card.imageAsset);
+            if (card.imageAsset) {
+                imageAssets.push(card.imageAsset);
+            }
         });
     });
 

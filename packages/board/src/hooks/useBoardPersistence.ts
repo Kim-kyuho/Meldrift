@@ -21,7 +21,9 @@ export function useBoardPersistence({
     const lastRequestedRef = useRef<BoardSnapshot | null>(skipInitialSave ? snapshot : null);
 
     useEffect(() => {
-        if (savePaused || snapshot === lastRequestedRef.current) return;
+        if (savePaused || snapshot === lastRequestedRef.current) {
+            return;
+        }
 
         const timeoutId = window.setTimeout(() => {
             lastRequestedRef.current = snapshot;
@@ -29,7 +31,9 @@ export function useBoardPersistence({
                 try {
                     await onSave(snapshot);
                 } catch (error) {
-                    if (lastRequestedRef.current === snapshot) lastRequestedRef.current = null;
+                    if (lastRequestedRef.current === snapshot) {
+                        lastRequestedRef.current = null;
+                    }
                     onError(error);
                 }
             })();
