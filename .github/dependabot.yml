@@ -13,6 +13,11 @@ updates:
     open-pull-requests-limit: 5
     versioning-strategy: increase
 
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
+
     groups:
       next-react:
         patterns:
@@ -23,19 +28,31 @@ updates:
           - "react-dom"
           - "@types/react"
           - "@types/react-dom"
+        update-types:
+          - "minor"
+          - "patch"
 
       tiptap:
         patterns:
           - "@tiptap/*"
+        update-types:
+          - "minor"
+          - "patch"
 
       codemirror:
         patterns:
           - "@codemirror/*"
+        update-types:
+          - "minor"
+          - "patch"
 
       mermaid:
         patterns:
           - "mermaid"
           - "@mermaid-js/*"
+        update-types:
+          - "minor"
+          - "patch"
 
       styling:
         patterns:
@@ -43,12 +60,18 @@ updates:
           - "@tailwindcss/*"
           - "lightningcss"
           - "lightningcss-*"
+        update-types:
+          - "minor"
+          - "patch"
 
       database:
         patterns:
           - "drizzle-orm"
           - "drizzle-kit"
           - "@neondatabase/*"
+        update-types:
+          - "minor"
+          - "patch"
 
       testing:
         patterns:
@@ -57,6 +80,9 @@ updates:
           - "@playwright/test"
           - "@testing-library/*"
           - "jsdom"
+        update-types:
+          - "minor"
+          - "patch"
 
       remaining:
         patterns:
