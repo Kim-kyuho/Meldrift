@@ -10,7 +10,7 @@ import {
     type BoardInfo,
     type BoardSnapshot,
 } from "@meldrift/board/board-state";
-import type { BrowserDbRequest, BrowserDbResponse, SyncMetadata, StoredBoard, OutboxBatch, OutboxState } from "./protocol";
+import type { BrowserDbRequest, BrowserDbResponse, SyncMetadata, StoredAsset, StoredBoard, OutboxBatch, OutboxState } from "./protocol";
 import { diffBoardSnapshots, mergeBoardOperations, type BoardOperation } from "../board-delta";
 import { schemaSql, migrateDatabase, isSupportedVersion, readSnapshot, replaceSnapshot } from "../sqlite-codec";
 const exec = (db: Database, sql: string, bind: SqlValue[] = []) => db.exec({ sql, bind });
@@ -419,7 +419,7 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
     }
 }
 
-type BoardDbResult = BoardSnapshot | ArrayBuffer | StoredBoard | OutboxState | OutboxBatch | undefined;
+type BoardDbResult = BoardSnapshot | ArrayBuffer | StoredBoard | OutboxState | OutboxBatch | StoredAsset | null | undefined;
 
 workerScope.addEventListener("message", (event: MessageEvent<BrowserDbRequest>) => {
     const request = event.data;
