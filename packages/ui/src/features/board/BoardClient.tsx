@@ -39,6 +39,7 @@ import { useBoardZoom } from "@meldrift/ui/useBoardZoom";
 import { useBoardPinchZoom } from "@meldrift/ui/useBoardPinchZoom";
 import { useAiAssistant } from "@meldrift/ui/useAiAssistant";
 import { useMemoReorder } from "@meldrift/ui/useMemoReorder";
+import { useBoardShortcuts } from "./useBoardShortcuts";
 
 export type BoardControls = {
     snapshot: BoardSnapshot;
@@ -398,6 +399,44 @@ export default function BoardClient({
         action();
     };
 
+    const closeModePanels = () => {
+        setSearchBarOpen(false);
+        setBoardNavigatorOpen(false);
+        setMenuOpen(false);
+    };
+    const toggleDrawing = withPermission(() => {
+        closeModePanels();
+        if (selectionMode) {
+            handleToggleSelectionMode();
+        }
+        handleToggleDrawingMode();
+    });
+    const toggleSelection = withPermission(() => {
+        if (!selectionMode && hasPendingAiCards) {
+            setBoardMessage("Save or discard the assistant's changes first.");
+            return;
+        }
+        closeModePanels();
+        if (drawingMode) {
+            handleToggleDrawingMode();
+        }
+        handleToggleSelectionMode();
+    });
+
+    useBoardShortcuts({
+        enabled: !isEditing && !menuOpen && !aboutOpen && !markdownViewOpen && !reorderOpen && !aiPanelOpen,
+        actions: {
+            "1": toggleSelection,
+            "2": toggleDrawing,
+            ...(!drawingMode && !cardsSelected ? {
+                m: withPermission(handleCreateTempMemo),
+                i: withPermission(handleImageUploadClick),
+                t: withPermission(handleCreateTempTable),
+                d: withPermission(handleCreateTempMermaid),
+            } : {}),
+        },
+    });
+
   return (
     <>
         <input
@@ -456,19 +495,8 @@ export default function BoardClient({
             onImageUploadClick={withPermission(handleImageUploadClick)}
             onMermaidCreateClick={withPermission(handleCreateTempMermaid)}
             onTableCreateClick={withPermission(handleCreateTempTable)}
-            onDrawingToggleClick={withPermission(() => {
-                if (selectionMode) {
-                    handleToggleSelectionMode();
-                }
-                handleToggleDrawingMode();
-            })}
-            onSelectionToggleClick={withPermission(() => {
-                if (!selectionMode && hasPendingAiCards) {
-                    setBoardMessage("Save or discard the assistant's changes first.");
-                    return;
-                }
-                handleToggleSelectionMode();
-            })}
+            onDrawingToggleClick={toggleDrawing}
+            onSelectionToggleClick={toggleSelection}
         />
         {cardsSelected && (
             <SelectionToolBar

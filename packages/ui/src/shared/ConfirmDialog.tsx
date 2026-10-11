@@ -22,6 +22,9 @@ export default function ConfirmDialog({ title, message, onConfirm, onCancel }: C
             />
             <div
                 className="confirm-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-label={title ?? message}
                 style={{
                     position: "fixed",
                     left: "50vw",
