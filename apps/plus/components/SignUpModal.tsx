@@ -65,6 +65,9 @@ export default function SignUpModal({ onClose }: SignUpModalProps) {
             />
             <div
                 className="fixed left-1/2 top-1/2 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 text-neutral-900 shadow-xl"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Sign-up"
                 style={{ zIndex: 80 }}
             >
                 <div className="mb-4 flex items-center justify-between">
