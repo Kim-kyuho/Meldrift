@@ -8,8 +8,7 @@ import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import TableGrid from "./TableGrid";
 import TableToolBar from "./TableToolBar";
-
-const TABLE_CARD_MIN_HEIGHT = 128;
+import { getTableCardMinHeight } from "./table-layout";
 
 type TableCardProps<T extends BoardTable> = {
     table: T;
@@ -69,6 +68,7 @@ export default function TableCard<T extends BoardTable>({
         onUpdate,
         onDelete,
     });
+    const minHeight = getTableCardMinHeight(source.rows.length);
     return (
         <>
             <Rnd
@@ -79,14 +79,14 @@ export default function TableCard<T extends BoardTable>({
                     translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,
                 }}
                 position={{ x: cardState.x, y: cardState.y }}
-                size={{ width: cardState.width, height: cardState.height }}
+                size={{ width: cardState.width, height: Math.max(cardState.height, minHeight) }}
                 bounds="parent"
                 scale={zoom}
                 dragHandleClassName="table-drag-handle"
                 disableDragging={!isEditing || !canEdit}
                 enableResizing={isEditing}
                 minWidth={360}
-                minHeight={TABLE_CARD_MIN_HEIGHT}
+                minHeight={minHeight}
                 onDragStop={handleDragStop}
                 onResizeStop={handleResizeStop}
             >

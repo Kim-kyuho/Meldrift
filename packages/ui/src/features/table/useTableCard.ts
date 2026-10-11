@@ -3,6 +3,7 @@ import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import { noop } from "../../internal/noop";
 import type { TableCardData as BoardTable } from "@meldrift/core/cards";
 import { TableSource } from "@meldrift/core/table-card";
+import { getTableCardMinHeight } from "./table-layout";
 
 type UseTableCardOptions<T extends BoardTable> = {
     table: T;
@@ -64,7 +65,7 @@ export function useTableCard<T extends BoardTable>({
             x: Math.round(current.x),
             y: Math.round(current.y),
             width: Math.round(current.width),
-            height: Math.round(current.height),
+            height: Math.max(Math.round(current.height), getTableCardMinHeight(sourceRef.current.rows.length)),
         };
 
         if (table.id < 0) {
@@ -161,7 +162,7 @@ export function useTableCard<T extends BoardTable>({
             x: position.x,
             y: position.y,
             width: ref.offsetWidth,
-            height: ref.offsetHeight,
+            height: Math.max(ref.offsetHeight, getTableCardMinHeight(sourceRef.current.rows.length)),
         };
         cardStateRef.current = next;
         setCardState(next);

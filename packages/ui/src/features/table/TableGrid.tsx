@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTableEdit } from "./useTableEdit";
 import { TableSource } from "@meldrift/core/table-card";
 import PressableButton from "../../shared/PressableButton";
+import { TABLE_ROW_MIN_HEIGHT } from "./table-layout";
 
 type TableGridProps = {
     source: TableSource;
@@ -54,8 +55,8 @@ export default function TableGrid({ source, isEditing, onChange }: TableGridProp
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto">
-                <table className="w-full table-fixed border-collapse">
-                    <thead className="sticky top-0 z-10 bg-neutral-100">
+                <table className="h-full w-full table-fixed border-collapse">
+                    <thead className="sticky top-0 z-10 h-10 bg-neutral-100">
                         {tableInstance.getHeaderGroups().map((headerGroup) => (
                             <tr key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
@@ -85,8 +86,9 @@ export default function TableGrid({ source, isEditing, onChange }: TableGridProp
                                 {row.getVisibleCells().map((cell) => (
                                     <td
                                         key={cell.id}
-                                        className="h-9 border border-neutral-200 px-2 py-1 align-top"
+                                        className="border border-neutral-200 px-2 py-1 align-top"
                                         style={{
+                                            height: TABLE_ROW_MIN_HEIGHT,
                                             width: `${(cell.column.getSize() / tableInstance.getTotalSize()) * 100}%`,
                                         }}
                                     >

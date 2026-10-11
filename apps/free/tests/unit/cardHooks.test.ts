@@ -146,6 +146,28 @@ describe("card hooks", () => {
     });
 
     describe("useTableCard", () => {
+        it("does not resize or save below the height required by added rows", () => {
+            const onUpdate = vi.fn();
+            const { result } = renderHook(() => useTableCard({
+                table, isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(),
+                onInsert: vi.fn(), onUpdate, onDelete: vi.fn(),
+            }));
+            const source = {
+                columns: [{ id: "name", name: "Name" }],
+                rows: Array.from({ length: 10 }, (_, index) => ({ id: `row-${index}`, cells: { name: "" } })),
+            };
+            act(() => result.current.setSource(source));
+            act(() => {
+                dispatchBoardPress("pointerdown");
+                dispatchBoardPress("pointerup");
+            });
+            expect(onUpdate).toHaveBeenLastCalledWith(expect.objectContaining({ source, height: 464 }));
+
+            act(() => result.current.handleResizeStop({} as never, "bottom" as never,
+                { offsetWidth: 360, offsetHeight: 128 } as HTMLElement, {} as never, { x: 0, y: 0 }));
+            expect(result.current.cardState.height).toBe(464);
+        });
+
         it("updates a persisted table with the latest source and resized geometry", () => {
             const onUpdate = vi.fn();
             const { result } = renderHook(() => useTableCard({
