@@ -32,6 +32,15 @@ function TableHarness({
 }
 
 describe("TableGrid", () => {
+    it("fills the card's remaining height while keeping the header compact", () => {
+        render(<TableHarness />);
+        const table = screen.getByRole("table");
+
+        expect(table).toHaveClass("h-full", "w-full");
+        expect(table.parentElement).toHaveClass("min-h-0", "flex-1", "overflow-auto");
+        expect(table.querySelector("thead")).toHaveClass("h-10");
+    });
+
     it("keeps the card surface transparent and only colors the editing toolbar", () => {
         const { container } = render(<TableHarness />);
         const grid = container.firstElementChild;
