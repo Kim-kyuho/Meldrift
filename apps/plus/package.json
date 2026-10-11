@@ -39,7 +39,7 @@
     "@tiptap/starter-kit": "^3.31.4",
     "@vercel/analytics": "^2.0.1",
     "cloudinary": "^2.11.0",
-    "drizzle-orm": "^0.45.3",
+    "drizzle-orm": "^0.45.4",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.52.0",
     "mermaid": "^11.17.2",
