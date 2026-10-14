@@ -1,6 +1,6 @@
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
-import type { MermaidCardData } from "@meldrift/core/cards";
+import type { MermaidCardData, SelectionRect } from "@meldrift/core/cards";
 import { noop } from "../../internal/noop";
 
 export type { MermaidCardData };
@@ -33,6 +33,7 @@ type UseMermaidCardOptions = {
         height: number,
     ) => void;
     onDelete: (id: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
 };
 
 export function useMermaidCard({
@@ -45,6 +46,7 @@ export function useMermaidCard({
     onInsert,
     onUpdate,
     onDelete,
+    onGeometryChange,
 }: UseMermaidCardOptions) {
     const [source, setSource] = useState(mermaid.source);
     const [cardState, setCardState] = useState({
@@ -191,6 +193,7 @@ export function useMermaidCard({
         const nextCardState = { ...cardStateRef.current, x: data.x, y: data.y };
         cardStateRef.current = nextCardState;
         setCardState(nextCardState);
+        onGeometryChange?.(nextCardState);
     };
 
     const handleResizeStop: RndResizeCallback = (_event, _direction, ref, _delta, position) => {
@@ -203,6 +206,7 @@ export function useMermaidCard({
 
         cardStateRef.current = nextCardState;
         setCardState(nextCardState);
+        onGeometryChange?.(nextCardState);
     };
 
     const openDeleteDialog = () => {

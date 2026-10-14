@@ -1,185 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1180" viewBox="0 0 1800 1180" role="img" aria-labelledby="title desc">
-  <title id="title">Meldrift Current Structure</title>
-  <desc id="desc">Current Meldrift architecture including board previews, four card types, drawing, Markdown compilation, AI assistance, APIs, database, Cloudinary, and authentication.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1040" viewBox="0 0 1200 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Meldrift v1.3 Beta architecture</title>
+  <desc id="desc">Free and Plus share board UI and browser storage. Plus synchronizes deltas to Neon, while snapshot mode remains for legacy boards.</desc>
   <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#52606d"/></marker>
     <style>
-      .bg { fill: #f8fafc; }
-      .grid { stroke: #e5e7eb; stroke-width: 1; opacity: .5; }
-      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
-      .panel-title { font: 700 28px Arial, sans-serif; fill: #0f172a; }
-      .section-title { font: 700 21px Arial, sans-serif; fill: #1e293b; }
-      .box { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.6; }
-      .blue { fill: #eff6ff; stroke: #60a5fa; }
-      .green { fill: #ecfdf5; stroke: #34d399; }
-      .amber { fill: #fffbeb; stroke: #f59e0b; }
-      .rose { fill: #fff1f2; stroke: #fb7185; }
-      .purple { fill: #faf5ff; stroke: #a78bfa; }
-      .cyan { fill: #ecfeff; stroke: #22d3ee; }
-      .text { font: 600 17px Arial, sans-serif; fill: #0f172a; }
-      .small { font: 500 14px Arial, sans-serif; fill: #334155; }
-      .muted { font: 500 13px Arial, sans-serif; fill: #64748b; }
-      .label { font: 600 12px Arial, sans-serif; fill: #475569; }
-      .arrow { stroke: #475569; stroke-width: 2.1; fill: none; marker-end: url(#arrow); }
-      .soft { stroke: #94a3b8; stroke-width: 1.7; fill: none; marker-end: url(#arrowSoft); }
-      .dash { stroke-dasharray: 7 6; }
+      text { font-family: Arial, sans-serif; fill: #24313b; }
+      .heading { font-size: 23px; font-weight: 700; }
+      .label { font-size: 19px; font-weight: 700; }
+      .body { font-size: 16px; }
+      .small { font-size: 14px; }
+      .box { stroke: #bac7cd; stroke-width: 1.5; }
+      .line { fill: none; stroke: #52606d; stroke-width: 2; marker-end: url(#arrow); }
     </style>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
-    </marker>
-    <marker id="arrowSoft" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"/>
-    </marker>
   </defs>
+  <rect width="1200" height="1040" fill="#ffffff"/>
+  <text x="40" y="46" class="heading">Meldrift v1.3 Beta</text>
+  <text x="40" y="74" class="body">Canvas-based Markdown compiler / shared local-first editor</text>
 
-  <rect class="bg" width="1800" height="1180"/>
-  <g>
-    <path class="grid" d="M0 50H1800M0 100H1800M0 150H1800M0 200H1800M0 250H1800M0 300H1800M0 350H1800M0 400H1800M0 450H1800M0 500H1800M0 550H1800M0 600H1800M0 650H1800M0 700H1800M0 750H1800M0 800H1800M0 850H1800M0 900H1800M0 950H1800M0 1000H1800M0 1050H1800M0 1100H1800M0 1150H1800"/>
-    <path class="grid" d="M50 0V1180M100 0V1180M150 0V1180M200 0V1180M250 0V1180M300 0V1180M350 0V1180M400 0V1180M450 0V1180M500 0V1180M550 0V1180M600 0V1180M650 0V1180M700 0V1180M750 0V1180M800 0V1180M850 0V1180M900 0V1180M950 0V1180M1000 0V1180M1050 0V1180M1100 0V1180M1150 0V1180M1200 0V1180M1250 0V1180M1300 0V1180M1350 0V1180M1400 0V1180M1450 0V1180M1500 0V1180M1550 0V1180M1600 0V1180M1650 0V1180M1700 0V1180M1750 0V1180"/>
-  </g>
+  <rect x="40" y="100" width="540" height="98" rx="8" class="box" fill="#edf6fc"/>
+  <text x="62" y="134" class="label">Free Board /</text>
+  <text x="62" y="163" class="body">Single browser board · no account required</text>
+  <rect x="620" y="100" width="540" height="98" rx="8" class="box" fill="#eaf8f1"/>
+  <text x="642" y="134" class="label">Plus /plus</text>
+  <text x="642" y="163" class="body">Board list · Neon session / approval · server sync</text>
+  <path d="M310 198V230H600V250" class="line"/>
+  <path d="M890 198V230H600" fill="none" stroke="#52606d" stroke-width="2"/>
 
-  <text x="60" y="58" class="panel-title">Meldrift Current Structure</text>
-  <text x="60" y="88" class="muted">Spatial board for rich text, images, diagrams, tables, drawing, AI-assisted editing, static previews, and Markdown compilation</text>
+  <rect x="40" y="250" width="1120" height="170" rx="8" class="box" fill="#f5f7f8"/>
+  <text x="62" y="285" class="label">packages/ui</text>
+  <text x="62" y="317" class="body">Memos · images · tables · Mermaid / CodeMirror · drawing</text>
+  <text x="62" y="345" class="body">Move / resize / layer · group selection · reorder · search · zoom / pan</text>
+  <text x="62" y="373" class="body">Undo / Redo: 50 in-memory operations · keyboard shortcuts · shared menu</text>
+  <text x="62" y="400" class="small">Object history excludes viewport, auth, server revision and transfer queues.</text>
+  <path d="M600 420V460" class="line"/>
 
-  <rect x="55" y="125" width="350" height="700" rx="12" class="panel"/>
-  <text x="82" y="168" class="section-title">Board List</text>
-  <rect x="85" y="195" width="290" height="112" rx="8" class="box blue"/>
-  <text x="118" y="228" class="text">Static WebP Preview</text>
-  <text x="108" y="256" class="small">PreviewIMG.webp from Cloudinary</text>
-  <text x="126" y="280" class="muted">dot-grid fallback on load error</text>
+  <rect x="40" y="460" width="740" height="156" rx="8" class="box" fill="#edf6fc"/>
+  <text x="62" y="496" class="label">packages/board-data</text>
+  <text x="62" y="526" class="body">BoardSnapshot · image conversion · Markdown compiler</text>
+  <text x="62" y="554" class="body">150ms local debounce → SQLite worker → IndexedDB</text>
+  <text x="62" y="582" class="body">SQLite Export / Import · Plus diff / durable outbox</text>
+  <rect x="820" y="460" width="340" height="156" rx="8" class="box" fill="#f5f7f8"/>
+  <text x="842" y="496" class="label">packages/core</text>
+  <text x="842" y="526" class="body">Card / stroke / table schemas</text>
+  <text x="842" y="554" class="body">Order / geometry / Mermaid</text>
+  <text x="842" y="582" class="body">Framework-free rules</text>
+  <path d="M780 538H820" class="line"/>
 
-  <rect x="85" y="338" width="135" height="52" rx="8" class="box green"/>
-  <text x="124" y="370" class="text">Open</text>
-  <rect x="240" y="338" width="135" height="52" rx="8" class="box blue"/>
-  <text x="272" y="370" class="text">Create</text>
-  <rect x="85" y="410" width="135" height="52" rx="8" class="box amber"/>
-  <text x="117" y="442" class="text">Rename</text>
-  <rect x="240" y="410" width="135" height="52" rx="8" class="box rose"/>
-  <text x="275" y="442" class="text">Delete</text>
-  <text x="102" y="492" class="muted">Create / rename / delete: admin only</text>
+  <path d="M200 616V656" class="line"/>
+  <rect x="40" y="656" width="320" height="76" rx="8" class="box" fill="#edf6fc"/>
+  <text x="62" y="687" class="label">Free: local save complete</text>
+  <text x="62" y="711" class="small">No remote board storage</text>
+  <path d="M580 616V656" class="line"/>
+  <rect x="400" y="656" width="760" height="76" rx="8" class="box" fill="#eaf8f1"/>
+  <text x="422" y="687" class="label">Plus: 3s after successful local save</text>
+  <text x="422" y="711" class="small">ChangeSync → fields / strokes / new assets · 1MiB binary chunks</text>
+  <path d="M780 732V774" class="line"/>
 
-  <rect x="85" y="530" width="290" height="112" rx="8" class="box"/>
-  <text x="120" y="563" class="text">Preview Recovery</text>
-  <text x="102" y="591" class="small">sessionStorage carries board ID</text>
-  <text x="105" y="615" class="muted">new or failed preview -&gt; board capture</text>
+  <rect x="400" y="774" width="760" height="112" rx="8" class="box" fill="#eaf8f1"/>
+  <text x="422" y="808" class="label">Plus API → Neon</text>
+  <text x="422" y="838" class="body">Auth / permissions · revision · idempotent mutation · batch commit</text>
+  <text x="422" y="866" class="small">Cards / strokes · assets / chunks · sync state / upload sessions</text>
+  <rect x="40" y="774" width="320" height="112" rx="8" class="box" fill="#fff5df"/>
+  <text x="62" y="808" class="label">Compatibility path</text>
+  <text x="62" y="838" class="body">snapshot mode only:</text>
+  <text x="62" y="866" class="small">Whole SQLite → board_snapshots</text>
+  <path d="M360 830H400" class="line"/>
 
-  <rect x="85" y="682" width="290" height="108" rx="8" class="box purple"/>
-  <text x="146" y="716" class="text">Board Menu</text>
-  <text x="104" y="744" class="small">auth · current board · compile</text>
-  <text x="115" y="768" class="muted">About · individual board actions</text>
-
-  <rect x="445" y="125" width="1300" height="700" rx="12" class="panel"/>
-  <text x="475" y="168" class="section-title">Board Canvas / BoardClient</text>
-  <rect x="475" y="195" width="1240" height="78" rx="8" class="box blue"/>
-  <text x="500" y="227" class="text">Right-side Tool Area</text>
-  <text x="500" y="253" class="small">Board tools when idle · card-specific portal tools while editing · zoom always visible</text>
-
-  <path d="M375 364C420 364 420 234 475 234" class="arrow"/>
-  <text x="407" y="304" class="label">open</text>
-
-  <rect x="475" y="315" width="280" height="235" rx="8" class="box green"/>
-  <text x="500" y="350" class="section-title">Memo Card</text>
-  <text x="500" y="383" class="small">TipTap HTML + color</text>
-  <text x="500" y="410" class="small">focus · search · rich tools</text>
-  <text x="500" y="437" class="small">move · resize · layer</text>
-  <text x="500" y="464" class="small">insert · update · delete</text>
-  <text x="500" y="502" class="muted">300 x 200 default</text>
-
-  <rect x="785" y="315" width="280" height="235" rx="8" class="box amber"/>
-  <text x="810" y="350" class="section-title">Image Card</text>
-  <text x="810" y="383" class="small">PNG client compression</text>
-  <text x="810" y="410" class="small">Cloudinary original asset</text>
-  <text x="810" y="437" class="small">move · resize · layer</text>
-  <text x="810" y="464" class="small">insert · update · delete</text>
-  <text x="810" y="502" class="muted">max display 400 x 300</text>
-
-  <rect x="1095" y="315" width="280" height="235" rx="8" class="box purple"/>
-  <text x="1120" y="350" class="section-title">Mermaid Card</text>
-  <text x="1120" y="383" class="small">live source rendering</text>
-  <text x="1120" y="410" class="small">Mermaid + ZenUML</text>
-  <text x="1120" y="437" class="small">responsive SVG · layer</text>
-  <text x="1120" y="464" class="small">insert · update · delete</text>
-  <text x="1120" y="502" class="muted">render ticket prevents races</text>
-
-  <rect x="1405" y="315" width="280" height="235" rx="8" class="box cyan"/>
-  <text x="1430" y="350" class="section-title">Table Card</text>
-  <text x="1430" y="383" class="small">TanStack headless table</text>
-  <text x="1430" y="410" class="small">JSONB source · cell editing</text>
-  <text x="1430" y="437" class="small">rows · columns · layer</text>
-  <text x="1430" y="464" class="small">insert · update · delete</text>
-  <text x="1430" y="502" class="muted">minimum 1 column x 1 row</text>
-
-  <path d="M615 273V315" class="soft"/>
-  <path d="M925 273V315" class="soft"/>
-  <path d="M1235 273V315" class="soft"/>
-  <path d="M1545 273V315" class="soft"/>
-
-  <rect x="475" y="600" width="275" height="175" rx="8" class="box rose"/>
-  <text x="500" y="635" class="section-title">Drawing Layer</text>
-  <text x="500" y="669" class="small">SVG draw / pan / erase</text>
-  <text x="500" y="697" class="small">mouse · touch · Pencil</text>
-  <text x="500" y="725" class="small">pointer ownership</text>
-  <text x="500" y="753" class="muted">JSONB strokes per board</text>
-
-  <rect x="780" y="600" width="300" height="175" rx="8" class="box green"/>
-  <text x="805" y="635" class="section-title">Compile to Markdown</text>
-  <text x="805" y="669" class="small">memo corners + highest z</text>
-  <text x="805" y="697" class="small">HTML · image · diagrams</text>
-  <text x="805" y="725" class="small">GFM table · .md download</text>
-  <text x="805" y="753" class="muted">drawing is not compiled</text>
-
-  <rect x="1110" y="600" width="275" height="175" rx="8" class="box blue"/>
-  <text x="1135" y="635" class="section-title">Board Preview</text>
-  <text x="1135" y="669" class="small">500ms debounce</text>
-  <text x="1135" y="697" class="small">html-to-image + Canvas</text>
-  <text x="1135" y="725" class="small">WebP overwrite upload</text>
-  <text x="1135" y="753" class="muted">current viewport snapshot</text>
-
-  <rect x="1415" y="600" width="270" height="175" rx="8" class="box purple"/>
-  <text x="1440" y="635" class="section-title">AI Assistant</text>
-  <text x="1440" y="669" class="small">Gemini function calling</text>
-  <text x="1440" y="697" class="small">create · edit · delete</text>
-  <text x="1440" y="725" class="small">rearrange · guide</text>
-  <text x="1440" y="753" class="muted">Save / Discard gate</text>
-
-  <path d="M612 550V600" class="soft"/>
-  <path d="M930 550V600" class="soft"/>
-  <path d="M1248 550V600" class="soft"/>
-  <path d="M1550 550V600" class="soft"/>
-  <path d="M1110 687H1080" class="soft dash"/>
-  <path d="M1110 735C940 830 560 835 375 642" class="arrow dash"/>
-  <text x="780" y="816" class="label">PreviewIMG.webp shown in board list</text>
-
-  <rect x="55" y="900" width="1690" height="220" rx="12" class="panel"/>
-  <text x="82" y="944" class="section-title">Server, Persistence, and Providers</text>
-
-  <rect x="85" y="980" width="260" height="82" rx="8" class="box blue"/>
-  <text x="150" y="1015" class="text">Route Handlers</text>
-  <text x="112" y="1043" class="muted">auth · CRUD · AI · layer</text>
-
-  <rect x="400" y="980" width="260" height="82" rx="8" class="box green"/>
-  <text x="475" y="1015" class="text">Neon DB</text>
-  <text x="438" y="1043" class="muted">7 tables · no foreign keys</text>
-
-  <rect x="715" y="980" width="260" height="82" rx="8" class="box amber"/>
-  <text x="783" y="1015" class="text">Cloudinary</text>
-  <text x="743" y="1043" class="muted">images + board previews</text>
-
-  <rect x="1030" y="980" width="260" height="82" rx="8" class="box purple"/>
-  <text x="1125" y="1015" class="text">Auth</text>
-  <text x="1062" y="1043" class="muted">token hash · expiry · role</text>
-
-  <rect x="1345" y="980" width="300" height="82" rx="8" class="box cyan"/>
-  <text x="1429" y="1015" class="text">Google Gemini</text>
-  <text x="1397" y="1043" class="muted">chat + image generation</text>
-
-  <path d="M612 775C612 870 215 870 215 980" class="arrow"/>
-  <path d="M930 775C930 870 215 870 215 980" class="arrow"/>
-  <path d="M1248 775C1248 870 215 870 215 980" class="arrow"/>
-  <path d="M1550 775C1550 870 215 870 215 980" class="arrow"/>
-  <path d="M345 1021H400" class="arrow"/>
-  <path d="M345 1021C520 1120 780 1120 845 1062" class="arrow"/>
-  <path d="M345 1003C610 920 900 920 1030 1003" class="soft"/>
-  <path d="M345 1021C730 910 1260 910 1495 980" class="arrow"/>
-
-  <text x="90" y="1100" class="muted">Board deletion explicitly removes related rows, Cloudinary card images, and the fixed PreviewIMG asset.</text>
+  <rect x="40" y="930" width="540" height="76" rx="8" class="box" fill="#f4effa"/>
+  <text x="62" y="960" class="label">packages/ai → Gemini</text>
+  <text x="62" y="986" class="small">Passcode gate · review proposed changes before applying</text>
+  <rect x="620" y="930" width="540" height="76" rx="8" class="box" fill="#fff5df"/>
+  <text x="642" y="960" class="label">Plus board previews → Cloudinary</text>
+  <text x="642" y="986" class="small">New image cards use binary assets, not Cloudinary uploads</text>
+  <path d="M890 886V930" class="line"/>
 </svg>

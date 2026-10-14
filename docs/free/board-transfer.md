@@ -1,58 +1,45 @@
-# 보드 반출입 상세설계
+# 보드 반출입 상세설계 (Free)
 
-소스: `hooks/useBoardTransfer.ts`, `packages/board-data/src/browser-db/client.ts`
+소스: `hooks/useBoardTransfer.ts`, `components/BoardControls.tsx`, `packages/board-data/src/browser-db/client.ts`
 
-## 목적
+## 계약
 
-브라우저 안에만 있는 보드를 사용자의 파일로 꺼내고 되돌린다. IndexedDB는 사용자가 찾을 수도 백업할 수도 없으므로, `.sqlite` 파일이 Free Edition의 유일한 백업 수단이다.
+| 입력 | 역할 |
+| --- | --- |
+| `exportDisabled` | 편집·드로잉·AI 제안이 끝나지 않았으면 파일 조작·Reset을 막는다 |
+| `setMessage` | 변환·반출입 실패 메시지 |
+| `getSnapshot` | 현재 보드 상태 |
+| `replaceSnapshot` | 공통 BoardClient의 내용 교체, 내부 초안 초기화와 이력 연결 |
 
-## 입력
+`transferring`은 Export·Import의 비동기 진행 상태다. `resetDialogOpen`은 확인 대화상자, `importInputRef`는 파일 선택창을 참조한다. Reset은 동기식 상태 교체라 `resetting` 반환값은 호환용 `false`다.
 
-| 값 | 타입 | 역할 |
-| --- | --- | --- |
-| `exportDisabled` | `boolean` | 카드 편집 중에는 내보내기를 막는다 |
-| `setMessage` | `(message: string) => void` | 실패 문구를 보드 메시지로 띄운다 |
-| `getSnapshot` | `() => BoardSnapshot` | 현재 화면 상태를 읽어 온다 |
+편집 중이거나 파일 전송 중이면 다른 파일 조작을 시작하지 않는다. `BoardControls`는 전송 중 자동 로컬 저장도 보류해 Import 도중 옛 화면 값이 DB를 덮지 않게 한다.
 
-## 상태
+## Export
 
-| 값 | 초기값 | 역할 |
-| --- | --- | --- |
-| `transferring` | `false` | 내보내기/불러오기 진행 중 |
-| `resetting` | `false` | 리셋 진행 중 |
-| `resetDialogOpen` | `false` | 리셋 확인 대화상자 |
-| `importInputRef` | `null` | 숨긴 `input[type=file]` |
+1. 현재 화면을 `replaceBoardState`로 먼저 저장한다.
+2. `exportBoardDatabase`로 SQLite 바이트를 받는다.
+3. `application/vnd.sqlite3` Blob을 `meldrift-free.sqlite`로 내려받는다.
+4. 다운로드용 object URL을 해제한다.
 
-세 동작은 서로를 막는다. `transferring` 또는 `resetting`이면 다른 동작은 시작하지 않는다.
+이미지 바이너리와 모든 카드·획을 포함한다. 파일 백업은 메모리 이력과 별개다.
 
-## 내보내기
+## Import
 
-1. `exportDisabled`이거나 다른 동작 중이면 종료한다.
-2. `replaceBoardState(getSnapshot())`로 **현재 화면 상태를 먼저 DB에 반영한다.** 이 단계가 없으면 마지막 편집이 빠진 파일이 나간다.
-3. `exportBoardDatabase()`로 바이트를 받는다.
-4. `application/vnd.sqlite3` Blob으로 만들어 `<a download>`를 클릭한다. 파일명은 `meldrift-free.sqlite`다.
-5. object URL을 해제한다.
+1. 선택 후 input 값을 비워 같은 파일의 재선택을 허용한다.
+2. 현재 50 MiB 입력 한도를 검사한다.
+3. `window.confirm`으로 보드 내용 교체를 확인받는다.
+4. 워커의 `importBoardDatabase`가 파일을 검증하고 반환한 스냅샷을 읽는다.
+5. 현재 보드 메타데이터를 유지한 채 `replaceSnapshot`으로 내용만 교체한다.
 
-실패 문구는 워커가 던진 메시지를 그대로 쓰고, 없으면 `The board could not be exported.`다.
+페이지를 새로고침하지 않는다. 교체 전 상태는 하나의 이력으로 남아 Undo로 복원할 수 있다. 실패 시 UI 내용을 교체하지 않고 워커 메시지를 표시한다.
 
-## 불러오기
+## Reset
 
-1. 파일 선택 직후 `event.target.value`를 비운다. 같은 파일을 다시 골라도 `change`가 발생하게 한다.
-2. 50 MiB를 넘으면 워커까지 가지 않고 여기서 막는다. 워커도 같은 한도를 다시 검사한다.
-3. `window.confirm`으로 현재 보드가 교체된다는 것을 확인받는다.
-4. `importBoardDatabase(await file.arrayBuffer())`를 호출한다. 검증은 전부 워커가 한다.
-5. 성공하면 `window.location.reload()`로 화면을 새로 띄운다.
+확인 후 빈 스냅샷에 현재 보드 정보를 넣어 `replaceSnapshot`을 호출한다. 카드·획만 비우고 SQLite 클라이언트와 IndexedDB를 파괴하지 않는다. 빈 상태의 영속 저장은 기존 자동 저장 경로가 처리한다.
 
-새로고침으로 끝내는 이유는 보드 전체가 교체되기 때문이다. 화면 상태를 부분적으로 맞추지 않는다.
+Reset 자체는 한 번의 Undo 작업이다. 새로고침하거나 해당 작업이 최근 50개 범위에서 밀려나면 메모리 이력으로 복원할 수 없으므로 `.sqlite` 백업과 구분한다.
 
-## 리셋
+`resetBoardDatabase`는 여전히 저수준 DB 초기화 API로 남아 있지만 Free 메뉴 Reset에서 호출하지 않는다. Plus의 서버 상태 복원과도 다른 기능이다.
 
-확인 대화상자를 거쳐 `resetBoardDatabase()`를 호출하고 새로고침한다.
-
-클라이언트의 `resetInProgress` 플래그가 서면 이후 `replaceBoardState`는 아무 일도 하지 않는다. 새로고침 전에 화면이 남은 상태를 다시 저장해 되살리는 것을 막는다.
-
-리셋에 실패하면 문구를 띄우고 `resetting`을 되돌린다. 성공 경로에서는 새로고침이 일어나므로 되돌리지 않는다.
-
-## 반환값
-
-`importInputRef`, `transferring`, `resetting`, `resetDialogOpen`과 핸들러 여섯 개(`handleExport`, `handleImportClick`, `handleImport`, `handleResetClick`, `handleResetCancel`, `handleResetConfirm`)를 돌려준다.
+검증: `tests/unit/useBoardTransfer.test.ts`, `tests/e2e/board-history.spec.ts`, `tests/e2e/lite-home.spec.ts`.

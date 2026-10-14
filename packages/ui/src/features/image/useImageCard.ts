@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
+import type { SelectionRect } from "@meldrift/core/cards";
 
 export interface ImageCardData {
     imageId: number;
@@ -36,6 +37,7 @@ type UseImageCardOptions = {
         height: number,
     ) => void;
     onDelete: (imageId: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
 };
 
 export function useImageCard({
@@ -45,6 +47,7 @@ export function useImageCard({
     onEditingClear,
     onUpdate,
     onDelete,
+    onGeometryChange,
 }: UseImageCardOptions) {
     const [imageState, setImageState] = useState({
         x: image.x,
@@ -141,6 +144,7 @@ export function useImageCard({
         const nextImageState = { ...imageStateRef.current, x: data.x, y: data.y };
         imageStateRef.current = nextImageState;
         setImageState(nextImageState);
+        onGeometryChange?.(nextImageState);
     };
 
     const handleResizeStop: RndResizeCallback = (_event, _direction, ref, _delta, position) => {
@@ -152,6 +156,7 @@ export function useImageCard({
         };
         imageStateRef.current = nextImageState;
         setImageState(nextImageState);
+        onGeometryChange?.(nextImageState);
     };
 
     const openDeleteDialog = () => {

@@ -36,6 +36,26 @@ describe("card hooks", () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
 
+    it("reports geometry separately at drag and resize completion for every card type", () => {
+        const onGeometryChange = { memo: vi.fn(), image: vi.fn(), mermaid: vi.fn(), table: vi.fn() };
+        const common = { isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(), onUpdate: vi.fn(), onInsert: vi.fn(), onDelete: vi.fn() };
+        const { result } = renderHook(() => ({
+            memo: useMemoCard({ memo, isFocused: true, onFocus: vi.fn(), onFocusClear: vi.fn(), ...common, onGeometryChange: onGeometryChange.memo }),
+            image: useImageCard({ image, ...common, onGeometryChange: onGeometryChange.image }),
+            mermaid: useMermaidCard({ mermaid, ...common, onGeometryChange: onGeometryChange.mermaid }),
+            table: useTableCard({ table, ...common, onGeometryChange: onGeometryChange.table }),
+        }));
+        for (const key of ["memo", "image", "mermaid", "table"] as const) {
+            act(() => result.current[key].handleDragStop({} as never, { x: 100, y: 200 } as never));
+            expect(onGeometryChange[key]).toHaveBeenLastCalledWith(expect.objectContaining({ x: 100, y: 200 }));
+            act(() => result.current[key].handleResizeStop({} as never, "bottomRight", { offsetWidth: 600, offsetHeight: 500 } as never, {} as never, { x: 100, y: 200 }));
+            expect(onGeometryChange[key]).toHaveBeenLastCalledWith({ x: 100, y: 200, width: 600, height: 500 });
+            expect(onGeometryChange[key]).toHaveBeenCalledTimes(2);
+        }
+        expect(common.onUpdate).not.toHaveBeenCalled();
+        expect(common.onInsert).not.toHaveBeenCalled();
+    });
+
     describe("useMemoCard", () => {
         const setup = (overrides: Partial<Parameters<typeof useMemoCard>[0]> = {}) => {
             const callbacks = {

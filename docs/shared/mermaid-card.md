@@ -1,96 +1,41 @@
 # MermaidCard 상세설계
 
-소스: `packages/ui/src/features/mermaid/MermaidCard.tsx`, `packages/ui/src/features/mermaid/useMermaidCard.ts`, `packages/ui/src/features/mermaid/useMermaidRenderer.ts`
+소스: `packages/ui/src/features/mermaid/MermaidCard.tsx`, `useMermaidCard.ts`, `MermaidCodeEditor.tsx`, `useMermaidRenderer.ts`, `packages/core/src/mermaid-language.ts`
 
-## MermaidCard Props
+## 카드 구성
 
-| Prop | 타입 | 사용처 |
-| --- | --- | --- |
-| `mermaid` | `MermaidCardData` | `useMermaidCard`/`useMermaidRenderer`에 전달, `Rnd` 초기값 |
-| `zoom` | `number` | `Rnd scale` |
-| `canEdit` | `boolean` (선택, 기본 `true`) | `editMermaid` 권한 체크. 권한 개념이 없는 Free Edition은 넘기지 않는다 |
-| `isEditing` | `boolean` | textarea 노출(127줄), 드래그 핸들 노출(151줄), 툴바 노출(167줄), `Rnd disableDragging/enableResizing` |
-| `onEditing`/`onEditingClear` | `() => void` | 편집 흐름 콜백 |
-| `onPermissionDenied` | `() => void` (선택, 기본 no-op — `packages/ui/src/internal/noop.ts`) | `canEdit`가 false일 때 |
-| `onInsert` | `(tempId, boardId, source, x, y, z, width, height) => void` | `saveMermaidDraft`가 `mermaid.id < 0`일 때 |
-| `onUpdate` | 동일 시그니처 | 기존 카드일 때 |
-| `onDelete` | `(id: number) => void` | `confirmDelete`에서 |
-| `onBringToFront`/`onSendToBack` | `() => void` | `MermaidToolBar`로 전달 |
+`mermaid`, `zoom`, `canEdit`, `isEditing`을 받아 `Rnd`와 편집·렌더 영역을 구성한다. 편집 진입·종료, 생성·수정·삭제, 레이어 변경은 부모 콜백으로 전달한다. 그룹 이동의 임시 표시에는 `groupOffset`을 사용한다.
 
-## `useMermaidCard` State (56~240줄)
-
-| State/Ref | 초기값 | 갱신 지점 | 소비 지점 |
-| --- | --- | --- | --- |
-| `source` | `mermaid.source` | textarea `onChange={(e) => setSource(e.target.value)}` (MermaidCard.tsx 130줄) | `useMermaidRenderer`의 `source` 인자, `sourceRef` 동기화 |
-| `cardState` | `{x,y,width,height} = mermaid.*` | `handleDragStop`, `handleResizeStop` | `Rnd position/size` |
-| `dragHandlePressed` | `false` | 드래그 핸들 pointer 이벤트 4종 (MermaidCard.tsx 154~157줄) | 핸들 바 색상 |
-| `deleteDialogOpen` | `false` | `openDeleteDialog`/`closeDeleteDialog`/`confirmDelete` | `ConfirmDialog` 렌더 조건 |
-| `sourceRef`/`cardStateRef` | 각 state 미러 | `useEffect`로 렌더 후 동기화(72~78줄) | `insertMermaid`/`updateMermaid`가 최신값을 읽기 위함 |
-| `lastMermaidTapRef` | `0` | `handleDoubleTap`마다 | 300ms 더블탭 판정 |
-| `outsidePressStartedRef` | `false` | 전역 `pointerdown`/`pointerup` 리스너 (142~185줄) | `TableCard`와 동일한 "빈 보드에서 시작해 빈 보드에서 끝난 press"만 저장 트리거로 인정하는 판정 |
-
-`TableCard`와의 차이: 이 훅의 판정 셀렉터 목록에는 `.confirm-dialog`가 없다(146, 160줄) — `TableCard`(`useTableCard`)는 `.confirm-dialog`를 제외 대상에 포함하지만, `MermaidCard`는 카드·툴바만 제외한다.
-
-## 저장 (`saveMermaidDraft`, 80~117줄)
-
-- `insertMermaid()`: `mermaid.id < 0`일 때 `onInsert(id, boardId, sourceRef.current, round(x), round(y), mermaid.z, round(width), round(height))`
-- `updateMermaid()`: 그 외에는 동일 인자로 `onUpdate(...)`
-- 두 함수 모두 `z`는 반올림하지 않고 원본 그대로 전달(x/y/width/height만 `Math.round`) — `ImageCard`와 동일한 패턴.
-
-## 기타 핸들러
-
-| 핸들러 | 동작 |
+| 영역 | 동작 |
 | --- | --- |
-| `editMermaid()` | `canEdit` false → `onPermissionDenied()`, true → `onEditing()` |
-| `handleDoubleTap` | 터치 + 300ms 이내 재탭 → `editMermaid()` |
-| `handleMermaidPress` | `stopPropagation()`만 |
-| `handleDragStop`/`handleResizeStop` | `TableCard`/`ImageCard`와 동일 패턴으로 `cardState` 갱신 |
-| `confirmDelete` (217~221줄) | `onDelete(id)` → `onEditingClear()` → `setDeleteDialogOpen(false)` (이 순서는 `TableCard`와 동일, `ImageCard`와는 뒤 두 호출 순서가 다름) |
+| 카드 상단 다이어그램 선택 | `mermaidDiagramDefinitions`의 종류를 표시하고 선택한 종류의 템플릿으로 소스 교체 |
+| CodeMirror 6 편집기 | 편집 중에만 표시. lazy/Suspense로 로드하고 소스 변경을 내부 초안에 반영 |
+| 다이어그램 미리보기 | 현재 소스를 SVG로 렌더. 문법 오류 또는 빈 소스 상태를 별도로 표시 |
+| 하단 드래그 핸들 | 편집 중 카드 이동 |
+| Hand drawn look | Mermaid 설정을 소스에 반영하는 토글 |
+| 툴바·삭제 확인 | 레이어 변경과 확인 후 삭제 |
 
-## MermaidCard 렌더 구조 (88~184줄)
+`Rnd`의 최소 너비·높이는 180이다. 렌더 영역 외 카드 배경은 투명하다. 편집 중에는 활성 카드 레이어를 사용하고 비편집 상태에서는 저장된 `z`를 사용한다.
 
-| 요소 | 조건 | 비고 |
-| --- | --- | --- |
-| `Rnd` (90줄) | 항상 | `className="mermaid-rnd-{id} ..."`, `dragHandleClassName="mermaid-drag-handle"`, `disableDragging={!isEditing \|\| !canEdit}`, `enableResizing={isEditing}`, `minWidth`/`minHeight`는 180(112~113줄) |
-| Source textarea (128줄) | `isEditing`일 때만 | `h-2/5 min-h-24`, `font-mono`, `spellCheck={false}` — 카드 상단 40% |
-| 렌더 결과 영역 (136줄) | 항상 | 3분기: `renderError` → rose `<pre>` / `svg` → `dangerouslySetInnerHTML` / 둘 다 없음 → "Mermaid source is empty." |
-| 드래그 핸들 (152줄) | `isEditing`일 때만 | 하단 중앙, `TableCard`와 동일 시각 패턴 |
-| `MermaidToolBar` (168줄) | `isEditing`일 때만 | `onDelete={openDeleteDialog}` |
-| `ConfirmDialog` (176줄) | `deleteDialogOpen`일 때만 | 메시지 "Delete this mermaid?" |
+## 자동 완성
 
-## `useMermaidRenderer({ source, mermaidId })` (`packages/ui/src/features/mermaid/useMermaidRenderer.ts`)
+문법 후보 생성은 `mermaid-language.ts`의 공통 엔진이 담당한다. CodeMirror를 도입하는 것만으로 Mermaid 문법을 자동 지원하는 것이 아니다.
 
-### 모듈 수준 초기화 (12~17줄)
-- `mermaidRenderer.initialize({ startOnLoad: false, securityLevel: "strict" })` — 모든 인스턴스가 공유, 컴포넌트 마운트와 무관하게 앱 로드 시 1회
-- `zenuml` 플러그인을 `registerExternalDiagrams`로 등록, 그 Promise를 `mermaidReady`로 보관해 렌더 전 항상 `await`
+- 선택한 다이어그램 종류와 현재 입력 위치에 맞는 후보를 제공한다.
+- Flowchart의 새 노드에는 도형 후보를, 연결 문맥에는 화살표와 대상 노드 후보를 제공한다.
+- 이미 선언한 객체를 소스에서 수집하여 이후 객체 입력 위치에서 다시 제안한다.
+- 후보 지원 범위는 엔진에 정의된 문맥을 따른다. Mermaid 전체 문법을 자동 검증·수정하는 기능과는 구분한다.
 
-### State
-| State | 초기값 | 갱신 지점 |
-| --- | --- | --- |
-| `svg` | `""` | 렌더 성공 시 정제된 SVG 문자열 |
-| `renderError` | `""` | parse/render 실패 시 에러 메시지 |
-| `renderTicketRef` | `0` | effect 실행마다 증가 — **경쟁 상태(race condition) 방지용 티켓** |
+## 작업 완료
 
-### 렌더 effect (59~97줄, deps `[mermaidId, source]`)
-1. `renderTicket = renderTicketRef.current + 1` 후 즉시 반영(다음 렌더가 시작되면 이전 티켓은 즉시 무효화됨)
-2. `source`가 공백뿐이면 마이크로태스크에서 `svg`/`renderError`를 빈 문자열로 초기화(티켓이 최신일 때만)
-3. `renderId = "meldrift-mermaid-{|mermaidId|}-{전역 카운터}"` — 전역 `mermaidRenderIndex`를 매 렌더마다 증가시켜 **DOM id 충돌 방지**
-4. `renderMermaidSvg` 성공/실패 각각에서 **`renderTicketRef.current !== renderTicket`이면 결과를 버림** — 빠르게 타이핑할 때 이전 렌더 결과가 최신 소스를 덮어쓰는 것을 방지
-5. `finally`에서 `removeMermaidRenderArtifacts(renderId)` — Mermaid가 렌더 중 생성한 `#d{renderId}`, `#i{renderId}`와 미사용 render element를 제거
+더블 클릭 또는 터치 더블 탭으로 편집한다. 본문은 `source`와 ref에 보관하고 빈 보드 클릭으로 편집이 끝날 때 확정한다. 신규 음수 ID 카드에는 `onInsert`, 기존 카드에는 `onUpdate`를 호출한다. 생성 시 `z`를 전달하고 기존 카드 수정은 현재 레이어를 별도로 유지한다.
 
-### `renderMermaidSvg` (36~47줄)
-1. `mermaidReady` 대기(zenUml 등록 완료 보장)
-2. `render(renderId, source)`로 문법 처리와 SVG 생성을 한 번에 수행한다. 별도의 `parse()`를 선행하지 않아 동일 소스를 중복 처리하지 않는다.
-3. `makeMermaidSvgResponsive`로 고정 `width`/`height` 속성 제거 + `preserveAspectRatio="xMidYMid meet"` 삽입(카드 크기에 맞춰 반응형으로 표시되게 함)
-4. `finally`에서 `removeZenUmlGlobalStyles()` 호출 — ZenUML이 주입하는 전역 `<style>` 중 `.zenuml .sequence-diagram`과 `--tw-ring-shadow`를 동시에 포함한 것을 찾아 제거(Tailwind ring 유틸리티와의 전역 스타일 충돌 방지)
+이동·리사이즈 종료는 `onGeometryChange`로 반올림된 위치·크기만 부모 상태에 즉시 반영한다. 아직 확정하지 않은 소스까지 함께 저장하지 않는다. 내용 확정과 geometry 변경은 [공통 보드 이력](./board-history.md)의 기록 대상이다.
 
-`removeMermaidRenderArtifacts()`는 `.mermaid-rendered` 안에 삽입된 실제 결과 SVG를 제거하지 않는다. 동일 ID가 있더라도 결과 컨테이너 내부이면 보존하고 Mermaid의 임시 DOM만 정리한다.
+## 렌더러
 
-## 보드 미리보기 연결
+Mermaid는 `startOnLoad: false`, `securityLevel: strict`로 초기화하며 ZenUML 등록 완료를 기다린 뒤 렌더한다. 반응형 SVG로 변환하고 임시 렌더 DOM 및 ZenUML 전역 스타일을 정리한다.
 
-`useBoardMermaids`는 INSERT 또는 UPDATE 성공 후 `onPreviewUpdate()`를 호출한다. 삭제와 레이어 변경은 현재 미리보기 갱신을 예약하지 않는다.
+렌더 티켓으로 이전 비동기 결과가 최신 소스를 덮어쓰지 않도록 한다. SVG 결과와 오류는 현재 티켓의 결과만 반영한다. 문법 편집은 내부 상태에서 렌더되며 카드별 서버 CRUD를 호출하지 않는다.
 
-## 알려진 특이사항
-
-- `TableCard`/`useTableCard`는 외부 클릭 판정에서 `.confirm-dialog`를 제외하지만 `MermaidCard`/`useMermaidCard`는 제외하지 않는다 — 삭제 확인 다이얼로그가 열린 상태에서 그 배경을 클릭하면(다이얼로그 자체는 안 닫히지만) 이 컴포넌트에서는 board 바깥 클릭으로 오인되어 저장이 트리거될 가능성이 있다(다이얼로그가 board-scroll-layer 밖 포탈에 렌더되므로 실제 영향은 제한적일 수 있음 — 정확한 판정은 DOM 트리 구조에 따라 달라짐).
-- Mermaid 렌더러의 "티켓" 패턴은 이 프로젝트에서 비동기 경쟁 상태를 다루는 유일한 명시적 사례로, `useBoardMarkdown`의 `AbortController` 패턴과 목적은 같지만 구현 방식이 다르다(취소가 아니라 사후 결과 폐기).
+Plus 미리보기는 카드 콜백의 `onPreviewUpdate`가 아니라 서버 저장 완료 버전을 기준으로 갱신한다. 삭제·레이어 변경·Undo/Redo도 같은 저장 경로를 사용한다.

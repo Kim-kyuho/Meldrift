@@ -1,75 +1,34 @@
 # DrawingToolBar 상세설계
 
-소스: `packages/ui/src/features/drawing/DrawingToolBar.tsx`, `packages/ui/src/features/drawing/useBoardDrawing.ts`, `packages/core/src/board-stroke.ts`
+소스: `packages/ui/src/features/drawing/DrawingToolBar.tsx`, `useBoardDrawing.ts`
 
-## DrawingToolBar Props
+## 도구와 상태
 
-| Prop | 타입 | 사용처 |
-| --- | --- | --- |
-| `drawingTool` | `DrawingTool` | 지우개 버튼의 `aria-pressed`·아이콘 색 |
-| `penColor` | `string` | Palette 아이콘 색(69줄) |
-| `penWidth` | `number` | 굵기 아이콘의 `strokeWidth`(90줄) |
-| `onChangeColor` | `(color: string) => void` | 색상 선택 시(48줄) |
-| `onChangeWidth` | `(width: number) => void` | 굵기 선택 시(53줄) |
-| `onToggleErase` | `() => void` | Erase 버튼 클릭(112줄) |
-| `onUndo` | `() => void` | Undo 버튼 클릭(64줄) |
+부모의 `useBoardDrawing`이 그리기 모드, 펜 색상·굵기, 지우개와 확정된 획 배열을 관리한다. 툴바는 색상·굵기 팝업의 열림 상태만 소유한다. 두 팝업은 동시에 열리지 않으며 선택 후 닫힌다.
 
-## State (34~35줄)
-
-| State | 초기값 | 갱신 지점 | 소비 지점 |
-| --- | --- | --- | --- |
-| `openColorMenu` | `false` | `toggleColorMenu`(37~40줄), 색상 선택 후 `handleColorSelect`가 `false`로(49줄) | 색상 팔레트 팝업 렌더 조건(71줄) |
-| `openWidthMenu` | `false` | `toggleWidthMenu`(42~45줄), 굵기 선택 후 `handleWidthSelect`가 `false`로(54줄) | 굵기 팝업 렌더 조건(92줄) |
-
-두 메뉴는 상호 배타적이다 — 하나를 열면(`toggleColorMenu`/`toggleWidthMenu`) 다른 하나를 항상 `false`로 닫는다(38~39, 43~44줄).
-
-## 핸들러
-
-| 함수 | 동작 |
+| Prop | 역할 |
 | --- | --- |
-| `toggleColorMenu` | `openColorMenu` 토글 + `openWidthMenu` 강제 닫기 |
-| `toggleWidthMenu` | `openWidthMenu` 토글 + `openColorMenu` 강제 닫기 |
-| `handleColorSelect(color)` | `onChangeColor(color)` 호출 후 메뉴 닫기 |
-| `handleWidthSelect(width)` | `onChangeWidth(width)` 호출 후 메뉴 닫기 |
-| `closeMenus()` | 두 메뉴 모두 닫기 — Erase 버튼 클릭 시 먼저 호출 |
+| `drawingTool` | `draw` / `erase`, 지우개 버튼의 선택 표시 |
+| `penColor`, `penWidth` | 현재 펜 표시 |
+| `onChangeColor`, `onChangeWidth` | 도구 설정 변경 |
+| `onToggleErase` | 지우개와 펜 전환 |
+| `onUndo` | 공통 보드 Undo 실행 |
+| `undoDisabled` | 이력이 없거나 현재 실행할 수 없을 때 Undo 비활성화 |
 
-## 렌더 구조 (62~134줄)
+색상·굵기 선택지는 `packages/core/src/board-stroke.ts`에 있다. 지우개를 다시 누르면 펜으로 돌아간다. 보드 패닝은 보드 모드 전환에서 처리하며 드로윙 툴바의 별도 도구로 두지 않는다.
 
-| 요소 | 조건 | 비고 |
-| --- | --- | --- |
-| Undo (64줄) | 항상 | 클릭 즉시 `onUndo()`, 활성/비활성 조건 없음(스택이 비어도 버튼은 항상 눌림 가능 — 실제 무동작 처리는 `useBoardDrawing.handleUndoStroke`가 담당) |
-| Pen color (68줄) | 항상 | 팔레트 아이콘 색을 `penColor`로 동적 지정 |
-| 색상 팝업 (71줄) | `openColorMenu`일 때만 | `packages/core/src/board-stroke.ts`의 `penColors`(7색: Ink/Red/Yellow/Green/Sky/Blue/Purple) 순회, 원형 스와치 버튼 |
-| Pen width (89줄) | 항상 | `Minus` 아이콘의 `strokeWidth`로 현재 굵기 시각화 |
-| 굵기 팝업 (92줄) | `openWidthMenu`일 때만 | `penWidths`(Thin 2 / Medium 4 / Bold 8) 순회 |
-| Erase (107줄) | 항상, `aria-pressed={drawingTool==="erase"}` | 라벨이 상태에 따라 "Erase" ↔ "Stop erasing"으로 바뀜, 활성 시 아이콘이 `#ec4899`(activeToolColor) |
+## 공통 Undo
 
-## 도구 상태 소유자: `useBoardDrawing` (`packages/ui/src/features/drawing/useBoardDrawing.ts`)
+기존 드로윙 툴바 Undo는 더 이상 마지막 획만 지우는 별도 이력을 실행하지 않는다. 하단 중앙 Undo 버튼과 같은 `useBoardHistory`의 실행 함수를 받는다. 접근성 이름은 `Undo board change`이며 실행 제한도 공통이다.
 
-이 컴포넌트 자신은 `drawingTool`/`penColor`/`penWidth`를 소유하지 않는다 — 실제 소유자는 부모가 사용하는 `useBoardDrawing`이다.
+따라서 가장 최근 작업이 지우개면 한 번의 지우개 조작을, 카드 변경이면 그 카드 작업을 되돌린다. 훅에 남은 `handleUndoStroke`는 현재 보드 UI의 Undo 버튼에 연결하지 않는다.
 
-| State | 초기값 | 비고 |
-| --- | --- | --- |
-| `strokes` | `initialStrokes` | 확정된 획 배열 |
-| `drawingMode` | `false` | 그리기 레이어 입력 활성 여부 |
-| `drawingTool` | `"draw"` | `"draw" \| "erase"` |
-| `penColor` | `defaultPenColor` ("Ink" `#1f2937`) | - |
-| `penWidth` | `defaultPenWidth` (Medium, 4) | - |
-| `unsavedRef` | `false` | 획 추가/지우기/undo 시 `true`로 표시(모드 종료 시 알림 여부) |
+## 입력 완료와 저장
 
-### `handleToggleDrawingMode`
-- 이미 그리기 모드 → 모드 종료 + `drawingTool`을 `"draw"`로 리셋 + `unsavedRef`가 true면 `onDrawingModeEnd?.(strokes)`를 부르고 플래그 초기화
-- 아니면 → `canEdit`이 false면 `onPermissionDenied?.()`로 거부, true면 모드 진입 + 도구를 `"draw"`로 리셋
+`DrawingLayer`의 `onInteractionChange`가 한 획 또는 한 번의 지우개 조작 시작·종료를 알린다. 조작 중의 중간 배열은 이력으로 기록하지 않고 종료 상태를 한 작업으로 기록한다.
 
-**무엇을 저장할지는 훅이 정하지 않는다.** `boardId`도 `fetch`도 이 패키지에 없다. 두 Edition 모두 `onDrawingModeEnd`를 넘기지 않고, 획은 `strokes` 상태로 `snapshot.strokes`에 실려 저장 계층으로 간다.
+이력 기록과 영속 저장은 별개다. 현재 `BoardClient`는 그리기 모드 동안 `savePaused`를 유지하며, 모드를 종료한 뒤 로컬 저장과 Plus 동기화를 재개한다. 그리기 모드 중 새로고침하면 아직 영속 저장되지 않은 변경은 남지 않는다.
 
-### `handleToggleEraseTool`
-지우개를 다시 누르면 `"draw"`로 되돌아가는 토글 방식이다.
+모드 종료 알림용 내부 플래그는 `changedRef`다. `useBoardDrawing`은 서버 API나 DB를 직접 호출하지 않는다.
 
-### `handleStrokeEnd`/`handleErase`/`handleUndoStroke` (76~112줄)
-셋 다 상태 변경 성공 시 `unsavedRef.current = true`로 표시. `handleErase`는 `eraseStrokesAlongPath`가 참조 동일 배열을 반환하면(실제로 지워진 게 없으면) 플래그를 세우지 않는다(97~99줄).
-
-## 알려진 특이사항
-
-- 그리기 모드 동안에는 `BoardClient`가 `savePaused`를 세워 저장을 멈춘다. 저장은 `BoardToolBar` 왼쪽 아래의 `Check` 버튼으로 모드를 종료한 뒤에 일어나므로, 그리기 모드에서 벗어나지 않고 새로고침하면 미저장 획을 잃는다.
-- Undo 버튼은 항상 클릭 가능하게 렌더되며(disabled 처리 없음) 빈 스택에서는 `handleUndoStroke`가 조용히 아무 것도 하지 않는다 — 사용자에게 "더 이상 undo할 게 없다"는 피드백이 없다.
+관련 설계: [DrawingLayer](./drawing-layer.md), [보드 이력](./board-history.md), [단축키](./board-shortcuts.md).

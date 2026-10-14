@@ -33,7 +33,7 @@ return <BoardSnapshotClient key={boardId} board={{ boardId, title, width, height
 
 ## `BoardSnapshotClient`
 
-[보드 스냅샷](./board-snapshot.md)의 `useBoardSnapshot`을 부르고 그 결과로 세 가지를 그린다.
+[변경분 동기화](./change-sync.md)와 [호환 스냅샷](./board-snapshot.md)을 다루는 `useBoardSnapshot`을 부르고 그 결과로 세 가지를 그린다.
 
 | 상태 | 화면 |
 | --- | --- |
@@ -69,21 +69,19 @@ const canEdit = canEditCard && editingAllowed;
 | 로그인함, 승인 대기 | `Your account is waiting for administrator approval.` |
 | 로그인 안 함 | `Please sign in before editing cards.` |
 
-### `SnapshotPersistence`
+### `BoardControls`와 공통 저장 예약
 
-`renderControls` 안에 그려지는, 아무것도 렌더하지 않는 컴포넌트다.
+`components/BoardControls.tsx`가 `useBoardPersistence`를 사용한다. Free와 같은 150ms 디바운스로 `onSnapshotChange(snapshot)`를 부르고, `!canEdit || savePaused`일 때 예약을 보류한다.
 
-```ts
-useEffect(() => {
-    if (!canEdit || savePaused || snapshot === lastSavedRef.current) return;
-    lastSavedRef.current = snapshot;
-    onSnapshotChange(snapshot);
-}, [snapshot, canEdit, savePaused, onSnapshotChange]);
-```
+`skipInitialSave: true`로 마운트 직후 서버에서 받은 초기 값을 다시 저장하지 않는다. 이후 공통 이력 복원·Import·Reset도 일반 객체 변경과 같은 경로를 사용한다.
 
-`lastSavedRef`가 참조 동일성을 기억하므로 **마운트 직후의 초기 스냅샷은 저장되지 않는다.** 방금 서버에서 받은 것을 그대로 되올리는 낭비를 막는다.
+로컬 저장 성공 후 원격 전송은 저장 모드에 따라 `ChangeSync` 또는 `SnapshotSync`가 3초로 묶는다. 150ms 로컬 저장과 3초 서버 전송은 서로 다른 예약이다.
 
-Free의 `useBoardPersistance`와 달리 디바운스가 없다. 카드 조작은 `onDragStop`·`onResizeStop`처럼 확정 시점에만 상태를 바꾸므로 한 동작에 한 번 불린다. 서버로 나가는 요청은 `SnapshotSync`가 3초로 묶는다.
+### 반출입과 이력
+
+공통 메뉴의 Export·Import·Reset을 `useBoardTransfer`로 연결한다. Export는 로그인, Import·Reset은 편집 권한과 확정된 상태를 요구한다. Import는 새 동기화 ID를 부여하고 현재 보드 ID를 유지하며, Reset은 메타데이터가 아닌 내용만 비운다.
+
+두 동작 모두 공유 `replaceSnapshot`을 거쳐 하나의 Undo 작업이 된다. Undo/Redo는 현재 객체를 복원할 뿐 서버 revision·전송 큐를 되감지 않는다. 계정 전환은 재로그인 후 페이지를 다시 열며, 서버 상태 복원도 편집기 트리를 다시 마운트해 이전 이력을 버린다.
 
 ### 미리보기
 

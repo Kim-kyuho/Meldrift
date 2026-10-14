@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import ImageCardView from "./ImageCardView";
 import { ImageCardData, useImageCard } from "./useImageCard";
 import { imageBytesToBlob } from "@meldrift/board-data/image-file";
-import type { SelectionOffset } from "@meldrift/core/cards";
+import type { SelectionOffset, SelectionRect } from "@meldrift/core/cards";
 
 type ImageCardProps = {
     image: ImageCardData;
@@ -22,6 +22,7 @@ type ImageCardProps = {
         height: number,
     ) => void;
     onDelete: (imageId: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
     onBringToFront: () => void;
     onSendToBack: () => void;
 };
@@ -35,6 +36,7 @@ export default function ImageCard({
     onEditingClear,
     onUpdate,
     onDelete,
+    onGeometryChange,
     onBringToFront,
     onSendToBack,
 }: ImageCardProps) {
@@ -56,6 +58,7 @@ export default function ImageCard({
         onEditingClear,
         onUpdate,
         onDelete,
+        onGeometryChange,
     });
     const imageElementRef = useRef<HTMLImageElement | null>(null);
 

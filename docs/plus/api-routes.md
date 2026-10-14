@@ -217,10 +217,14 @@ Cache-Control: no-store
 
 ## `/api/boards/[boardId]/markdown`
 
-두 경로가 한 라우트에 있다. 스냅샷이 있으면 그것을 쓰고, 없으면 옛 SQL 컴파일로 내려간다.
+저장 모드에 따라 세 경로를 사용한다. delta 모드를 먼저 판정하고 이전 보드만 스냅샷·구 SQL 경로를 사용한다.
 
 ```text
-저장된 스냅샷 있음
+delta 모드
+  → loadBoardState → compileBoardMarkdown (공유 코드)
+  → 이미지는 /plus/api/boards/{id}/assets/{assetId}/bytes 링크로 교체
+
+이전 모드에 저장된 스냅샷 있음
   → decodeSnapshot → compileBoardMarkdown (공유 코드)
   → 이미지는 /api/boards/{id}/snapshot/images/{imageId} 링크로 교체
 
@@ -242,4 +246,4 @@ Cache-Control: no-store
 | PATCH | `boardId`가 양의 정수. 바꿀 필드가 하나도 없으면 400 `No update fields were provided.` |
 | DELETE | 보드가 없으면 404 |
 
-DELETE는 Cloudinary 자산을 지운 뒤 삭제 일곱 개를 `db.batch`로 함께 보낸다. 스냅샷 행(`board_snapshots`)도 여기서 지운다. 카드 테이블은 FK `ON DELETE CASCADE`로도 지워지지만, 배치에 명시해 순서를 못 박는다.
+DELETE는 Cloudinary 자산 정리와 함께 보드의 카드·획·스냅샷·동기화 상태·업로드·자산 청크를 명시적으로 정리한다. 관련 DB 삭제는 `db.batch` 경로를 사용한다. Neon 스키마에 FK `ON DELETE CASCADE`가 있다고 가정하지 않는다.

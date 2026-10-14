@@ -28,7 +28,7 @@ import { useBoardSelection } from "@meldrift/ui/useBoardSelection";
 import { useBoardImages } from "@meldrift/ui/useBoardImages";
 import { imageInputAccept } from "@meldrift/board-data/image-file";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
-import type { CardType } from "@meldrift/core/cards";
+import type { CardType, SelectionRect } from "@meldrift/core/cards";
 import { useBoardMermaids } from "@meldrift/ui/useBoardMermaids";
 import { useBoardTables } from "@meldrift/ui/useBoardTables";
 import { useBoardMemoFocus } from "@meldrift/ui/useBoardMemoFocus";
@@ -40,6 +40,9 @@ import { useBoardPinchZoom } from "@meldrift/ui/useBoardPinchZoom";
 import { useAiAssistant } from "@meldrift/ui/useAiAssistant";
 import { useMemoReorder } from "@meldrift/ui/useMemoReorder";
 import { useBoardShortcuts } from "./useBoardShortcuts";
+import { useBoardHistory, type BoardContent } from "./useBoardHistory";
+import { useBoardPointerActive } from "./useBoardPointerActive";
+import BoardHistoryToolbar from "./BoardHistoryToolbar";
 
 export type BoardControls = {
     snapshot: BoardSnapshot;
@@ -81,6 +84,7 @@ export default function BoardClient({
     const [boardNavigatorOpen, setBoardNavigatorOpen] = useState(false);
     const [boardMessage, setBoardMessage] = useState("");
     const [contentVersion, setContentVersion] = useState(0);
+    const [drawingInputActive, setDrawingInputActive] = useState(false);
     const showPermissionMessage = () => {
         setBoardMessage(permissionMessage);
     };
@@ -116,6 +120,7 @@ export default function BoardClient({
         images,
         setImages,
         editingImageId,
+        uploadingImage,
         setEditingImageId,
         handleImageUploadClick,
         handleUploadImage,
@@ -290,7 +295,6 @@ export default function BoardClient({
         handleToggleEraseTool,
         handleStrokeEnd,
         handleErase,
-        handleUndoStroke,
     } = useBoardDrawing({
         initialStrokes: mappedStrokes,
     });
@@ -391,6 +395,59 @@ export default function BoardClient({
 
     const snapshot = useMemo<BoardSnapshot>(() => ({ board: currentBoard, memos, images, mermaids, tables, strokes }), [currentBoard, memos, images, mermaids, tables, strokes]);
     const savePaused = isEditing || drawingMode || hasPendingAiCards;
+    const pointerActive = useBoardPointerActive(cardLocationRef);
+    const applyContent = useCallback((next: BoardContent) => {
+        setMemos(next.memos);
+        setImages(next.images);
+        setMermaids(next.mermaids);
+        setTables(next.tables);
+        setStrokes(next.strokes);
+        setContentVersion((version) => version + 1);
+        setEditingMemoId(null);
+        setEditingImageId(null);
+        setEditingMermaidId(null);
+        setEditingTableId(null);
+        setFocusedMemoId(null);
+        handleClearSelection();
+    }, [setMemos, setImages, setMermaids, setTables, setStrokes, setEditingMemoId, setEditingImageId, setEditingMermaidId, setEditingTableId, setFocusedMemoId, handleClearSelection]);
+    const hasDraftCards = memos.some((card) => card.id < 0) || mermaids.some((card) => card.id < 0) || tables.some((card) => card.id < 0);
+    const history = useBoardHistory({
+        snapshot,
+        paused: drawingInputActive || draggingMemoId !== null || hasDraftCards || hasPendingAiCards || aiSending || aiSaving,
+        onRestore: applyContent,
+    });
+    const resetHistory = history.reset;
+    const lastInitialSnapshot = useRef(initialSnapshot);
+    useEffect(() => {
+        if (lastInitialSnapshot.current !== initialSnapshot) {
+            lastInitialSnapshot.current = initialSnapshot;
+            resetHistory(initialSnapshot);
+            applyContent(initialSnapshot);
+        }
+    }, [initialSnapshot, resetHistory, applyContent]);
+    const historyBlocked = !canEditCard || isEditing || pointerActive || drawingInputActive || draggingMemoId !== null || uploadingImage || aiSending || aiSaving || hasPendingAiCards;
+    const restoreHistory = (action: () => void) => {
+        if (!historyBlocked && !document.querySelector('[aria-modal="true"], dialog[open]')) {
+            action();
+        }
+    };
+    const undo = () => restoreHistory(history.undo);
+    const redo = () => restoreHistory(history.redo);
+    const handleGeometryChange = (type: CardType, id: number, geometry: SelectionRect) => {
+        if (!canEditCard) {
+            return;
+        }
+        const frame = { x: Math.round(geometry.x), y: Math.round(geometry.y), width: Math.round(geometry.width), height: Math.round(geometry.height) };
+        if (type === "memo") {
+            setMemos((previous) => previous.map((card) => card.id === id ? { ...card, ...frame } : card));
+        } else if (type === "image") {
+            setImages((previous) => previous.map((card) => card.imageId === id ? { ...card, ...frame } : card));
+        } else if (type === "mermaid") {
+            setMermaids((previous) => previous.map((card) => card.id === id ? { ...card, ...frame } : card));
+        } else {
+            setTables((previous) => previous.map((card) => card.id === id ? { ...card, ...frame } : card));
+        }
+    };
     const withPermission = (action: () => void) => () => {
         if (!canEditCard) {
             showPermissionMessage();
@@ -466,20 +523,10 @@ export default function BoardClient({
                 if (next.board.boardId !== currentBoard.boardId) {
                     return;
                 }
-                setMemos(next.memos);
-                setImages(next.images);
-                setMermaids(next.mermaids);
-                setTables(next.tables);
-                setStrokes(next.strokes);
-                setContentVersion((version) => version + 1);
-                setEditingMemoId(null);
-                setEditingImageId(null);
-                setEditingMermaidId(null);
-                setEditingTableId(null);
-                setFocusedMemoId(null);
-                handleClearSelection();
+                applyContent(next);
             },
         })}
+        <BoardHistoryToolbar canUndo={history.canUndo && !historyBlocked} canRedo={history.canRedo && !historyBlocked} onUndo={undo} onRedo={redo} />
         <BoardToolBar
             cardEditing={isEditing || drawingMode || cardsSelected}
             drawingMode={drawingMode}
@@ -512,7 +559,8 @@ export default function BoardClient({
                 onChangeColor={setPenColor}
                 onChangeWidth={setPenWidth}
                 onToggleErase={handleToggleEraseTool}
-                onUndo={handleUndoStroke}
+                onUndo={undo}
+                undoDisabled={!history.canUndo || historyBlocked}
             />
         )}
         {searchBarOpen && (
@@ -659,6 +707,7 @@ export default function BoardClient({
                             }}
                             onEditingClear={() => setEditingImageId(null)}
                             onUpdate={handleUpdateImage}
+                            onGeometryChange={(geometry) => handleGeometryChange("image", image.imageId, geometry)}
                             onDelete={handleDeleteImage}
                             onBringToFront={() => handleCardLayer("image", image.imageId, "front")}
                             onSendToBack={() => handleCardLayer("image", image.imageId, "back")}
@@ -690,6 +739,7 @@ export default function BoardClient({
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertMemo}
                             onUpdate={handleUpdateMemo}
+                            onGeometryChange={(geometry) => handleGeometryChange("memo", memo.id, geometry)}
                             onDelete={handleDeleteMemo}
                             onBringToFront={() => handleCardLayer("memo", memo.id, "front")}
                             onSendToBack={() => handleCardLayer("memo", memo.id, "back")}
@@ -719,6 +769,7 @@ export default function BoardClient({
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertMermaid}
                             onUpdate={handleUpdateMermaid}
+                            onGeometryChange={(geometry) => handleGeometryChange("mermaid", mermaid.id, geometry)}
                             onDelete={handleDeleteMermaid}
                             onBringToFront={() => handleCardLayer("mermaid", mermaid.id, "front")}
                             onSendToBack={() => handleCardLayer("mermaid", mermaid.id, "back")}
@@ -748,6 +799,7 @@ export default function BoardClient({
                             onPermissionDenied={showPermissionMessage}
                             onInsert={handleInsertTable}
                             onUpdate={handleUpdateTable}
+                            onGeometryChange={(geometry) => handleGeometryChange("table", table.id, geometry)}
                             onDelete={handleDeleteTable}
                             onBringToFront={() => handleCardLayer("table", table.id, "front")}
                             onSendToBack={() => handleCardLayer("table", table.id, "back")}
@@ -763,6 +815,7 @@ export default function BoardClient({
                         zoom={boardZoom}
                         onStrokeEnd={handleStrokeEnd}
                         onErase={handleErase}
+                        onInteractionChange={setDrawingInputActive}
                     />
                     {selectionActive && (
                         <SelectionLayer

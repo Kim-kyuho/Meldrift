@@ -6,7 +6,7 @@
 
 두 Edition 모두 **브라우저에서** `compileBoardMarkdownDocument`로 계산한다. 화면에 있는 스냅샷이 곧 입력이라 서버 왕복이 없다.
 
-Plus에는 같은 문서를 서버에서 만드는 경로가 하나 더 있다. `GET /api/boards/[boardId]/markdown`은 저장된 스냅샷을 해독해 같은 함수로 컴파일하고, 이미지는 zip 대신 `/api/boards/[boardId]/snapshot/images/[imageId]` 링크로 바꿔 넣는다. 화면이 쓰는 경로가 아니라 보드 밖에서 문서를 받아 가려는 쪽을 위한 것이다([Route Handler](../plus/api-routes.md)).
+Plus에는 같은 문서를 서버에서 만드는 경로가 하나 더 있다. `GET /api/boards/[boardId]/markdown`은 delta 보드 상태를 먼저 읽어 공통 함수로 컴파일하고 이미지는 `/plus/api/boards/{id}/assets/{assetId}/bytes` 링크로 바꾼다. 이전 모드는 저장된 스냅샷과 `/snapshot/images/{imageId}`를 사용하고, 스냅샷도 없으면 구 SQL 경로를 사용한다. 보드 밖에서 저장된 문서를 받기 위한 경로다([Route Handler](../plus/api-routes.md)).
 
 ## 컴파일 (`compileBoardMarkdownDocument`)
 
@@ -46,6 +46,8 @@ Turndown 설정은 `headingStyle: atx`, `bulletListMarker: -`, `codeBlockStyle: 
 `compileBoardMarkdownDocument`를 `useMemo`로 계산한다. 스냅샷이 바뀔 때만 다시 돈다.
 
 `markdownSections`는 본문을 ` ```mermaid ` 블록 기준으로 쪼갠 배열이다. 화면은 홀수 인덱스를 Mermaid 렌더러로, 짝수 인덱스를 React Markdown으로 그린다.
+
+분리는 `mermaid-sections.ts`의 순차 스캔으로 처리한다. Mermaid 블록을 찾는 중첩 정규식으로 긴 입력을 반복 탐색하지 않아 해당 분리 경로의 ReDoS 위험을 피한다.
 
 이미지 자산이 있으면 effect가 자산마다 object URL을 만들어 `{ "./images/image-1.png": "blob:..." }` 맵을 만든다.
 

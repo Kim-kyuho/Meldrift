@@ -105,7 +105,7 @@ test.describe("Meldrift Free Edition home", () => {
         await getBoardMenuButton(page).click();
         await page.getByRole("button", { name: "Reset" }).click();
         await expect(page.getByRole("heading", { name: "Reset Meldrift Free Edition?" })).toBeVisible();
-        await expect(page.getByText("Once deleted, your board data cannot be recovered.")).toBeVisible();
+        await expect(page.getByText("All cards and drawings on this board will be removed. You can undo this change until you reload the page.")).toBeVisible();
         await page.getByRole("button", { name: "No" }).click();
         await expect(imageCard).toBeVisible();
 

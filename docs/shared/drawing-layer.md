@@ -13,6 +13,15 @@
 | `zoom` | `number` | `eraserRadius` 보정(55줄), `useDrawingPointer`에 전달, 지우개 원 `strokeWidth={1/zoom}`(131줄) |
 | `onStrokeEnd` | `(points: StrokePoint[]) => void` | `useDrawingPointer`가 획 완료 시 호출 |
 | `onErase` | `(start, end, radius) => void` | `useDrawingPointer`가 지우개 이동마다 호출 |
+| `onInteractionChange` | `(active: boolean) => void` (선택) | 수락된 그리기·지우개 조작의 시작·종료를 부모에 알림 |
+
+## 작업 완료와 공통 이력
+
+입력 중에는 `onInteractionChange(true)`로 이력 기록을 보류하고 종료 시 `false`로 최종 상태를 한 작업으로 기록한다. 지우개 이동 중 여러 획이 분리·삭제되어도 한 번의 포인터 조작은 한 작업이다.
+
+레이어 밖 `pointerup`·`pointercancel`도 window 캡처 리스너로 종료하고 창 blur에서도 입력을 정리한다. Pencil은 `buttons`뿐 아니라 `pressure`를 확인하여 아직 접촉 중인 이벤트를 종료로 오인하지 않는다. 보드 이력 실행을 막는 물리 포인터 감지는 `useBoardPointerActive`가 별도로 담당한다.
+
+하단 중앙과 드로윙 툴바의 Undo는 모두 공통 이력을 사용한다. [보드 이력](./board-history.md)을 참조한다.
 
 ## State/Ref (`useDrawingPointer`, 13~175줄)
 
