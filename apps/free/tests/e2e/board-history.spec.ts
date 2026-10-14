@@ -43,27 +43,38 @@ for (const [key, type] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
 test("records memo movement and resize separately and restores the rendered geometry", async ({ page }) => {
     await addMemo(page, "Geometry history");
     const card = page.locator('[class*="memo-rnd-"]');
-    const original = (await card.boundingBox())!;
+    const geometry = () => card.evaluate((element: HTMLElement) => {
+        const position = new DOMMatrixReadOnly(element.style.transform);
+        return {
+            x: Math.round(position.m41),
+            y: Math.round(position.m42),
+            width: Math.round(Number.parseFloat(element.style.width)),
+            height: Math.round(Number.parseFloat(element.style.height)),
+        };
+    });
+    const originalGeometry = await geometry();
     await card.locator(".memo-editor-content").dblclick();
     const handle = (await card.locator(".memo-drag-handle").boundingBox())!;
     await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
     await page.mouse.down();
-    await page.mouse.move(handle.x + handle.width / 2 + 30, handle.y + handle.height / 2 + 20, { steps: 6 });
+    await page.mouse.move(handle.x + handle.width / 2 - 30, handle.y + handle.height / 2 + 20, { steps: 6 });
     await page.mouse.up();
-    const moved = (await card.boundingBox())!;
+    await expect.poll(async () => (await geometry()).x).toBeLessThan(originalGeometry.x - 10);
+    await expect.poll(async () => (await geometry()).y).toBeGreaterThan(originalGeometry.y + 10);
+    const movedGeometry = await geometry();
     const corner = card.locator('div[style*="cursor: se-resize"]').last();
     const cornerBox = (await corner.boundingBox())!;
     await page.mouse.move(cornerBox.x + cornerBox.width / 2, cornerBox.y + cornerBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(cornerBox.x + cornerBox.width / 2 + 30, cornerBox.y + cornerBox.height / 2 + 20, { steps: 6 });
     await page.mouse.up();
+    await expect.poll(async () => (await geometry()).width).toBeGreaterThan(movedGeometry.width + 10);
+    await expect.poll(async () => (await geometry()).height).toBeGreaterThan(movedGeometry.height + 10);
     await finishEditing(page);
     await undo(page).click();
-    await expect.poll(async () => Math.round((await card.boundingBox())!.width)).toBe(Math.round(original.width));
-    expect((await card.boundingBox())!.x).toBeCloseTo(moved.x, 0);
+    await expect.poll(geometry).toEqual(movedGeometry);
     await undo(page).click();
-    expect((await card.boundingBox())!.x).toBeCloseTo(original.x, 0);
-    expect((await card.boundingBox())!.y).toBeCloseTo(original.y, 0);
+    await expect.poll(geometry).toEqual(originalGeometry);
     await undo(page).click();
     await expect(card).toHaveCount(0);
 });
