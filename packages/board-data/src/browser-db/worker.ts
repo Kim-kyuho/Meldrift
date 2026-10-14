@@ -57,8 +57,7 @@ async function loadIndexedDbFile() {
                 const value = request.result;
                 if (value instanceof ArrayBuffer) {
                     resolve(value);
-                }
-                else if (value instanceof Uint8Array) {
+                } else if (value instanceof Uint8Array) {
                     resolve(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer);
                 } else {
                     resolve(undefined);
@@ -209,8 +208,7 @@ async function initialize() {
         : new sqlite3.oo1.DB(":memory:");
     if (savedFile) {
         migrateDatabase(database);
-    }
-    else {
+    } else {
         database.exec(schemaSql);
     }
     exec(database, "INSERT OR IGNORE INTO boards (board_id, title, width, height) VALUES (?, ?, ?, ?)", [
@@ -329,7 +327,9 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
                 replaceSnapshot(exported, request.snapshot);
                 const bytes = exportDatabase(exported);
                 return bytes.slice().buffer as ArrayBuffer;
-            } finally { exported.close(); }
+            } finally {
+                exported.close();
+            }
         }
         case "decode":
             return decodeDatabase(request.bytes);
@@ -419,7 +419,15 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
     }
 }
 
-type BoardDbResult = BoardSnapshot | ArrayBuffer | StoredBoard | OutboxState | OutboxBatch | StoredAsset | null | undefined;
+type BoardDbResult =
+    | BoardSnapshot
+    | ArrayBuffer
+    | StoredBoard
+    | OutboxState
+    | OutboxBatch
+    | StoredAsset
+    | null
+    | undefined;
 
 workerScope.addEventListener("message", (event: MessageEvent<BrowserDbRequest>) => {
     const request = event.data;

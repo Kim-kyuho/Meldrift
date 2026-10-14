@@ -110,7 +110,10 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
                 .filter((candidate) =>
                     candidate.x < cornerX && cornerX < candidate.x + candidate.width &&
                     candidate.y < cornerY && cornerY < candidate.y + candidate.height)
-                .sort((left, right) => right.z - left.z || cardTypeOrder[left.type] - cardTypeOrder[right.type] || left.id - right.id)[0];
+                .sort((left, right) =>
+                    right.z - left.z
+                    || cardTypeOrder[left.type] - cardTypeOrder[right.type]
+                    || left.id - right.id)[0];
             if (!card) {
                 return;
             }

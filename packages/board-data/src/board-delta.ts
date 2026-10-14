@@ -167,8 +167,7 @@ export function mergeBoardOperations(pending: BoardOperation[], incoming: BoardO
         if (operation.action === "delete") {
             if (existing.action === "create") {
                 merged.delete(key);
-            }
-            else {
+            } else {
                 merged.set(key, operation);
             }
             continue;

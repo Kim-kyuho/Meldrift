@@ -1,7 +1,7 @@
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import { noop } from "../../internal/noop";
-import type { TableCardData as BoardTable } from "@meldrift/core/cards";
+import type { TableCardData as BoardTable, SelectionRect } from "@meldrift/core/cards";
 import { TableSource } from "@meldrift/core/table-card";
 import { getTableCardMinHeight } from "./table-layout";
 
@@ -16,6 +16,7 @@ type UseTableCardOptions<T extends BoardTable> = {
     onInsert: (table: T) => void;
     onUpdate: (table: T) => void;
     onDelete: (id: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
 };
 
 export function useTableCard<T extends BoardTable>({
@@ -28,6 +29,7 @@ export function useTableCard<T extends BoardTable>({
     onInsert,
     onUpdate,
     onDelete,
+    onGeometryChange,
 }: UseTableCardOptions<T>) {
     const [source, setSource] = useState<TableSource>(table.source);
     const [cardState, setCardState] = useState({
@@ -155,6 +157,7 @@ export function useTableCard<T extends BoardTable>({
         const next = { ...cardStateRef.current, x: data.x, y: data.y };
         cardStateRef.current = next;
         setCardState(next);
+        onGeometryChange?.(next);
     };
 
     const handleResizeStop: RndResizeCallback = (_event, _direction, ref, _delta, position) => {
@@ -166,6 +169,7 @@ export function useTableCard<T extends BoardTable>({
         };
         cardStateRef.current = next;
         setCardState(next);
+        onGeometryChange?.(next);
     };
 
     const confirmDelete = () => {

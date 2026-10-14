@@ -5,7 +5,18 @@ import { useBoardSnapshot } from "@/hooks/useBoardSnapshot";
 import BoardClient from "./BoardClient";
 
 export default function BoardSnapshotClient({ board }: { board: BoardInfo }) {
-    const { snapshot, status, message, canEdit, save, downloadLocal, restoreServer, serverSaveVersion, exportSnapshot, readSnapshotFile } = useBoardSnapshot(board);
+    const {
+        snapshot,
+        status,
+        message,
+        canEdit,
+        save,
+        downloadLocal,
+        restoreServer,
+        serverSaveVersion,
+        exportSnapshot,
+        readSnapshotFile,
+    } = useBoardSnapshot(board);
     return (
         <>
             {snapshot && (

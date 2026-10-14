@@ -59,7 +59,7 @@
 | --- | --- |
 | `handleDoubleTap` (155~168줄) | 터치 + 300ms 이내 재탭 → `event.preventDefault()` 후 `editMemo()` (다른 카드의 `handleDoubleTap`과 달리 `preventDefault`를 호출한다) |
 | `handleMemoPress` (226~228줄) | `onFocus()`만 호출 — `stopPropagation()`이 없다(다른 카드들의 `handle*Press`는 `stopPropagation`만 하고 포커스/이벤트 콜백이 없는 것과 반대) |
-| `handleDragStop`/`handleResizeStop` | `TableCard` 등과 달리 `Ref` 동기화 없이 `setMemoState`만 호출(함수형 업데이트 사용, 231, 235줄) |
+| `handleDragStop`/`handleResizeStop` | 내부 위치·크기를 갱신하고 `onGeometryChange`로 geometry만 부모에 전달. 본문 초안은 편집 완료 때 확정 |
 | `confirmDelete` (247~251줄) | `onDelete(id)` → `onEditingClear()` → `setDeleteDialogOpen(false)` |
 
 ## MemoCard 렌더 구조 (102~212줄)
@@ -82,4 +82,8 @@
 - `memoState`/`memoContent`/`memoColor`가 Ref 미러 없이 `useCallback` 의존성 배열로만 최신값을 보장하는 방식은 다른 카드 훅(Table/Image/Mermaid)의 "Ref 미러" 패턴과 다르다 — 동작은 동일하지만 이 프로젝트 안에 두 가지 스타일이 공존한다.
 - 편집 중에는 `memo-focused` 클래스가 적용되지 않는다(106줄의 삼항 연산자가 `isEditing`을 우선시) — 시각적으로 "포커스됨"과 "편집 중"을 구분하려는 의도인지, 단순히 편집 중엔 `card-editing`이 이미 강조 스타일을 담당해서인지는 CSS 정의를 봐야 확정할 수 있다.
 - 빈 보드 클릭 시 포커스 해제(`onFocusClear`)가 저장 로직과 같은 리스너 안에 있어, 저장 조건(`isEditing && ...`)이 거짓이어도 포커스 해제 조건은 별도로 평가된다 — 편집 중이 아닐 때 카드를 포커스한 상태에서 빈 보드를 클릭하면 포커스만 해제되고 저장은 애초에 대상이 없다.
-- `useBoardMemos`는 INSERT/UPDATE 성공 후 `onPreviewUpdate()`를 호출한다. 삭제와 레이어 변경은 현재 미리보기 갱신을 예약하지 않는다.
+- Plus 미리보기는 서버 저장 완료 버전을 기준으로 갱신한다. 삭제·레이어 변경·Undo/Redo도 같은 저장 경로를 사용한다.
+
+## 이력 연결
+
+선택 prop `onGeometryChange`는 이동·리사이즈 종료 상태를 공통 보드에 전달한다. 입력 문자마다 이력을 기록하지 않으며 본문은 편집 완료 기준으로 기록한다. Undo/Redo는 `contentVersion` 변경으로 카드 내부 에디터 상태까지 재초기화한다. [보드 이력](./board-history.md)을 참조한다.

@@ -14,6 +14,7 @@ type DrawingToolBarProps = {
     onChangeWidth: (width: number) => void;
     onToggleErase: () => void;
     onUndo: () => void;
+    undoDisabled?: boolean;
 };
 
 const activeToolColor = "#ec4899";
@@ -26,6 +27,7 @@ export default function DrawingToolBar({
     onChangeWidth,
     onToggleErase,
     onUndo,
+    undoDisabled = false,
 }: DrawingToolBarProps) {
     const [openColorMenu, setOpenColorMenu] = useState(false);
     const [openWidthMenu, setOpenWidthMenu] = useState(false);
@@ -57,7 +59,7 @@ export default function DrawingToolBar({
 
     return (
         <CardToolPortal>
-            <CardToolButton label="Undo last stroke" onClick={onUndo}>
+            <CardToolButton label="Undo board change" onClick={onUndo} disabled={undoDisabled}>
                 <Undo2 />
             </CardToolButton>
             <div className="relative">

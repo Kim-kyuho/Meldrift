@@ -16,7 +16,9 @@ function adapter(db: SqlDatabase): Database {
                 rows.push(statement.getAsObject());
             }
             return rows;
-        } finally { statement.free(); }
+        } finally {
+            statement.free();
+        }
     };
     return {
         selectObjects,
@@ -49,12 +51,16 @@ export async function decodeSnapshot(bytes: Uint8Array, boardId: number) {
                 if (statement.get()[0] !== 0) {
                     throw new Error("Snapshot contains another board.");
                 }
-            } finally { statement.free(); }
+            } finally {
+                statement.free();
+            }
         }
         const snapshot = readSnapshot(adapter(db), boardId);
         if (snapshot.images.some((image) => !image.data)) {
             throw new Error("All snapshot images must contain their binary data.");
         }
         return snapshot;
-    } finally { db.close(); }
+    } finally {
+        db.close();
+    }
 }

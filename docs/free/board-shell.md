@@ -2,7 +2,7 @@
 
 소스: `app/layout.tsx`, `components/BoardMenu.tsx`, `packages/ui/src/shared/BoardMessage.tsx`, `packages/ui/src/features/board/AboutModal.tsx`
 
-카드와 캔버스를 둘러싼 화면 요소다. Plus와 이름이 같지만 담는 항목이 다르다. 인증·보드 목록·미리보기가 없고, 대신 세이브 파일 조작이 들어온다.
+카드와 캔버스를 둘러싼 화면 요소다. Free·Plus가 같은 공통 메뉴와 About 구조를 사용하며 앱에서 브랜드·문구·인증 영역을 주입한다. Free에는 인증·서버 보드 목록·미리보기가 없다.
 
 ## `app/layout.tsx`
 
@@ -10,7 +10,7 @@
 
 ## `BoardMenu`
 
-Plus의 보드 메뉴에 있던 로그인·회원가입·보드 목록·보드 이름 변경·삭제가 전부 없다. 대신 세이브 파일 항목이 들어간다.
+`packages/ui/src/features/board/BoardMenu.tsx`를 사용한다. Plus도 같은 파일 항목을 사용하고 인증 영역을 추가한다. 보드 생성·이름 변경·삭제는 Plus 목록 화면의 별도 책임이다.
 
 | Props | 타입 | 역할 |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ Plus의 보드 메뉴에 있던 로그인·회원가입·보드 목록·보드 �
 | `reorderOpen` | `boolean` | 순서 패널 열림 표시 |
 | `onReorder`/`onExport`/`onImport`/`onCompileMarkdown`/`onReset`/`onAbout` | `() => void` | 항목 동작 |
 
-항목은 위에서부터 다음과 같다. 머리에 `Free Edition` 라벨이 붙는다.
+항목은 위에서부터 다음과 같다. 머리에 `Free Board` 라벨이 붙는다.
 
 | 항목 | 잠기는 조건 |
 | --- | --- |
@@ -29,7 +29,7 @@ Plus의 보드 메뉴에 있던 로그인·회원가입·보드 목록·보드 �
 | Export (`.sqlite` 내보내기) | `exportDisabled \|\| transferring \|\| resetting` |
 | Import (`.sqlite` 불러오기) | `transferring \|\| resetting` |
 | Markdown 컴파일 | 없음 |
-| Reset (브라우저 데이터 삭제) | `transferring \|\| resetting` |
+| Reset (현재 보드 내용 비우기) | `transferring \|\| resetting` |
 | About | 없음 |
 
 `runAndClose(action)`은 메뉴를 먼저 닫고 동작을 실행한다. 모든 항목이 이 경로를 쓴다.
@@ -37,6 +37,8 @@ Plus의 보드 메뉴에 있던 로그인·회원가입·보드 목록·보드 �
 `exportDisabled`일 때만 메뉴 아래에 `Finish editing before exporting.`를 덧붙인다. 버튼이 왜 잠겼는지 알려 주는 자리다.
 
 About은 구분선 아래에 따로 둔다.
+
+파일 작업 훅도 편집·전송 가능 여부를 확인한다. 현재 Free Reset은 DB 자체를 삭제하거나 새로고침하지 않으며 Import와 함께 Undo할 수 있다. `resetting` 반환값은 호환용 `false`다. [반출입 설계](./board-transfer.md)를 참조한다.
 
 ## `BoardToolBar`
 

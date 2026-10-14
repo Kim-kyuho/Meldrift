@@ -45,7 +45,10 @@ export function useCardLayer({
             ...images.map((image) => ({ type: "image" as const, id: image.imageId, z: image.z })),
             ...mermaids.map((mermaid) => ({ type: "mermaid" as const, id: mermaid.id, z: mermaid.z })),
             ...tables.map((table) => ({ type: "table" as const, id: table.id, z: table.z })),
-        ].sort((left, right) => left.z - right.z || cardTypeOrder[left.type] - cardTypeOrder[right.type] || left.id - right.id);
+        ].sort((left, right) =>
+            left.z - right.z
+            || cardTypeOrder[left.type] - cardTypeOrder[right.type]
+            || left.id - right.id);
 
         const targetIndex = cards.findIndex((card) => card.type === type && card.id === id);
         if (targetIndex < 0) {
@@ -55,8 +58,7 @@ export function useCardLayer({
         const [target] = cards.splice(targetIndex, 1);
         if (action === "front") {
             cards.push(target);
-        }
-        else {
+        } else {
             cards.unshift(target);
         }
 

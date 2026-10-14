@@ -20,7 +20,9 @@ export function useBoardLoad() {
                 }
                 setDatabaseError(error instanceof Error ? error.message : "Browser SQLite could not be opened.");
             });
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     }, []);
 
     return { initialSnapshot, databaseError };

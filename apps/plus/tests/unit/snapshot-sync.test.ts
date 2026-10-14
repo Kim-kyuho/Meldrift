@@ -20,7 +20,15 @@ function setup() {
     };
     const status = vi.fn();
     const manager = new SnapshotSync(database as unknown as BoardDatabaseClient, "/api/boards/1/snapshot", status);
-    return { manager, database, status, record: () => record, setBytes: (bytes: ArrayBuffer) => { record.bytes = bytes; } };
+    return {
+        manager,
+        database,
+        status,
+        record: () => record,
+        setBytes: (bytes: ArrayBuffer) => {
+            record.bytes = bytes;
+        },
+    };
 }
 
 describe("snapshot synchronization", () => {
@@ -28,7 +36,10 @@ describe("snapshot synchronization", () => {
         vi.useFakeTimers();
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ revision: 1 }) }));
     });
-    afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+    });
 
     it("keeps the 150ms local debounce separate from the 3s server debounce", async () => {
         const { manager, database } = setup();
@@ -74,7 +85,9 @@ describe("snapshot synchronization", () => {
     it("never uploads before a pending local transaction completes", async () => {
         const { manager, database } = setup();
         let finish!: () => void;
-        database.replace.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
+        database.replace.mockImplementationOnce(() => new Promise<void>((resolve) => {
+            finish = resolve;
+        }));
         const saving = manager.save(createEmptyBoardSnapshot());
         await vi.advanceTimersByTimeAsync(5000);
         expect(fetch).not.toHaveBeenCalled();
@@ -87,7 +100,9 @@ describe("snapshot synchronization", () => {
     it("serializes uploads and keeps edits made during an upload dirty", async () => {
         const { manager, database, record } = setup();
         let finish!: (response: Response) => void;
-        vi.mocked(fetch).mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }) as Promise<Response>);
+        vi.mocked(fetch).mockImplementationOnce(() => new Promise((resolve) => {
+            finish = resolve;
+        }) as Promise<Response>);
         await manager.save(createEmptyBoardSnapshot());
         await vi.advanceTimersByTimeAsync(3000);
         await manager.save(createEmptyBoardSnapshot());

@@ -1,4 +1,4 @@
-import { PointerEvent as ReactPointerEvent, useRef, useState } from "react";
+import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import type { DrawingTool } from "@meldrift/core/board-stroke";
 import type { StrokePoint } from "@meldrift/core/board-stroke";
 
@@ -8,6 +8,7 @@ type UseDrawingPointerOptions = {
     eraserRadius: number;
     onStrokeEnd: (points: StrokePoint[]) => void;
     onErase: (start: StrokePoint, end: StrokePoint, radius: number) => void;
+    onInteractionChange?: (active: boolean) => void;
 };
 
 export function useDrawingPointer({
@@ -16,6 +17,7 @@ export function useDrawingPointer({
     eraserRadius,
     onStrokeEnd,
     onErase,
+    onInteractionChange,
 }: UseDrawingPointerOptions) {
     const layerRef = useRef<SVGSVGElement | null>(null);
     const activePointerRef = useRef<number | null>(null);
@@ -49,6 +51,7 @@ export function useDrawingPointer({
         }
 
         setCurrentPoints([]);
+        onInteractionChange?.(false);
     };
 
     const discardCurrentInput = () => {
@@ -58,6 +61,7 @@ export function useDrawingPointer({
         previousEraserPointRef.current = null;
         setCurrentPoints([]);
         setEraserPoint(null);
+        onInteractionChange?.(false);
     };
 
     const handlePointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
@@ -80,6 +84,7 @@ export function useDrawingPointer({
         const boardPoint = toBoardPoint(event);
         activePointerRef.current = event.pointerId;
         activePointerTypeRef.current = event.pointerType;
+        onInteractionChange?.(true);
 
         if (drawingTool === "erase") {
             previousEraserPointRef.current = boardPoint;
@@ -111,6 +116,7 @@ export function useDrawingPointer({
                 activePointerRef.current = null;
                 activePointerTypeRef.current = null;
                 previousEraserPointRef.current = null;
+                onInteractionChange?.(false);
                 return;
             }
 
@@ -150,11 +156,39 @@ export function useDrawingPointer({
             activePointerRef.current = null;
             activePointerTypeRef.current = null;
             previousEraserPointRef.current = null;
+            onInteractionChange?.(false);
             return;
         }
 
         finishCurrentStroke();
     };
+
+    useEffect(() => {
+        const end = (event: PointerEvent) => {
+            if (activePointerRef.current === event.pointerId) {
+                if (event.pointerType === "pen") {
+                    penContactRef.current = false;
+                }
+                finishCurrentStroke();
+                previousEraserPointRef.current = null;
+            }
+        };
+        const blur = () => {
+            if (activePointerRef.current !== null) {
+                finishCurrentStroke();
+            }
+            penContactRef.current = false;
+            previousEraserPointRef.current = null;
+        };
+        window.addEventListener("pointerup", end, true);
+        window.addEventListener("pointercancel", end, true);
+        window.addEventListener("blur", blur);
+        return () => {
+            window.removeEventListener("pointerup", end, true);
+            window.removeEventListener("pointercancel", end, true);
+            window.removeEventListener("blur", blur);
+        };
+    });
 
     return {
         layerRef,

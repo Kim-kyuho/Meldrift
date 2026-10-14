@@ -201,8 +201,7 @@ export function useBoardSnapshot(board: BoardInfo) {
                 await previousCleanup;
                 if (manager) {
                     await manager.close();
-                }
-                else {
+                } else {
                     database?.close();
                 }
             })().catch(() => {});

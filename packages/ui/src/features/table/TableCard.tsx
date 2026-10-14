@@ -4,7 +4,7 @@ import { Rnd } from "react-rnd";
 import { noop } from "../../internal/noop";
 import type { TableCardData as BoardTable } from "@meldrift/core/cards";
 import { useTableCard } from "./useTableCard";
-import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
+import { ACTIVE_CARD_Z, type SelectionOffset, type SelectionRect } from "@meldrift/core/cards";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import TableGrid from "./TableGrid";
 import TableToolBar from "./TableToolBar";
@@ -23,6 +23,7 @@ type TableCardProps<T extends BoardTable> = {
     onInsert: (table: T) => void;
     onUpdate: (table: T) => void;
     onDelete: (id: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
     onBringToFront: () => void;
     onSendToBack: () => void;
 };
@@ -39,6 +40,7 @@ export default function TableCard<T extends BoardTable>({
     onInsert,
     onUpdate,
     onDelete,
+    onGeometryChange,
     onBringToFront,
     onSendToBack,
 }: TableCardProps<T>) {
@@ -67,6 +69,7 @@ export default function TableCard<T extends BoardTable>({
         onInsert,
         onUpdate,
         onDelete,
+        onGeometryChange,
     });
     const minHeight = getTableCardMinHeight(source.rows.length);
     return (

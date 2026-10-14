@@ -20,6 +20,7 @@ type DrawingLayerProps = {
     zoom: number;
     onStrokeEnd: (points: StrokePoint[]) => void;
     onErase: (start: StrokePoint, end: StrokePoint, radius: number) => void;
+    onInteractionChange?: (active: boolean) => void;
 };
 
 const markerStrokeOpacity = 0.82;
@@ -55,6 +56,7 @@ export default function DrawingLayer({
     zoom,
     onStrokeEnd,
     onErase,
+    onInteractionChange,
 }: DrawingLayerProps) {
     const eraserRadius = eraserScreenRadius / zoom;
     const {
@@ -71,6 +73,7 @@ export default function DrawingLayer({
         eraserRadius,
         onStrokeEnd,
         onErase,
+        onInteractionChange,
     });
 
     if (!drawingMode) {

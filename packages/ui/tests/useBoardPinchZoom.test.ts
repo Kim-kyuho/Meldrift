@@ -49,7 +49,9 @@ describe("useBoardPinchZoom", () => {
         Object.defineProperty(event, "touches", {
             value: xs.map((clientX) => ({ clientX, clientY: 100 })),
         });
-        act(() => { viewport.dispatchEvent(event); });
+        act(() => {
+            viewport.dispatchEvent(event);
+        });
         return event;
     };
 

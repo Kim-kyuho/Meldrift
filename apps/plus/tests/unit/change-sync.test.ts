@@ -60,7 +60,9 @@ function setup() {
     managers.push(manager);
     return {
         manager, database, status,
-        queue: (...operations: BoardOperation[]) => { pending = [...pending, ...operations]; },
+        queue: (...operations: BoardOperation[]) => {
+            pending = [...pending, ...operations];
+        },
         claimedBatches: () => claimed,
     };
 }

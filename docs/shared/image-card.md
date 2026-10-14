@@ -1,5 +1,9 @@
 # ImageCard 상세설계
 
+## 이력 연결
+
+선택 prop `onGeometryChange`는 이동·리사이즈 종료 시 반올림된 위치·크기만 공통 보드 상태에 전달한다. 이미지 바이너리를 복제하거나 재업로드하지 않는다. 삭제 후 Undo는 원래 바이너리 참조를 복원하고 표시용 Blob URL을 다시 만든다. 복원 시 `contentVersion`으로 카드 내부 상태를 재초기화한다. [보드 이력](./board-history.md)을 참조한다.
+
 소스: `packages/ui/src/features/image/ImageCard.tsx`, `packages/ui/src/features/image/useImageCard.ts`, `packages/ui/src/features/image/useBoardImages.ts`
 
 이미지 카드와 편집 훅은 `@meldrift/ui`에 있다. `ImageCard`는 편집과 object URL 처리를 연결하고, `ImageCardView`는 카드 프레임·툴바를 표시한다. 데이터 타입과 이미지 변환은 `@meldrift/board-data`에서 가져온다.

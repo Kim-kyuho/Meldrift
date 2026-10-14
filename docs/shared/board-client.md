@@ -2,7 +2,7 @@
 
 소스: `packages/ui/src/features/board/BoardClient.tsx`
 
-보드 화면 전체다. 카드 네 종류, 드로잉, 검색, 탐색, 줌, 순서 패널, Markdown 뷰, AI 어시스턴트를 여기서 조립한다. 두 Edition이 같은 파일을 쓴다.
+보드 화면 전체다. 카드 네 종류, 드로잉, 다중 선택, 검색, 탐색, 줌, 순서 패널, 단축키, Undo/Redo, Markdown 뷰, AI 어시스턴트를 여기서 조립한다. 두 Edition이 같은 파일을 쓴다.
 
 Edition마다 다른 것은 **저장 방식과 껍데기**뿐이라, 그 둘만 밖으로 뺐다.
 
@@ -41,13 +41,14 @@ Edition이 그려 넣는 자리다. 넘겨받는 값은 이렇다.
 | `reorderOpen`, `onReorder` | 순서 패널 상태와 토글 |
 | `onCompileMarkdown`, `onAbout` | Markdown 뷰·About 열기 |
 | `closeOverlays` | 메뉴·About·Markdown 뷰를 한꺼번에 닫기 |
+| `replaceSnapshot` | 현재 보드의 내용을 교체하고 내부 카드 상태·선택·편집을 정리한다. Import·Reset도 이 경로를 쓰며 이력에 기록한다 |
 
 저장은 이 컴포넌트가 하지 않는다. `snapshot`과 `savePaused`를 내주기만 하고, 그것으로 무엇을 할지는 Edition이 정한다.
 
 | Edition | `renderControls`가 그리는 것 |
 | --- | --- |
 | Free | `BoardControls` — 보드 메뉴, Help, 반출입, `useBoardPersistance`(브라우저 DB 저장) |
-| Plus | 보드 메뉴, 로그인·가입 모달, `SnapshotPersistence`(서버 동기화로 스냅샷 전달) |
+| Plus | `BoardControls`의 공통 메뉴·반출입·`useBoardPersistence`, 로그인·가입 모달. 로컬 저장은 `onSnapshotChange`로 동기화 계층에 전달 |
 
 ## 스냅샷
 
@@ -66,7 +67,7 @@ const savePaused = isEditing || drawingMode || hasPendingAiCards;
 | 조건 | 막는 이유 |
 | --- | --- |
 | 카드 편집 중 | 확정되지 않은 초안을 쓰지 않는다 |
-| 드로잉 모드 | 같은 이유. 획은 모드를 끌 때 확정된다 |
+| 드로잉 모드 | 획은 입력 종료 때 상태와 이력에 반영되지만 영속 저장은 모드를 끈 뒤에 실행한다 |
 | AI 제안 대기 | 임시 카드가 음수 id라 `board-state` 검증에 걸린다 |
 
 `isEditing`은 네 종류의 `editing{Type}Id` 중 하나라도 있으면 참이다. 카드별 편집 id는 각 컬렉션 훅이 따로 소유하고, 여기서는 하나의 파생 플래그로만 합친다.
@@ -84,12 +85,16 @@ const withPermission = (action) => () => {
 
 카드 생성 버튼, 이미지 업로드·드롭, 순서 패널의 끌기 시작, 카드 컴포넌트의 `onPermissionDenied`, `useAiAssistant`의 `canEdit`이 같은 판정을 공유한다.
 
+Undo/Redo 실행과 `onGeometryChange`로 전달된 카드 좌표 반영도 같은 편집 권한을 검사한다.
+
 ## 조립하는 훅
 
 | 출처 | 훅 |
 | --- | --- |
 | `@meldrift/ui` | `useBoardMemos`, `useBoardImages`, `useBoardMermaids`, `useBoardTables`, `useCardLayer`, `useMemoReorder`, `useAiAssistant` |
 | `@meldrift/ui` | `useBoardZoom`, `useBoardPinchZoom`, `useBoardScroll`, `useBoardSearch`, `useBoardMemoFocus`, `useBoardDrawing`, `useBoardImageDrop` |
+| 공통 보드 내부 | `useBoardHistory`, `useBoardPointerActive`, `useBoardShortcuts` |
+| 선택 | `useBoardSelection`, `useSelectionPointer` |
 
 보드 화면과 카드 상태를 다루는 React 훅은 `@meldrift/ui`에 둔다. 데이터 구조·저장·변환 코드는 `@meldrift/board-data`에서 가져온다.
 
@@ -98,7 +103,9 @@ const withPermission = (action) => () => {
 ```text
 hidden image input
 renderControls(...)          ← Edition이 그리는 자리
+BoardHistoryToolbar         ← 하단 중앙 Undo/Redo
 BoardToolBar
+SelectionToolBar (cardsSelected)
 DrawingToolBar (drawingMode)
 BoardSearchPanel / BoardNavigator / MemoReorderPanel
 BoardMarkdownView (markdownViewOpen)
@@ -111,10 +118,21 @@ main
    └ board-size-layer     ← boardWidth * zoom
       └ meldrift-board    ← transform: scale(zoom)
          ├ ImageCard[] / MemoCard[] / MermaidCard[] / TableCard[]
-         └ DrawingLayer
+         ├ DrawingLayer
+         └ SelectionLayer (selectionActive)
 ```
 
 `DrawingLayer`는 드로잉 모드가 바뀔 때 `key`로 재마운트한다. `useDrawingPointer`가 들고 있는 포인터 소유권 Ref를 비우기 위해서다.
+
+## 작업 완료와 이력
+
+네 카드의 `onGeometryChange`는 이동·리사이즈 종료마다 위치·크기만 컬렉션에 반영한다. 내용은 카드의 편집 완료 콜백에서 반영한다. 음수 ID 임시 카드와 AI 제안은 확정 전 기록을 보류한다.
+
+지우개의 이동 프레임은 `onInteractionChange`로 한 입력으로 묶는다. 물리 포인터의 활성 여부는 버튼 실행 차단에 별도로 사용한다. 기록과 영속 저장의 보류 조건은 같지 않다.
+
+`applyContent`는 공통 복원 경로다. 컬렉션과 획을 교체하고 `contentVersion`을 올리며 편집 ID·포커스·선택을 비운다. `initialSnapshot`이 새 서버 상태로 교체되면 화면과 이력도 초기화한다. 복원한 상태는 `snapshot`으로 다시 저장 계층에 전달된다.
+
+세부 규칙은 [보드 이력](./board-history.md), 키 입력 보호는 [보드 단축키](./board-shortcuts.md)를 참조한다.
 
 ## 변경 시 확인 지점
 

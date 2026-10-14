@@ -53,4 +53,10 @@
 ## 알려진 특이사항
 
 - `#card-tool-portal`이 일반 도구 목록과 정확히 같은 좌표(`bottom-16 right-5`)에 위치하는 것은 우연이 아니라 의도된 설계로 보인다 — 카드 편집 진입 시 "일반 도구 숨김 + 같은 자리에 카드 도구 등장"으로 자리를 교대하는 방식.
-- `board-toolbar` 클래스는 `packages/ui/src/hooks/useBoardScroll.ts`의 패닝 제외 목록과 `useTableCard`/유사 훅들의 "빈 보드 클릭 판정" 제외 목록에도 쓰인다 — 이 툴바 위에서는 보드 드래그 패닝이나 카드 바깥 클릭 저장이 발생하지 않는다.
+- `board-toolbar` 클래스는 `packages/ui/src/features/viewport/useBoardScroll.ts`의 패닝 제외 목록과 카드 훅들의 빈 보드 클릭 판정 제외 목록에도 쓰인다.
+
+## 키보드와 이력 버튼
+
+`useBoardShortcuts`가 같은 모드 전환·생성 핸들러를 호출한다. `1`은 선택/패닝, `2`는 드로윙/패닝, `m`·`i`·`t`·`d`는 카드 생성이다. 편집·입력·모달 중에는 실행하지 않는다.
+
+화면 하단 중앙 Undo/Redo는 별도 `BoardHistoryToolbar`가 렌더하며 카드 생성 툴바 안에 넣지 않는다. [단축키](./board-shortcuts.md)와 [이력](./board-history.md)을 참조한다.

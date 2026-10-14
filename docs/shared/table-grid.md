@@ -56,6 +56,8 @@
 
 ## 셀/헤더 서브컴포넌트 (`useTableEdit.tsx` 32~120줄)
 
+표는 `h-full w-full`로 가용 영역을 채운다. 상단 추가 도구는 편집 중 흰색, 비편집 중 연회색이며 헤더 높이는 40px이다. 본문 셀은 `TABLE_ROW_MIN_HEIGHT`(37px)를 하한으로 사용한다. 전체 카드 하한은 [TableCard](./table-card.md#가용-영역과-최소-높이)에서 행 수로 계산한다.
+
 | 컴포넌트 | 편집 모드 | 비편집 모드 |
 | --- | --- | --- |
 | `SelectHeader` (32~45줄) | 전체 선택 체크박스, `disabled={!meta.isEditing}` | 동일 마크업이지만 checkbox `disabled` |

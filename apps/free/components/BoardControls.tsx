@@ -21,6 +21,7 @@ export default function BoardControls({
     onReorder,
     onCompileMarkdown,
     onAbout,
+    replaceSnapshot,
 }: BoardControlsProps & { initialHelpOpen: boolean }) {
     const [helpOpen, setHelpOpen] = useState(initialHelpOpen);
     const openHelp = useCallback(() => {
@@ -44,9 +45,10 @@ export default function BoardControls({
         exportDisabled: savePaused,
         setMessage,
         getSnapshot: () => snapshot,
+        replaceSnapshot,
     });
 
-    useBoardPersistance({ snapshot, savePaused: savePaused || resetting, setMessage });
+    useBoardPersistance({ snapshot, savePaused: savePaused || resetting || transferring, setMessage });
 
     return (
         <>
@@ -75,7 +77,7 @@ export default function BoardControls({
             {resetDialogOpen && (
                 <ConfirmDialog
                     title="Reset Meldrift Free Edition?"
-                    message="Once deleted, your board data cannot be recovered."
+                    message="All cards and drawings on this board will be removed. You can undo this change until you reload the page."
                     onConfirm={handleResetConfirm}
                     onCancel={handleResetCancel}
                 />

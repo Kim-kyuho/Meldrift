@@ -34,5 +34,9 @@ export type BrowserDbPayload =
 
 export type BrowserDbRequest = BrowserDbPayload & { id: number; storageName: string; board: BoardInfo };
 export type BrowserDbResponse =
-    | { id: number; ok: true; value?: BoardSnapshot | ArrayBuffer | StoredBoard | OutboxState | OutboxBatch | StoredAsset | null }
+    | {
+        id: number;
+        ok: true;
+        value?: BoardSnapshot | ArrayBuffer | StoredBoard | OutboxState | OutboxBatch | StoredAsset | null;
+    }
     | { id: number; ok: false; error: string };

@@ -23,10 +23,14 @@ export function useBoardTransfer(options: Options) {
     const importInputRef = useRef<HTMLInputElement | null>(null);
     const [transferring, setTransferring] = useState(false);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
-    useEffect(() => { latest.current = options; });
+    useEffect(() => {
+        latest.current = options;
+    });
     useEffect(() => {
         active.current = true;
-        return () => { active.current = false; };
+        return () => {
+            active.current = false;
+        };
     }, []);
 
     const canModify = () => active.current && latest.current.canEdit && !latest.current.savePaused;
@@ -62,8 +66,11 @@ export function useBoardTransfer(options: Options) {
             link.click();
             link.remove();
             URL.revokeObjectURL(url);
-        } catch (error) { reportError(error); }
-        finally { finish(); }
+        } catch (error) {
+            reportError(error);
+        } finally {
+            finish();
+        }
     };
 
     const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -98,8 +105,11 @@ export function useBoardTransfer(options: Options) {
                 mermaids: copy.mermaids.map((card) => ({ ...card, boardId: board.boardId })),
                 tables: copy.tables.map((card) => ({ ...card, boardId: board.boardId })),
             });
-        } catch (error) { reportError(error); }
-        finally { finish(); }
+        } catch (error) {
+            reportError(error);
+        } finally {
+            finish();
+        }
     };
 
     return {

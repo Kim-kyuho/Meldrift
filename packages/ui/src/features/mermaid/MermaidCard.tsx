@@ -7,7 +7,7 @@ import { noop } from "../../internal/noop";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import { MermaidCardData, useMermaidCard } from "./useMermaidCard";
 import { useMermaidRenderer } from "./useMermaidRenderer";
-import { ACTIVE_CARD_Z, type SelectionOffset } from "@meldrift/core/cards";
+import { ACTIVE_CARD_Z, type SelectionOffset, type SelectionRect } from "@meldrift/core/cards";
 import {
     detectMermaidDiagramType,
     getMermaidTemplate,
@@ -50,6 +50,7 @@ type MermaidCardProps = {
         height: number,
     ) => void;
     onDelete: (id: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
     onBringToFront: () => void;
     onSendToBack: () => void;
 };
@@ -66,6 +67,7 @@ export default function MermaidCard({
     onInsert,
     onUpdate,
     onDelete,
+    onGeometryChange,
     onBringToFront,
     onSendToBack,
 }: MermaidCardProps) {
@@ -94,6 +96,7 @@ export default function MermaidCard({
         onInsert,
         onUpdate,
         onDelete,
+        onGeometryChange,
     });
     const { svg, renderError } = useMermaidRenderer({
         source,

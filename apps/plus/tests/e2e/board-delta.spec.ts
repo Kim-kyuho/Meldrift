@@ -36,6 +36,43 @@ async function redImage(page: Page) {
     return { name: "delta-red.png", mimeType: "image/png", buffer: Buffer.from(base64, "base64") };
 }
 
+test("syncs Undo and Redo with increasing revisions without re-uploading image geometry", async ({ page, context }) => {
+    const server = createDeltaServer();
+    await server.install(context);
+    await openBoard(page);
+    await page.getByLabel("Upload image").setInputFiles(await redImage(page));
+    await expect(page.locator(".card-editing img")).toBeVisible();
+    await finishEditing(page);
+    await expect.poll(() => server.changes.length, { timeout: 15000 }).toBe(1);
+    await expect(saved(page)).toBeVisible();
+    const image = page.getByRole("img", { name: "delta-red.png" });
+    const original = (await image.boundingBox())!;
+    await image.dblclick();
+    await page.mouse.move(original.x + original.width / 2, original.y + original.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(original.x + original.width / 2 + 30, original.y + original.height / 2 + 20, { steps: 8 });
+    await page.mouse.up();
+    await finishEditing(page);
+    await expect.poll(() => server.changes.length, { timeout: 15000 }).toBe(2);
+    await expect(saved(page)).toBeVisible();
+    const uploads = server.chunkUploads.length;
+    const toolbar = page.getByRole("toolbar", { name: "Board history" });
+    await toolbar.getByRole("button", { name: "Undo board change" }).click();
+    await expect.poll(() => server.changes.length, { timeout: 15000 }).toBe(3);
+    await expect(saved(page)).toBeVisible();
+    expect((await image.boundingBox())!.x).toBeCloseTo(original.x, 0);
+    await toolbar.getByRole("button", { name: "Redo board change" }).click();
+    await expect.poll(() => server.changes.length, { timeout: 15000 }).toBe(4);
+    await expect(saved(page)).toBeVisible();
+    expect(server.changes.map((change) => change.baseRevision)).toEqual([0, 1, 2, 3]);
+    for (const change of server.changes.slice(1)) {
+        expect(Object.keys(change.operations[0].changes).sort()).toEqual(["x", "y"]);
+        expect(change.operations[0].asset).toBeUndefined();
+    }
+    expect(server.chunkUploads).toHaveLength(uploads);
+    expect(server.unexpected).toEqual([]);
+});
+
 test("syncs three identical images separately and restores them from the server in a fresh browser context", async ({ page, context, browser }) => {
     const server = createDeltaServer();
     await server.install(context);
@@ -63,7 +100,9 @@ test("syncs three identical images separately and restores them from the server 
         expect(server.chunkDownloads).toHaveLength(3);
         expect(server.chunkUploads).toHaveLength(3);
         expect(server.unexpected).toEqual([]);
-    } finally { await fresh.close(); }
+    } finally {
+        await fresh.close();
+    }
 });
 
 test("moving an image sends geometry only and captures its pixels in the preview", async ({ page, context }, testInfo) => {

@@ -1,16 +1,17 @@
 import { ChangeEvent, useRef, useState } from "react";
 import type { BoardSnapshot } from "@/lib/board-state";
+import { createEmptyBoardSnapshot } from "@/lib/board-state";
 import {
     exportBoardDatabase,
     importBoardDatabase,
     replaceBoardState,
-    resetBoardDatabase,
 } from "@/lib/browser-db/client";
 
 type UseBoardTransferOptions = {
     exportDisabled: boolean;
     setMessage: (message: string) => void;
     getSnapshot: () => BoardSnapshot;
+    replaceSnapshot: (snapshot: BoardSnapshot) => void;
 };
 
 const errorMessage = (error: unknown, fallback: string) =>
@@ -20,14 +21,14 @@ export function useBoardTransfer({
     exportDisabled,
     setMessage,
     getSnapshot,
+    replaceSnapshot,
 }: UseBoardTransferOptions) {
     const importInputRef = useRef<HTMLInputElement | null>(null);
     const [transferring, setTransferring] = useState(false);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
-    const [resetting, setResetting] = useState(false);
 
     const handleExport = async () => {
-        if (exportDisabled || transferring || resetting) {
+        if (exportDisabled || transferring) {
             return;
         }
 
@@ -52,7 +53,7 @@ export function useBoardTransfer({
     };
 
     const handleImportClick = () => {
-        if (!transferring && !resetting) {
+        if (!exportDisabled && !transferring) {
             importInputRef.current?.click();
         }
     };
@@ -60,7 +61,7 @@ export function useBoardTransfer({
     const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = "";
-        if (!file || resetting) {
+        if (!file || exportDisabled || transferring) {
             return;
         }
 
@@ -78,8 +79,8 @@ export function useBoardTransfer({
 
         setTransferring(true);
         try {
-            await importBoardDatabase(await file.arrayBuffer());
-            window.location.reload();
+            const imported = await importBoardDatabase(await file.arrayBuffer());
+            replaceSnapshot({ ...imported, board: getSnapshot().board });
         } catch (error) {
             setMessage(errorMessage(error, "The save file could not be imported."));
         } finally {
@@ -88,34 +89,27 @@ export function useBoardTransfer({
     };
 
     const handleResetClick = () => {
-        if (!transferring && !resetting) {
+        if (!exportDisabled && !transferring) {
             setResetDialogOpen(true);
         }
     };
 
     const handleResetCancel = () => setResetDialogOpen(false);
 
-    const handleResetConfirm = async () => {
-        if (transferring || resetting) {
+    const handleResetConfirm = () => {
+        if (exportDisabled || transferring) {
             return;
         }
 
         setResetDialogOpen(false);
-        setResetting(true);
         setMessage("");
-        try {
-            await resetBoardDatabase();
-            window.location.reload();
-        } catch (error) {
-            setMessage(errorMessage(error, "Meldrift Free Edition browser data could not be reset."));
-            setResetting(false);
-        }
+        replaceSnapshot({ ...createEmptyBoardSnapshot(), board: getSnapshot().board });
     };
 
     return {
         importInputRef,
         transferring,
-        resetting,
+        resetting: false,
         resetDialogOpen,
         handleExport,
         handleImportClick,

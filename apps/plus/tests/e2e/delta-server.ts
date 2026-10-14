@@ -182,8 +182,14 @@ export function createDeltaServer() {
 
     return {
         install, changes, attempts, chunkUploads, chunkDownloads, previews, unexpected,
-        setOffline: (value: boolean) => { offline = value; },
-        loseNextResponse: () => { loseResponse = true; },
-        failNextChunk: (index: number) => { failChunk = index; },
+        setOffline: (value: boolean) => {
+            offline = value;
+        },
+        loseNextResponse: () => {
+            loseResponse = true;
+        },
+        failNextChunk: (index: number) => {
+            failChunk = index;
+        },
     };
 }

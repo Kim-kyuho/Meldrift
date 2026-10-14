@@ -55,8 +55,10 @@ export async function PUT(request: NextRequest, { params }: Context) {
     const revisionHeader = request.headers.get("X-Snapshot-Revision");
     const revision = Number(revisionHeader);
     const mutationId = request.headers.get("X-Snapshot-Mutation") ?? "";
-    if (!Number.isSafeInteger(boardId) || boardId <= 0 || revisionHeader === null || !Number.isSafeInteger(revision) || revision < 0
-        || !/^[a-zA-Z0-9:-]{1,160}$/.test(mutationId)) {
+    const validBoardId = Number.isSafeInteger(boardId) && boardId > 0;
+    const validRevision = revisionHeader !== null && Number.isSafeInteger(revision) && revision >= 0;
+    const validMutationId = /^[a-zA-Z0-9:-]{1,160}$/.test(mutationId);
+    if (!validBoardId || !validRevision || !validMutationId) {
         return NextResponse.json({ message: "Invalid snapshot request." }, { status: 400 });
     }
     if (Number(request.headers.get("Content-Length")) > maxSnapshotBytes) {
@@ -66,8 +68,9 @@ export async function PUT(request: NextRequest, { params }: Context) {
     if (bytes.byteLength > maxSnapshotBytes) {
         return NextResponse.json({ message: "Board snapshots must be 4 MiB or smaller." }, { status: 413 });
     }
-    try { await decodeSnapshot(bytes, boardId); }
-    catch (error) {
+    try {
+        await decodeSnapshot(bytes, boardId);
+    } catch (error) {
         return NextResponse.json({ message: error instanceof Error ? error.message : "Invalid snapshot." }, { status: 400 });
     }
     const hash = getSessionTokenHash(request.cookies.get(sessionCookieName)?.value);

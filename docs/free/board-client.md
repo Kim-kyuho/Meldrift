@@ -42,18 +42,20 @@ Help 모달은 읽힌 스냅샷이 비어 있을 때(`isBoardContentEmpty`) 처�
 `useBoardPersistance`가 `BoardControls` 안에서 돈다.
 
 ```text
-조건: !savePaused && !resetting
+조건: !savePaused && !transferring
 지연: 150ms
 동작: replaceBoardState(snapshot)
 ```
 
 `snapshot`이 바뀔 때마다 타이머를 다시 건다. 언마운트하면 대기 중인 저장은 취소된다. 실패 문구는 `setMessage`로 보드 메시지에 띄운다.
 
-`savePaused`는 공유 BoardClient가 계산해서 내려준다(편집 중·드로잉 중·AI 제안 대기). 여기에 Free만의 조건 하나를 더한다.
+`savePaused`는 공유 BoardClient가 계산해서 내려준다(편집 중·드로잉 중·AI 제안 대기). 여기에 파일 반출입 진행 상태를 더한다.
 
-- **리셋 중**: 방금 지운 브라우저 DB가 저장으로 되살아나는 것을 막는다.
+- **파일 전송 중**: Import가 교체한 DB를 이전 화면 상태가 다시 덮지 않게 한다. Reset은 DB 삭제가 아닌 동기식 내용 교체다.
 
 부분 갱신이 없다. 워커가 `DELETE` 후 전부 다시 INSERT하므로 한 번의 저장이 보드 전체를 다시 쓴다.
+
+공통 이력의 Undo/Redo와 `replaceSnapshot`으로 교체한 Import·Reset 결과도 같은 자동 저장 경로를 따른다. [반출입](./board-transfer.md), [보드 이력](../shared/board-history.md)을 참조한다.
 
 ## 내보내기 잠금
 
@@ -77,4 +79,4 @@ Help를 열 때는 `closeOverlays()`로 메뉴·About·Markdown 뷰를 먼저 �
 | 저장 | `replaceBoardState` 한 번 | 브라우저 DB에 쓴 뒤 서버로 올린다 |
 | 보드 | `defaultBoard` 하나 | 여러 개, 목록 화면 있음 |
 | 인증 | 없음 | 로그인·승인 |
-| 반출입 | `.sqlite` 세이브 파일 | 없음(서버가 원본을 들고 있다) |
+| 반출입 | `.sqlite` 세이브 파일·내용 Reset | 같은 파일 기능, 인증·편집 권한 검사 |

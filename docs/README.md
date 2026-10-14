@@ -1,4 +1,4 @@
-# Meldrift 문서
+# Meldrift v1.3 Beta 문서
 
 Meldrift는 같은 보드 기능을 두 Edition으로 배포한다. 두 Edition이 공유하는 것과 각자 다른 것을 폴더로 갈라 둔다.
 
@@ -32,27 +32,39 @@ Meldrift는 npm workspace 모노레포라 문서에서 경로를 두 가지 형�
 
 | 영역 | Plus | Free |
 | --- | --- | --- |
-| 저장소 | 브라우저 SQLite → Neon PostgreSQL에 스냅샷 파일로 업로드 | 브라우저 SQLite WASM, 워커에서 IndexedDB 스냅샷 |
-| 저장 단위 | 보드 전체(SQLite 파일 한 장) | 같다 |
-| 보드 수 | 여러 개, 소유자별 | 하나(`boardId = 1`) 고정 |
+| 저장소 | 공통 SQLite·IndexedDB → Neon PostgreSQL | 공통 SQLite·IndexedDB |
+| 로컬 저장 단위 | 보드 전체, 추가 변경이 없는 150ms 후 | 같다 |
+| 서버 저장 단위 | `delta` 보드의 변경 필드·획·새 자산 청크, 로컬 저장 성공 후 3초 | 서버 저장 없음 |
+| 보드 수 | 여러 개, 관리자 목록 관리 | 하나(`boardId = 1`) 고정 |
 | 인증 | 세션 쿠키 로그인, 권한 플래그 | 없음. 카드 편집 권한 개념도 없다 |
-| 이미지 | 브라우저에서 압축해 스냅샷 안 BLOB으로 저장 | 같다 |
-| 반출 | Markdown 문서 | Markdown 문서 + `.sqlite` 세이브 파일 |
-| AI 잠금 | 로그인 사용자 권한 | 서명 토큰 쿠키 + 비밀번호 |
+| 이미지 | 로컬 BLOB + 서버의 불변 자산·바이너리 청크 | 로컬 BLOB |
+| 반출입 | Markdown·이미지 ZIP + SQLite Export·Import·Reset. 파일 조작은 인증·권한 검사 | 같은 파일 기능, 인증 없음 |
+| AI 잠금 | 승인된 로그인 사용자 + AI 비밀번호·서명 쿠키 | AI 비밀번호·서명 쿠키 |
 | 보드 미리보기 | 있음(WebP를 Cloudinary에 업로드) | 없음 |
-| 동시 편집 | 계정당 편집 탭 하나 | 해당 없음 |
+| 동시 접근 | 단일 활성 로그인 세션, 서버 revision 충돌 검사. 별도 탭 리스 없음 | 원격 동기화 없음 |
 
-Plus의 카드별 Route Handler와 Cloudinary 이미지 업로드는 [보드 스냅샷](./plus/board-snapshot.md)으로 대체됐다. 구버전 보드를 여는 마이그레이션 경로만 남아 있다.
+Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다. `snapshot` 모드 보드는 [기존 전체 파일 업로드](./plus/board-snapshot.md)를 유지하며, 전환한 `delta` 보드에는 그 경로로 다시 쓰지 않는다. 구 카드별 쓰기 API는 차단되어 있고 신규 이미지 카드는 Cloudinary에 올리지 않는다.
+
+## 공통 추가 사양
+
+- [Undo/Redo](./shared/board-history.md): 하단 중앙 버튼, 최근 50개 객체 작업, 드로잉·Import·Reset 복원. 새로고침 시 초기화.
+- [보드 단축키](./shared/board-shortcuts.md): 모드 토글 `1`·`2`, 카드 생성 `m`·`i`·`t`·`d`, 입력·편집·모달 보호.
+- [다중 선택](./shared/board-selection.md): 카드 그룹 이동·삭제와 한 번의 이력 기록.
+- [Mermaid 편집](./shared/mermaid-card.md): 종류 선택, CodeMirror 6 문맥 자동완성, 손그림 스타일.
+- [표 크기](./shared/table-card.md): 가용 영역 채우기와 전체 행 수에 따른 최소 높이.
+- [이미지](./shared/image-card.md): 드롭·투명도 보존·바이너리 복원.
 
 ## 어디서부터 읽나
 
 | 알고 싶은 것 | 문서 |
 | --- | --- |
 | 보드 화면이 어떻게 조립되나 | [shared/board-client.md](./shared/board-client.md) |
-| Plus가 어떻게 저장하나 | [plus/board-snapshot.md](./plus/board-snapshot.md) |
+| 이전 스냅샷 보드는 어떻게 저장하나 | [plus/board-snapshot.md](./plus/board-snapshot.md) |
 | Plus가 변경분만 어떻게 올리나 | [plus/change-sync.md](./plus/change-sync.md) |
 | 브라우저 SQLite가 어떻게 도나 | [shared/browser-database.md](./shared/browser-database.md) |
 | 보드 값의 형태와 검증 | [shared/board-state.md](./shared/board-state.md) |
+| 전체 아키텍처와 기능 | [meldrift-basic-design.md](./meldrift-basic-design.md) |
+| 과거 상태를 어떻게 복원하나 | [shared/board-history.md](./shared/board-history.md) |
 
 ## 그 밖의 문서
 

@@ -59,7 +59,12 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(page.locator('[class*="image-rnd-"] img').first()).toBeVisible();
     });
 
-    test("exports and imports an actual SQLite save file", async ({ page }) => {
+    test("exports and imports an actual SQLite save file without reloading", async ({ page }) => {
+        await getBoardToolButton(page, "lucide-square-pen").click();
+        await page.locator('.card-editing [contenteditable="true"]').fill("SQLite import fixture");
+        await page.locator(".meldrift-board").click({ position: { x: 20, y: 20 } });
+        await expect(page.locator(".card-editing")).toHaveCount(0);
+
         await getBoardMenuButton(page).click();
         const downloadPromise = page.waitForEvent("download");
         await page.getByRole("button", { name: "Export" }).click();
@@ -70,16 +75,26 @@ test.describe("Meldrift Free Edition home", () => {
         expect(savePath).not.toBeNull();
         const bytes = await readFile(savePath!);
         expect(bytes.subarray(0, 16).toString("utf8")).toBe("SQLite format 3\0");
+        expect(bytes.includes(Buffer.from("SQLite import fixture"))).toBe(true);
+
+        await getBoardMenuButton(page).click();
+        await page.getByRole("button", { name: "Reset", exact: true }).click();
+        await page.getByRole("button", { name: "Yes", exact: true }).click();
+        await expect(page.locator('[class*="memo-rnd-"]')).toHaveCount(0);
 
         await getBoardMenuButton(page).click();
         const chooserPromise = page.waitForEvent("filechooser");
         await page.getByRole("button", { name: "Import" }).click();
         const chooser = await chooserPromise;
         page.once("dialog", (dialog) => dialog.accept());
-        const reloaded = page.waitForEvent("load");
+        const timeOrigin = await page.evaluate(() => performance.timeOrigin);
         await chooser.setFiles(savePath!);
-        await reloaded;
+        await expect(page.locator('[class*="memo-rnd-"]')).toContainText("SQLite import fixture");
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
+        expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+        await expect.poll(() => boardDatabaseContainsText(page, "SQLite import fixture")).toBe(true);
+        await page.reload();
+        await expect(page.locator('[class*="memo-rnd-"]')).toContainText("SQLite import fixture");
     });
 
     test("disables Export while a card is being edited", async ({ page }) => {
@@ -91,7 +106,7 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(page.getByText("Finish editing before exporting.")).toBeVisible();
     });
 
-    test("resets only after confirmation and reopens an empty board", async ({ page }) => {
+    test("resets only after confirmation without reloading and can undo the reset", async ({ page }) => {
         const chooserPromise = page.waitForEvent("filechooser");
         await getBoardToolButton(page, "lucide-camera").click();
         const chooser = await chooserPromise;
@@ -101,22 +116,37 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(imageCard).toBeVisible();
         await page.locator(".meldrift-board").click({ position: { x: 20, y: 20 } });
         await expect(imageCard).toHaveAttribute("data-editing", "false");
+        await expect.poll(() => boardDatabaseContainsText(page, "reset-me.png")).toBe(true);
 
         await getBoardMenuButton(page).click();
         await page.getByRole("button", { name: "Reset" }).click();
         await expect(page.getByRole("heading", { name: "Reset Meldrift Free Edition?" })).toBeVisible();
-        await expect(page.getByText("Once deleted, your board data cannot be recovered.")).toBeVisible();
+        await expect(page.getByText("All cards and drawings on this board will be removed. You can undo this change until you reload the page.")).toBeVisible();
         await page.getByRole("button", { name: "No" }).click();
         await expect(imageCard).toBeVisible();
 
         await getBoardMenuButton(page).click();
         await page.getByRole("button", { name: "Reset" }).click();
-        const reloaded = page.waitForEvent("load");
+        const timeOrigin = await page.evaluate(() => performance.timeOrigin);
         await page.getByRole("button", { name: "Yes" }).click();
-        await reloaded;
 
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
         await expect(page.locator('[class*="image-rnd-"]')).toHaveCount(0);
+        expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+
+        const history = page.getByRole("toolbar", { name: "Board history" });
+        await history.getByRole("button", { name: "Undo board change" }).click();
+        await expect(imageCard).toBeVisible();
+        await history.getByRole("button", { name: "Redo board change" }).click();
+        await expect(imageCard).toHaveCount(0);
+
+        await getBoardMenuButton(page).click();
+        const downloadPromise = page.waitForEvent("download");
+        await page.getByRole("button", { name: "Export", exact: true }).click();
+        await downloadPromise;
+        await page.reload();
+        await expect(page.locator(".board-scroll-layer")).toBeVisible();
+        await expect(imageCard).toHaveCount(0);
     });
 });
 

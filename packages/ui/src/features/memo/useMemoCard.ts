@@ -1,6 +1,6 @@
 import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
-import type { MemoCardData } from "@meldrift/core/cards";
+import type { MemoCardData, SelectionRect } from "@meldrift/core/cards";
 import { noop } from "../../internal/noop";
 
 export type { MemoCardData };
@@ -37,6 +37,7 @@ type UseMemoCardOptions = {
         color: string
     ) => void;
     onDelete: (id: number) => void;
+    onGeometryChange?: (geometry: SelectionRect) => void;
 };
 
 export function useMemoCard({
@@ -52,6 +53,7 @@ export function useMemoCard({
     onInsert,
     onUpdate,
     onDelete,
+    onGeometryChange,
 }: UseMemoCardOptions) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [dragHandlePressed, setDragHandlePressed] = useState(false);
@@ -224,16 +226,20 @@ export function useMemoCard({
     };
 
     const handleDragStop = (_event: RndDragEvent, data: DraggableData) => {
-        setMemoState((prev) => ({ ...prev, x: data.x, y: data.y }));
+        const next = { ...memoState, x: data.x, y: data.y };
+        setMemoState(next);
+        onGeometryChange?.(next);
     };
 
     const handleResizeStop: RndResizeCallback = (_event, _direction, ref, _delta, position) => {
-        setMemoState({
+        const next = {
             x: position.x,
             y: position.y,
             width: ref.offsetWidth,
             height: ref.offsetHeight,
-        });
+        };
+        setMemoState(next);
+        onGeometryChange?.(next);
     };
 
     const openDeleteDialog = () => {

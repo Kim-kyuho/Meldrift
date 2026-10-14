@@ -53,7 +53,13 @@ async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 
         }
         return route.fulfill({ json: { ok: true, unlocked: false } });
     });
-    return { uploads, legacyWrites, setOffline: (value: boolean) => { failUploads = value; } };
+    return {
+        uploads,
+        legacyWrites,
+        setOffline: (value: boolean) => {
+            failUploads = value;
+        },
+    };
 }
 
 async function openBoard(page: Page) {
