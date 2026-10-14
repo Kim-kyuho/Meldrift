@@ -17,9 +17,14 @@ function makeDatabase() {
         record: vi.fn(async () => ({ bytes: new ArrayBuffer(16), sync: { ...sync } })),
         load: vi.fn(async () => snapshot),
         replace: vi.fn(async () => {}),
-        import: vi.fn(async () => { sync = { ...sync, revision: 2, dirty: false }; return snapshot; }),
+        import: vi.fn(async () => {
+            sync = { ...sync, revision: 2, dirty: false };
+            return snapshot;
+        }),
         export: vi.fn(async () => new ArrayBuffer(16)),
-        acknowledge: vi.fn(async (_generation: number, revision: number) => { sync = { ...sync, revision, dirty: false }; }),
+        acknowledge: vi.fn(async (_generation: number, revision: number) => {
+            sync = { ...sync, revision, dirty: false };
+        }),
         close: vi.fn(),
     };
 }
@@ -37,7 +42,10 @@ describe("Plus snapshot lifecycle", () => {
             return new Response(new Uint8Array(16), { headers: { "Content-Type": "application/vnd.sqlite3", "X-Snapshot-Revision": "1" } });
         }));
     });
-    afterEach(async () => { await act(async () => {}); vi.unstubAllGlobals(); });
+    afterEach(async () => {
+        await act(async () => {});
+        vi.unstubAllGlobals();
+    });
 
     it("loads a matching local revision without importing and closes the database on unmount", async () => {
         const { result, unmount } = renderHook(() => useBoardSnapshot(board));

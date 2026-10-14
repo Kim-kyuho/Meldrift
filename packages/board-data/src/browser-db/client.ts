@@ -31,8 +31,7 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
                         pending.delete(response.id);
                         if (response.ok) {
                             entry.resolve(response.value);
-                        }
-                        else {
+                        } else {
                             entry.reject(new Error(response.error));
                         }
                     });
@@ -75,8 +74,12 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
                 return;
             }
             resetInProgress = true;
-            try { await request<void>({ type: "reset" }); }
-            catch (error) { resetInProgress = false; throw error; }
+            try {
+                await request<void>({ type: "reset" });
+            } catch (error) {
+                resetInProgress = false;
+                throw error;
+            }
         },
         close,
     };

@@ -104,11 +104,18 @@ export default function MemoCard(props: MemoCardProps) {
 
     const memoEditorRef = useRef<MemoEditorHandle>(null);
 
+    let stateClassName = "";
+    if (isEditing) {
+        stateClassName = "card-editing";
+    } else if (isFocused) {
+        stateClassName = "memo-focused";
+    }
+
     return (
         <>
-            <Rnd 
+            <Rnd
                 data-editing={isEditing}
-                className={`memo-rnd-${memo.id} select-none rounded-xl ${isEditing ? "card-editing" : isFocused ? "memo-focused" : ""}`}
+                className={`memo-rnd-${memo.id} select-none rounded-xl ${stateClassName}`}
                 style={{
                     zIndex: isEditing ? ACTIVE_CARD_Z : memo.z,
                     translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,

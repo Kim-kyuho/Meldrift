@@ -111,9 +111,8 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                 onDismiss={() => setBoardListMessage("")}
             />
 
-            <main className="min-h-screen bg-neutral-100 px-6 py-24" 
-                onClick={() => 
-                {
+            <main className="min-h-screen bg-neutral-100 px-6 py-24"
+                onClick={() => {
                     if (boardListMessage) {
                         setBoardListMessage("");
                     }
@@ -199,7 +198,7 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                                         onRename={() => {
                                             setRenameBoardOpen(true);
                                             setSelectedBoardTitle(board.title);
-                                            
+
                                         }}
                                         onDelete={openDeleteDialog}
                                     />

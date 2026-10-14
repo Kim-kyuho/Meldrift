@@ -100,7 +100,9 @@ test("syncs three identical images separately and restores them from the server 
         expect(server.chunkDownloads).toHaveLength(3);
         expect(server.chunkUploads).toHaveLength(3);
         expect(server.unexpected).toEqual([]);
-    } finally { await fresh.close(); }
+    } finally {
+        await fresh.close();
+    }
 });
 
 test("moving an image sends geometry only and captures its pixels in the preview", async ({ page, context }, testInfo) => {

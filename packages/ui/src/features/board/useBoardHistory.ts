@@ -82,5 +82,11 @@ export function useBoardHistory({ snapshot, paused, onRestore }: {
         update({ past: [], present: contentOf(snapshot), future: [] });
     }, [update]);
 
-    return { undo, redo, reset, canUndo: !paused && history.past.length > 0, canRedo: !paused && history.future.length > 0 };
+    return {
+        undo,
+        redo,
+        reset,
+        canUndo: !paused && history.past.length > 0,
+        canRedo: !paused && history.future.length > 0,
+    };
 }

@@ -58,8 +58,11 @@ export async function POST(request: NextRequest, { params }: Context) {
     const db = getDb();
 
     let payload: unknown;
-    try { payload = JSON.parse(body); }
-    catch { return NextResponse.json({ message: "Invalid change request." }, { status: 400 }); }
+    try {
+        payload = JSON.parse(body);
+    } catch {
+        return NextResponse.json({ message: "Invalid change request." }, { status: 400 });
+    }
 
     const staged = (payload as { staged?: unknown })?.staged === true;
     const stagedId = String((payload as { mutationId?: unknown })?.mutationId ?? "");
@@ -75,8 +78,11 @@ export async function POST(request: NextRequest, { params }: Context) {
             return NextResponse.json(
                 { message: "The staged changes are no longer available. Upload them again." }, { status: 409 });
         }
-        try { payload = { ...(payload as object), operations: JSON.parse(stored.bytes.toString("utf8")) }; }
-        catch { return NextResponse.json({ message: "Invalid change request." }, { status: 400 }); }
+        try {
+            payload = { ...(payload as object), operations: JSON.parse(stored.bytes.toString("utf8")) };
+        } catch {
+            return NextResponse.json({ message: "Invalid change request." }, { status: 400 });
+        }
     }
 
     let digest: string;

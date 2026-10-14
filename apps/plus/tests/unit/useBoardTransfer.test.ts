@@ -80,12 +80,19 @@ describe("Plus board file operations", () => {
     it("does not apply a file if permission is lost while reading it", async () => {
         const options = setupOptions();
         let finish!: (value: ReturnType<typeof createEmptyBoardSnapshot>) => void;
-        options.readSnapshotFile.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+        options.readSnapshotFile.mockImplementationOnce(() => new Promise((resolve) => {
+            finish = resolve;
+        }));
         const { result, rerender } = renderHook((props) => useBoardTransfer(props), { initialProps: options });
         let pending!: Promise<void>;
-        await act(async () => { pending = result.current.handleImport(importEvent()); });
+        await act(async () => {
+            pending = result.current.handleImport(importEvent());
+        });
         rerender({ ...options, canEdit: false });
-        await act(async () => { finish(createEmptyBoardSnapshot()); await pending; });
+        await act(async () => {
+            finish(createEmptyBoardSnapshot());
+            await pending;
+        });
         expect(options.replaceSnapshot).not.toHaveBeenCalled();
     });
 

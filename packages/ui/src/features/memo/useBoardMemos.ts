@@ -54,7 +54,17 @@ export function useBoardMemos({
         setEditingMemoId(tempMemo.id);
     };
 
-    const handleInsertMemo = async (tempId: number, boardId: number, content: string, x: number, y: number, z: number, width: number, height: number, color: string) => {
+    const handleInsertMemo = async (
+        tempId: number,
+        boardId: number,
+        content: string,
+        x: number,
+        y: number,
+        z: number,
+        width: number,
+        height: number,
+        color: string,
+    ) => {
         setMemos((prev) => {
             const id = nextPositiveId(prev.map((memo) => memo.id));
             return prev.map((memo) => memo.id === tempId
@@ -63,7 +73,16 @@ export function useBoardMemos({
         });
     };
 
-    const handleUpdateMemo = async (id: number, boardId: number, content: string, x: number, y: number, width: number, height: number, color: string) => {
+    const handleUpdateMemo = async (
+        id: number,
+        boardId: number,
+        content: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        color: string,
+    ) => {
         setMemos((prev) =>
             prev.map((memo) =>
                 memo.id === id ? { ...memo, content, x, y, width, height, color } : memo
