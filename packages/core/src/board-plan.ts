@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { cornerLinkRadius } from "./cards";
 import { createTableItemId, type TableSource } from "./table-card";
 
 // AI 어시스턴트가 만들어내는 보드 계획과, 그 계획을 실제 카드 좌표로 배치하는 라이브러리.
 //
 // AI에게 좌표를 직접 계산시키지 않는다. AI는 "어떤 메모에 어떤 카드가 붙는가"라는 논리 구조만
-// 내놓고, 좌표는 이 파일의 배치 함수가 결정한다. Markdown 컴파일이 메모 꼭짓점 포함 여부로
-// 카드를 고르기 때문에, 배치가 어긋나면 컴파일 결과가 통째로 달라진다.
+// 내놓고, 좌표는 이 파일의 배치 함수가 결정한다. Markdown 컴파일이 메모 꼭짓점 반경(cornerLinkRadius)
+// 안쪽 여부로 카드를 고르기 때문에, 배치가 어긋나면 컴파일 결과가 통째로 달라진다.
 
 export const memoBlockSchema = z.discriminatedUnion("type", [
     z.object({ type: z.literal("heading"), level: z.number().int().min(1).max(6), text: z.string() }),
@@ -115,9 +116,9 @@ export type BoardEdit = z.infer<typeof boardEditSchema>;
 export type BoardDeletion = z.infer<typeof boardDeletionSchema>;
 
 // 배치 상수. 값 사이의 관계가 컴파일 정확성을 좌우하므로 개별로 바꾸지 않는다.
-// - attachmentOverlap < 카드 최소 변: 카드가 꼭짓점을 "엄격히" 포함해야 한다.
-// - sectionGap > attachmentOverlap: 첨부 카드가 이전 메모의 아래쪽 꼭짓점을 덮으면 안 된다.
-// - columnGap > 0: 열이 넘어갈 때 옆 열 메모의 꼭짓점을 덮으면 안 된다.
+// - attachmentOverlap <= cornerLinkRadius: 카드가 꼭짓점 반경(cornerLinkRadius) 안에 들어와야 한다.
+// - sectionGap > cornerLinkRadius + attachmentOverlap: 첨부 카드가 이전 메모의 아래쪽 꼭짓점 반경에 들어오면 안 된다.
+// - columnGap > cornerLinkRadius: 열이 넘어갈 때 옆 열 메모의 꼭짓점 반경에 들어오면 안 된다.
 // 메모는 가로를 400으로 고정하고 내용에 맞춰 세로로 늘린다. 글이 카드 밖으로 넘치면 안 된다.
 export const memoWidth = 400;
 export const minMemoHeight = 200;
@@ -127,8 +128,8 @@ export const sectionGap = 80;
 export const columnGap = 60;
 export const boardMargin = 40;
 // scatter 배치에서 카드 사이에 항상 남겨둘 최소 간격.
-// 겹침 판정을 이 값만큼 부풀려서 하므로, 첨부 카드가 남의 메모 꼭짓점에 닿는 일도 함께 막힌다.
-export const scatterMinGap = 24;
+// 겹침 판정을 이 값만큼 부풀려서 하므로, 첨부 카드가 남의 메모 꼭짓점 반경(cornerLinkRadius) 안에 들어가는 일도 함께 막힌다.
+export const scatterMinGap = cornerLinkRadius + 4;
 export const mermaidSize = { width: 480, height: 360 };
 export const tableSize = { width: 560, height: 360 };
 

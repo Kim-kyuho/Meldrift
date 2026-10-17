@@ -5,7 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTableEdit } from "./useTableEdit";
 import { TableSource } from "@meldrift/core/table-card";
 import PressableButton from "../../shared/PressableButton";
-import { TABLE_ROW_MIN_HEIGHT } from "./table-layout";
+import { TABLE_ROW_MIN_HEIGHT, TABLE_SELECT_COLUMN_WIDTH } from "./table-layout";
 
 type TableGridProps = {
     source: TableSource;
@@ -22,6 +22,11 @@ export default function TableGrid({ source, isEditing, onChange }: TableGridProp
         addRow,
         deleteSelectedRows,
     } = useTableEdit({ source, isEditing, onChange });
+    const dataTotalSize = Math.max(1, tableInstance.getTotalSize() - TABLE_SELECT_COLUMN_WIDTH);
+    const getColumnStyleWidth = (columnId: string, size: number) =>
+        columnId === "select"
+            ? `${TABLE_SELECT_COLUMN_WIDTH}px`
+            : `calc((100% - ${TABLE_SELECT_COLUMN_WIDTH}px) * ${size / dataTotalSize})`;
 
     return (
         <div className="flex h-full min-h-0 flex-col text-sm text-neutral-800">
@@ -64,7 +69,7 @@ export default function TableGrid({ source, isEditing, onChange }: TableGridProp
                                         key={header.id}
                                         className="relative border border-neutral-200 px-2 py-2 text-left"
                                         style={{
-                                            width: `${(header.getSize() / tableInstance.getTotalSize()) * 100}%`,
+                                            width: getColumnStyleWidth(header.column.id, header.getSize()),
                                         }}
                                     >
                                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -89,7 +94,7 @@ export default function TableGrid({ source, isEditing, onChange }: TableGridProp
                                         className="border border-neutral-200 px-2 py-1 align-top"
                                         style={{
                                             height: TABLE_ROW_MIN_HEIGHT,
-                                            width: `${(cell.column.getSize() / tableInstance.getTotalSize()) * 100}%`,
+                                            width: getColumnStyleWidth(cell.column.id, cell.column.getSize()),
                                         }}
                                     >
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

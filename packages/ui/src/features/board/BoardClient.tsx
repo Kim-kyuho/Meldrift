@@ -28,7 +28,7 @@ import { useBoardSelection } from "@meldrift/ui/useBoardSelection";
 import { useBoardImages } from "@meldrift/ui/useBoardImages";
 import { imageInputAccept } from "@meldrift/board-data/image-file";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
-import type { CardType, SelectionRect } from "@meldrift/core/cards";
+import { resolveMemoCornerLinks, type CardType, type SelectionRect } from "@meldrift/core/cards";
 import { useBoardMermaids } from "@meldrift/ui/useBoardMermaids";
 import { useBoardTables } from "@meldrift/ui/useBoardTables";
 import { useBoardMemoFocus } from "@meldrift/ui/useBoardMemoFocus";
@@ -43,6 +43,7 @@ import { useBoardShortcuts } from "./useBoardShortcuts";
 import { useBoardHistory, type BoardContent } from "./useBoardHistory";
 import { useBoardPointerActive } from "./useBoardPointerActive";
 import BoardHistoryToolbar from "./BoardHistoryToolbar";
+import BoardCornerLinksLayer from "./BoardCornerLinksLayer";
 
 export type BoardControls = {
     snapshot: BoardSnapshot;
@@ -400,6 +401,58 @@ export default function BoardClient({
     const groupOffsetOf = (type: CardType, id: number) =>
         groupOffset && selectedCardKeys.has(`${type}:${id}`) ? groupOffset : undefined;
 
+    const cornerLinks = resolveMemoCornerLinks(
+        memos.map((memo) => {
+            const offset = groupOffsetOf("memo", memo.id);
+            return {
+                id: memo.id,
+                sortOrder: memo.sortOrder,
+                x: memo.x + (offset?.x ?? 0),
+                y: memo.y + (offset?.y ?? 0),
+                width: memo.width,
+                height: memo.height,
+            };
+        }),
+        [
+            ...images.map((image) => {
+                const offset = groupOffsetOf("image", image.imageId);
+                return {
+                    type: "image" as const,
+                    id: image.imageId,
+                    x: image.x + (offset?.x ?? 0),
+                    y: image.y + (offset?.y ?? 0),
+                    z: image.z,
+                    width: image.width,
+                    height: image.height,
+                };
+            }),
+            ...mermaids.map((mermaid) => {
+                const offset = groupOffsetOf("mermaid", mermaid.id);
+                return {
+                    type: "mermaid" as const,
+                    id: mermaid.id,
+                    x: mermaid.x + (offset?.x ?? 0),
+                    y: mermaid.y + (offset?.y ?? 0),
+                    z: mermaid.z,
+                    width: mermaid.width,
+                    height: mermaid.height,
+                };
+            }),
+            ...tables.map((table) => {
+                const offset = groupOffsetOf("table", table.id);
+                return {
+                    type: "table" as const,
+                    id: table.id,
+                    x: table.x + (offset?.x ?? 0),
+                    y: table.y + (offset?.y ?? 0),
+                    z: table.z,
+                    width: table.width,
+                    height: table.height,
+                };
+            }),
+        ],
+    );
+
     const snapshot = useMemo<BoardSnapshot>(
         () => ({ board: currentBoard, memos, images, mermaids, tables, strokes }),
         [currentBoard, memos, images, mermaids, tables, strokes],
@@ -437,7 +490,7 @@ export default function BoardClient({
         || tables.some((card) => card.id < 0);
     const history = useBoardHistory({
         snapshot,
-        paused: drawingInputActive || draggingMemoId !== null || hasDraftCards || hasPendingAiCards || aiSending || aiSaving,
+        paused: pointerActive || drawingInputActive || draggingMemoId !== null || hasDraftCards || hasPendingAiCards || aiSending || aiSaving,
         onRestore: applyContent,
     });
     const resetHistory = history.reset;
@@ -854,6 +907,7 @@ export default function BoardClient({
                                     onSendToBack={() => handleCardLayer("table", table.id, "back")}
                                 />
                             ))}
+                            <BoardCornerLinksLayer links={cornerLinks} />
                             <DrawingLayer
                                 key={`${contentVersion}:${drawingMode ? "drawing-active" : "drawing-inactive"}`}
                                 strokes={strokes}

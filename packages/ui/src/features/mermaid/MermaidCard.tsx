@@ -134,7 +134,9 @@ export default function MermaidCard({
                 dragHandleClassName="mermaid-drag-handle"
                 disableDragging={!isEditing || !canEdit}
                 enableResizing={isEditing}
+                onDrag={handleDragStop}
                 onDragStop={handleDragStop}
+                onResize={handleResizeStop}
                 onResizeStop={handleResizeStop}
             >
                 <div

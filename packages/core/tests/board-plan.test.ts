@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+    getCardCornerAnchor,
+    isCardWithinCornerRadius,
+    resolveMemoCornerLinks,
+} from "../src/cards";
+import {
     attachmentOverlap,
     layoutModes,
     boardDeletionSchema,
@@ -23,13 +28,10 @@ type Rect = { x: number; y: number; width: number; height: number };
 // 테스트 기본 보드. Meldrift가 제공하는 가장 큰 보드 크기다.
 const largeBoard = { width: 7680, height: 4320 };
 
-// app/api/boards/[boardId]/markdown/route.ts의 SQL 접점 판정과 같은 조건.
-// 카드가 꼭짓점을 "엄격히" 포함해야 한다.
+// compileBoardMarkdownDocument 및 Plus SQL의 접점 판정과 같은 조건.
+// 카드가 꼭짓점 중심 반경 50px 원형 영역과 겹쳐야 한다.
 const containsCorner = (card: Rect, corner: { x: number; y: number }) =>
-    card.x < corner.x &&
-    corner.x < card.x + card.width &&
-    card.y < corner.y &&
-    corner.y < card.y + card.height;
+    isCardWithinCornerRadius(card, corner.x, corner.y);
 
 const getMemoCorners = (memo: Rect) => [
     { x: memo.x, y: memo.y },
@@ -846,3 +848,42 @@ describe("scatter layout", () => {
         });
     });
 });
+
+describe("resolveMemoCornerLinks & getCardCornerAnchor", () => {
+    it("renders dashed links only for non-overlapping cards within 50px of memo corners, picking the highest z", () => {
+        const memos = [
+            { id: 1, sortOrder: 1, x: 100, y: 100, width: 200, height: 150 },
+        ];
+        const cards = [
+            // 우상단 꼭짓점(300, 100) 바깥쪽 30px 거리의 카드 (z = 2)
+            { type: "mermaid" as const, id: 10, x: 330, y: 90, z: 2, width: 120, height: 100 },
+            // 우상단 꼭짓점(300, 100) 바깥쪽 40px 거리의 더 높은 z 카드 (z = 7)
+            { type: "image" as const, id: 11, x: 340, y: 80, z: 7, width: 120, height: 100 },
+            // 우하단 꼭짓점(300, 250) 안쪽으로 겹치는 카드 (영역이 겹치므로 점선 표시 제외)
+            { type: "table" as const, id: 12, x: 276, y: 226, z: 4, width: 150, height: 120 },
+            // 좌상단 꼭짓점(100, 100)에서 60px 떨어진 카드 (연결 안 됨)
+            { type: "mermaid" as const, id: 13, x: 0, y: 0, z: 99, width: 30, height: 30 },
+        ];
+
+        const links = resolveMemoCornerLinks(memos, cards);
+
+        expect(links).toEqual([
+            {
+                memoId: 1,
+                cornerIndex: 1,
+                cardType: "image",
+                cardId: 11,
+                from: { x: 300, y: 100 },
+                to: { x: 340, y: 100 },
+            },
+        ]);
+    });
+
+    it("computes the closest boundary anchor point on an outside card", () => {
+        const card = { x: 330, y: 120, width: 120, height: 100 };
+        const anchor = getCardCornerAnchor(card, 300, 100);
+
+        expect(anchor).toEqual({ x: 330, y: 120 });
+    });
+});
+

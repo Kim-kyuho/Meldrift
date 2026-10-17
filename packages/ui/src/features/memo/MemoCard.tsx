@@ -141,7 +141,9 @@ export default function MemoCard(props: MemoCardProps) {
                 dragHandleClassName="memo-drag-handle"
                 disableDragging={!isEditing || !canEdit}
                 enableResizing={isEditing}
+                onDrag={handleDragStop}
                 onDragStop={handleDragStop}
+                onResize={handleResizeStop}
                 onResizeStop={handleResizeStop}
             >   
                 <div

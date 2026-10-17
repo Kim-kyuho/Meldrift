@@ -36,10 +36,12 @@ export const tableSourceToMarkdown = (source: TableSource) => {
     return [header, separator, ...rows].join("\n");
 };
 
+export const TABLE_COLUMN_MIN_WIDTH = 80;
+
 export const defaultTableSource: TableSource = {
     columns: [
-        { id: "column-1", name: "Column 1", width: 160 },
-        { id: "column-2", name: "Column 2", width: 160 },
+        { id: "column-1", name: "Column 1", width: TABLE_COLUMN_MIN_WIDTH },
+        { id: "column-2", name: "Column 2", width: TABLE_COLUMN_MIN_WIDTH },
     ],
     rows: [
         {

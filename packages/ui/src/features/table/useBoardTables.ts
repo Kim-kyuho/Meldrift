@@ -1,6 +1,7 @@
 import { RefObject, useState } from "react";
 import { defaultTableSource } from "@meldrift/core/table-card";
 import { createSyncId, nextPositiveId, type BoardTable } from "@meldrift/board-data/board-state";
+import { getTableCardMinHeight, TABLE_CARD_MIN_WIDTH } from "./table-layout";
 
 export type { BoardTable } from "@meldrift/board-data/board-state";
 
@@ -24,8 +25,8 @@ export function useBoardTables({
 
     const handleCreateTempTable = () => {
         const locationElement = cardLocationRef.current;
-        const width = 560;
-        const height = 360;
+        const width = TABLE_CARD_MIN_WIDTH;
+        const height = getTableCardMinHeight(defaultTableSource.rows.length);
         const x = locationElement
             ? Math.max(0, (locationElement.scrollLeft + locationElement.clientWidth / 2) / boardZoom - width / 2)
             : 0;

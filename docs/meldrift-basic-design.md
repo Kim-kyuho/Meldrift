@@ -188,7 +188,7 @@ Plus 목록은 정적 WebP 미리보기를 표시한다. 서버 저장 성공 �
 
 ## 14. Markdown 컴파일
 
-두 Edition의 화면은 현재 로컬 스냅샷을 같은 공통 함수로 컴파일한다. 메모를 `sortOrder`, ID 순으로 읽고 각 메모의 네 꼭짓점을 엄격히 포함하는 이미지·Mermaid·표 중 z가 가장 높은 카드를 붙인다. 중복 첨부는 한 번만 출력한다.
+두 Edition의 화면은 현재 로컬 스냅샷을 같은 공통 함수로 컴파일한다. 메모를 `sortOrder`, ID 순으로 읽고 각 메모의 네 꼭짓점을 중심으로 반경 50px(`cornerLinkRadius`) 원형 영역 안에 들어오는 이미지·Mermaid·표 중 z가 가장 높은 카드를 붙인다. 중복 첨부는 한 번만 출력한다.
 
 메모 HTML은 Markdown, Mermaid는 fenced code block, 표는 GFM 표, 이미지는 이미지 링크로 변환한다. 로컬 이미지가 있으면 PNG 자산과 문서를 ZIP으로, 없으면 `.md`로 내려받는다. 드로잉은 포함하지 않는다.
 

@@ -54,12 +54,12 @@ describe("GET /api/boards/[boardId]/markdown", () => {
         expect(renderedSql()).toContain("sort_order AS memo_sort_order");
     });
 
-    it("메모 꼭짓점을 엄격히 포함하는 카드만 고른다", async () => {
+    it("메모 꼭짓점 중심 반경 50px 안쪽의 카드만 고른다", async () => {
         await GET(new Request("http://localhost"), { params: params("7") });
 
         const sql = renderedSql();
-        expect(sql).toContain("ON card.x < corner.corner_x AND corner.corner_x < card.x + card.width");
-        expect(sql).toContain("AND card.y < corner.corner_y AND corner.corner_y < card.y + card.height");
+        expect(sql).toContain("POWER(GREATEST(0, card.x - corner.corner_x, corner.corner_x - (card.x + card.width)), 2)");
+        expect(sql).toContain("POWER(GREATEST(0, card.y - corner.corner_y, corner.corner_y - (card.y + card.height)), 2) <= 2500");
     });
 
     it("메모를 받은 순서대로 이어 붙인다", async () => {
