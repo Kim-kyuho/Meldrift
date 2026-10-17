@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
 import { db_boards, db_boardSync } from "@/lib/db/schema";
+import { cornerLinkRadius } from "@meldrift/core/cards";
 import { tableSourceSchema, tableSourceToMarkdown } from "@meldrift/core/table-card";
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -142,6 +143,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
             return NextResponse.json({ ok: true, markdown }, { headers: { "Cache-Control": "no-store" } });
         }
 
+        const maxDistanceSquared = sql.raw(String(cornerLinkRadius * cornerLinkRadius));
         const result = await db.execute<CompiledCardRow>(sql`
             WITH ordered_memos AS (
                 SELECT
@@ -232,10 +234,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ boa
                     ) AS corner_rank
                 FROM memo_contact_points corner
                 INNER JOIN board_cards card
-                    ON card.x < corner.corner_x
-                    AND corner.corner_x < card.x + card.width
-                    AND card.y < corner.corner_y
-                    AND corner.corner_y < card.y + card.height
+                    ON POWER(GREATEST(0, card.x - corner.corner_x, corner.corner_x - (card.x + card.width)), 2)
+                    + POWER(GREATEST(0, card.y - corner.corner_y, corner.corner_y - (card.y + card.height)), 2)
+                    <= ${maxDistanceSquared}
             ),
             selected_cards AS (
                 SELECT

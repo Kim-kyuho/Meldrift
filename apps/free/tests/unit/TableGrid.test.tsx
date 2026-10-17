@@ -80,6 +80,9 @@ describe("TableGrid", () => {
         expect(addedColumn?.id).toEqual(expect.any(String));
         expect(addedRow?.id).toEqual(expect.any(String));
         expect(addedRow?.cells).toEqual({ name: "", role: "", [addedColumn!.id]: "" });
+
+        const headerCells = Array.from(screen.getAllByRole("columnheader")).slice(1);
+        expect(new Set(headerCells.map((th) => th.style.width)).size).toBe(1);
     });
 
     it("deletes selected rows while preserving at least one data row", () => {

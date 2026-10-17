@@ -6,8 +6,8 @@ import MermaidCard from "@meldrift/ui/MermaidCard";
 import TableCard from "@meldrift/ui/TableCard";
 
 vi.mock("react-rnd", () => ({
-    Rnd: ({ children, className }: { children: ReactNode; className?: string }) => (
-        <div className={className}>{children}</div>
+    Rnd: ({ children, className, lockAspectRatio }: { children: ReactNode; className?: string; lockAspectRatio?: boolean | number }) => (
+        <div className={className} data-lock-aspect-ratio={String(Boolean(lockAspectRatio))}>{children}</div>
     ),
 }));
 
@@ -20,7 +20,7 @@ const callback = vi.fn();
 afterEach(() => vi.unstubAllGlobals());
 
 describe("card surface layout", () => {
-    it("does not force a white background on image cards", () => {
+    it("does not force a white background on image cards and locks aspect ratio", () => {
         const { container } = render(
             <ImageCard
                 image={{
@@ -48,6 +48,7 @@ describe("card surface layout", () => {
         );
 
         expect(container.querySelector(".image-rnd-1 > div")).not.toHaveClass("bg-white");
+        expect(container.querySelector(".image-rnd-1")).toHaveAttribute("data-lock-aspect-ratio", "true");
     });
 
     it("creates and revokes a Blob URL for a stored local image", async () => {

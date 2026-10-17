@@ -98,7 +98,7 @@ describe("board card collection hooks", () => {
         act(() => mermaids.result.current.handleCreateTempMermaid());
         act(() => tables.result.current.handleCreateTempTable());
         expect(mermaids.result.current.mermaids[1]).toMatchObject({ id: -1000, x: 160, y: 70 });
-        expect(tables.result.current.tables[1]).toMatchObject({ id: -1000, x: 120, y: 70 });
+        expect(tables.result.current.tables[1]).toMatchObject({ id: -1000, x: 220, y: 166, width: 360, height: 168 });
     });
 
     it("uses getTopmostZ when creating Mermaid and table drafts", () => {

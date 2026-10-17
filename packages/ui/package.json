@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./BoardClient": "./src/features/board/BoardClient.tsx",
+    "./BoardCornerLinksLayer": "./src/features/board/BoardCornerLinksLayer.tsx",
     "./BoardMarkdownView": "./src/features/markdown/BoardMarkdownView.tsx",
     "./ImageCard": "./src/features/image/ImageCard.tsx",
     "./useBoardPersistence": "./src/features/board/useBoardPersistence.ts",

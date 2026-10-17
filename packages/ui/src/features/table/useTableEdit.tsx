@@ -9,7 +9,8 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 import { X } from "lucide-react";
-import { createTableItemId, TableSource } from "@meldrift/core/table-card";
+import { createTableItemId, TABLE_COLUMN_MIN_WIDTH, TableSource } from "@meldrift/core/table-card";
+import { TABLE_SELECT_COLUMN_WIDTH } from "./table-layout";
 
 type UseTableEditOptions = {
     source: TableSource;
@@ -127,7 +128,7 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
     const sourceRef = useRef(source);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() =>
-        Object.fromEntries(source.columns.map((column) => [column.id, column.width ?? 160]))
+        Object.fromEntries(source.columns.map((column) => [column.id, column.width ?? TABLE_COLUMN_MIN_WIDTH]))
     );
 
     useEffect(() => {
@@ -143,7 +144,9 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
     useEffect(() => {
         const currentSource = sourceRef.current;
         const widthChanged = currentSource.columns.some(
-            (column) => Math.round(columnSizing[column.id] ?? 160) !== Math.round(column.width ?? 160)
+            (column) =>
+                Math.round(columnSizing[column.id] ?? column.width ?? TABLE_COLUMN_MIN_WIDTH)
+                !== Math.round(column.width ?? TABLE_COLUMN_MIN_WIDTH)
         );
 
         if (!widthChanged) {
@@ -154,7 +157,7 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
             ...currentSource,
             columns: currentSource.columns.map((column) => ({
                 ...column,
-                width: Math.round(columnSizing[column.id] ?? column.width ?? 160),
+                width: Math.round(columnSizing[column.id] ?? column.width ?? TABLE_COLUMN_MIN_WIDTH),
             })),
         });
     }, [columnSizing, onChange]);
@@ -196,13 +199,13 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
     }, [onChange]);
 
     const columnStructureKey = source.columns
-        .map((column) => `${column.id}:${column.width ?? 160}`)
+        .map((column) => `${column.id}:${column.width ?? TABLE_COLUMN_MIN_WIDTH}`)
         .join("|");
 
     const columns = useMemo<ColumnDef<TableRow>[]>(() => [
         {
             id: "select",
-            size: 32,
+            size: TABLE_SELECT_COLUMN_WIDTH,
             enableSorting: false,
             enableColumnFilter: false,
             enableResizing: false,
@@ -212,8 +215,8 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
         ...source.columns.map((sourceColumn) => ({
             id: sourceColumn.id,
             accessorFn: (row) => row.cells[sourceColumn.id] ?? "",
-            size: sourceColumn.width ?? 160,
-            minSize: 80,
+            size: sourceColumn.width ?? TABLE_COLUMN_MIN_WIDTH,
+            minSize: TABLE_COLUMN_MIN_WIDTH,
             header: TableColumnHeader,
             cell: TableColumnCell,
         } satisfies ColumnDef<TableRow>)),
@@ -248,8 +251,10 @@ export function useTableEdit({ source, isEditing, onChange }: UseTableEditOption
     const addColumn = () => {
         const currentSource = sourceRef.current;
         const id = createTableItemId();
+        const width = currentSource.columns[0]?.width ?? TABLE_COLUMN_MIN_WIDTH;
+        setColumnSizing((previous) => ({ ...previous, [id]: width }));
         onChange({
-            columns: [...currentSource.columns, { id, name: `Column ${currentSource.columns.length + 1}`, width: 160 }],
+            columns: [...currentSource.columns, { id, name: `Column ${currentSource.columns.length + 1}`, width }],
             rows: currentSource.rows.map((row) => ({ ...row, cells: { ...row.cells, [id]: "" } })),
         });
     };

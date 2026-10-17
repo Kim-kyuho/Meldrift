@@ -8,7 +8,7 @@ import { ACTIVE_CARD_Z, type SelectionOffset, type SelectionRect } from "@meldri
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import TableGrid from "./TableGrid";
 import TableToolBar from "./TableToolBar";
-import { getTableCardMinHeight } from "./table-layout";
+import { getTableCardMinHeight, getTableCardMinWidth } from "./table-layout";
 
 type TableCardProps<T extends BoardTable> = {
     table: T;
@@ -71,6 +71,7 @@ export default function TableCard<T extends BoardTable>({
         onDelete,
         onGeometryChange,
     });
+    const minWidth = getTableCardMinWidth(source.columns.length);
     const minHeight = getTableCardMinHeight(source.rows.length);
     return (
         <>
@@ -82,15 +83,17 @@ export default function TableCard<T extends BoardTable>({
                     translate: groupOffset ? `${groupOffset.x}px ${groupOffset.y}px` : undefined,
                 }}
                 position={{ x: cardState.x, y: cardState.y }}
-                size={{ width: cardState.width, height: Math.max(cardState.height, minHeight) }}
+                size={{ width: Math.max(cardState.width, minWidth), height: Math.max(cardState.height, minHeight) }}
                 bounds="parent"
                 scale={zoom}
                 dragHandleClassName="table-drag-handle"
                 disableDragging={!isEditing || !canEdit}
                 enableResizing={isEditing}
-                minWidth={360}
+                minWidth={minWidth}
                 minHeight={minHeight}
+                onDrag={handleDragStop}
                 onDragStop={handleDragStop}
+                onResize={handleResizeStop}
                 onResizeStop={handleResizeStop}
             >
                 <div

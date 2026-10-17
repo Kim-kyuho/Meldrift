@@ -94,9 +94,12 @@ export default function ImageCardView({
                 scale={zoom}
                 minWidth={48}
                 minHeight={48}
+                lockAspectRatio
                 disableDragging={!isEditing}
                 enableResizing={isEditing}
+                onDrag={onDragStop}
                 onDragStop={onDragStop}
+                onResize={onResizeStop}
                 onResizeStop={onResizeStop}
             >
                 <div

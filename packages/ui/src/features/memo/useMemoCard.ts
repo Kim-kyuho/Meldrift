@@ -67,6 +67,11 @@ export function useMemoCard({
         width: memo.width ?? 300,
         height: memo.height ?? 200,
     });
+    const memoStateRef = useRef(memoState);
+    useEffect(() => {
+        memoStateRef.current = memoState;
+    }, [memoState]);
+
     const [syncedPosition, setSyncedPosition] = useState({ x: memo.x, y: memo.y });
     if (!isEditing && (syncedPosition.x !== memo.x || syncedPosition.y !== memo.y)) {
         setSyncedPosition({ x: memo.x, y: memo.y });
@@ -226,7 +231,8 @@ export function useMemoCard({
     };
 
     const handleDragStop = (_event: RndDragEvent, data: DraggableData) => {
-        const next = { ...memoState, x: data.x, y: data.y };
+        const next = { ...memoStateRef.current, x: data.x, y: data.y };
+        memoStateRef.current = next;
         setMemoState(next);
         onGeometryChange?.(next);
     };
@@ -238,6 +244,7 @@ export function useMemoCard({
             width: ref.offsetWidth,
             height: ref.offsetHeight,
         };
+        memoStateRef.current = next;
         setMemoState(next);
         onGeometryChange?.(next);
     };

@@ -53,4 +53,67 @@ describe("compileBoardMarkdown 문서 순서", () => {
 
         expect(markdown).toBe("Fourth\n\nNinth");
     });
+
+    it("메모와 겹치지 않아도 꼭짓점 중심 반경 50px 안쪽의 카드를 연결하고, 가장 높은 z 카드를 고른다", () => {
+        // 메모: (100, 100) ~ (200, 200), 오른쪽 위 꼭짓점은 (200, 100)
+        const targetMemo: BoardMemo = {
+            id: 1,
+            syncId: "memo-1",
+            boardId: 1,
+            content: "<p>Memo</p>",
+            x: 100,
+            y: 100,
+            z: 1,
+            width: 100,
+            height: 100,
+            color: "#fffadc",
+            sortOrder: 1,
+        };
+        const snapshot: BoardSnapshot = {
+            ...createEmptyBoardSnapshot(),
+            memos: [targetMemo],
+            mermaids: [
+                // 오른쪽 위 꼭짓점(200, 100)에서 가로 30px, 세로 40px 떨어진 카드 (거리 = 50px, z = 2)
+                {
+                    id: 1,
+                    syncId: "mermaid-1",
+                    boardId: 1,
+                    source: "flowchart LR\nLowerZ-->B",
+                    x: 230,
+                    y: 140,
+                    z: 2,
+                    width: 100,
+                    height: 100,
+                },
+                // 같은 꼭짓점 반경 50px 안쪽이지만 z가 더 높은 카드 (거리 = 20px, z = 5)
+                {
+                    id: 2,
+                    syncId: "mermaid-2",
+                    boardId: 1,
+                    source: "flowchart LR\nHigherZ-->B",
+                    x: 220,
+                    y: 100,
+                    z: 5,
+                    width: 100,
+                    height: 100,
+                },
+                // 왼쪽 위 꼭짓점(100, 100)에서 51px 떨어진 카드 (연결되지 않아야 함)
+                {
+                    id: 3,
+                    syncId: "mermaid-3",
+                    boardId: 1,
+                    source: "flowchart LR\nTooFar-->B",
+                    x: 0,
+                    y: 0,
+                    z: 10,
+                    width: 49,
+                    height: 100,
+                },
+            ],
+        };
+
+        const markdown = compileBoardMarkdown(snapshot);
+
+        expect(markdown).toBe("Memo\n\n```mermaid\nflowchart LR\nHigherZ-->B\n```");
+    });
 });

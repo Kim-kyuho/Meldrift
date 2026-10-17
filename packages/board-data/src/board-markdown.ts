@@ -1,5 +1,5 @@
 import TurndownService from "turndown";
-import { cardTypeOrder, type CardType } from "@meldrift/core/cards";
+import { cardTypeOrder, isCardWithinCornerRadius, type CardType } from "@meldrift/core/cards";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
 import { sortMemosByOrder } from "@meldrift/core/memo-order";
 import { tableSourceToMarkdown } from "@meldrift/core/table-card";
@@ -107,9 +107,7 @@ export function compileBoardMarkdownDocument(snapshot: BoardSnapshot): BoardMark
 
         corners.forEach(([cornerX, cornerY]) => {
             const card = cards
-                .filter((candidate) =>
-                    candidate.x < cornerX && cornerX < candidate.x + candidate.width &&
-                    candidate.y < cornerY && cornerY < candidate.y + candidate.height)
+                .filter((candidate) => isCardWithinCornerRadius(candidate, cornerX, cornerY))
                 .sort((left, right) =>
                     right.z - left.z
                     || cardTypeOrder[left.type] - cardTypeOrder[right.type]
