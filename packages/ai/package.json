@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@google/genai": "^2.30.0",
+    "@google/genai": "^2.32.0",
     "@meldrift/core": "*",
     "zod": "^4.6.7"
   },
