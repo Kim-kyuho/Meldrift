@@ -51,7 +51,7 @@
     "@next/env": "^16.2.4",
     "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
