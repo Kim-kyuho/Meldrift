@@ -12,7 +12,7 @@
 | `onHorizontalRule`/`onCodeBlock`/`onBlockQuote` | `() => void` | block 모드 각 버튼 (172, 175, 178줄) |
 | `onBringToFront`/`onSendToBack`/`onDelete` | `() => void` | main 모드 레이어/삭제 버튼 (113, 116, 119줄) |
 
-이 컴포넌트는 실제 Tiptap 명령을 실행하지 않는다 — 모든 서식 콜백은 호출자(`MemoCard`)가 에디터 인스턴스와 연결해서 넘겨준다.
+이 컴포넌트는 실제 편집 명령을 실행하지 않는다 — 모든 서식 콜백은 호출자(`MemoCard`)가 `MemoEditor`의 ref 명령과 연결해서 넘겨준다. 실제 처리는 [memo-editor.md](./memo-editor.md)에 있다.
 
 ## `useMemoToolBar` State (10~12줄)
 
@@ -49,4 +49,4 @@
 ## 알려진 특이사항
 
 - `useMemoToolBar`의 `onChangeColor`/`onHeading` 파라미터 타입은 옵셔널(`?`)이지만, `MemoToolBarProps`에서는 필수로 선언되어 있다 — 훅 자체는 재사용을 고려해 더 관대하게 타입을 잡아둔 것으로 보인다.
-- 이 컴포넌트는 순수하게 "어떤 모드에서 어떤 버튼을 보여줄지"만 관리하고, Tiptap 편집 상태(예: 현재 커서 위치가 실제로 h2인지)는 전혀 추적하지 않는다 — 버튼에 활성/비활성(눌린 상태) 표시가 없다.
+- 이 컴포넌트는 순수하게 "어떤 모드에서 어떤 버튼을 보여줄지"만 관리하고, 에디터 편집 상태(예: 현재 커서 위치가 실제로 h2인지)는 전혀 추적하지 않는다 — 버튼에 활성/비활성(눌린 상태) 표시가 없다.
