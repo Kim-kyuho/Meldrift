@@ -74,16 +74,16 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/autocomplete": "^6.20.4",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/state": "^6.7.6",
-    "@codemirror/view": "^6.43.13",
+    "@codemirror/view": "^6.43.15",
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
     "@meldrift/markdown-engine": "^0.2.0",
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
     "@tanstack/react-table": "^8.21.3",
-    "lucide-react": "^1.11.0",
+    "lucide-react": "^1.61.0",
     "mermaid": "^11.17.2",
     "react-markdown": "^10.1.0",
     "react-rnd": "^10.5.3",
@@ -92,13 +92,13 @@
     "remark-gfm": "^4.0.1"
   },
   "peerDependencies": {
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "jsdom": "^29.1.1",
-    "vitest": "^4.1.9"
+    "vitest": "^5.0.5"
   }
 }
