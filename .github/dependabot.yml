@@ -32,13 +32,6 @@ updates:
           - "minor"
           - "patch"
 
-      tiptap:
-        patterns:
-          - "@tiptap/*"
-        update-types:
-          - "minor"
-          - "patch"
-
       codemirror:
         patterns:
           - "@codemirror/*"
