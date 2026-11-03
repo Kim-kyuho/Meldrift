@@ -38,7 +38,7 @@ Meldrift는 캔버스 기반 Markdown 컴파일러를 만드는 개인 프로젝
 | 영역 | 기술 |
 | --- | --- |
 | 화면 | Next.js App Router, React, TypeScript, Tailwind CSS |
-| 카드·편집 | react-rnd, TipTap, CodeMirror 6, TanStack Table |
+| 카드·편집 | react-rnd, Meldrift Markdown Engine, CodeMirror 6, TanStack Table |
 | 다이어그램 | Mermaid, ZenUML 플러그인 |
 | 로컬 저장 | Web Worker의 SQLite WASM, IndexedDB의 SQLite 파일 |
 | 서버 저장 | Neon PostgreSQL, Drizzle의 Neon HTTP 드라이버 |
@@ -102,7 +102,7 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 
 | 카드 | 내용 | 기본 크기 | 최소 크기 |
 | --- | --- | --- | --- |
-| Memo | TipTap HTML, 배경색, `sortOrder` | 300 × 200 | 180 × 180 |
+| Memo | 메모 에디터가 만든 HTML, 배경색, `sortOrder` | 300 × 200 | 180 × 180 |
 | Image | 이미지 바이너리, MIME, label, `assetId` | 비율 유지, 최대 400 × 300 | 48 × 48 |
 | Mermaid | 문법 문자열 | 480 × 360 | 180 × 180 |
 | Table | 열·행·셀을 가진 `TableSource` | 560 × 360 | 폭 360, 높이는 전체 행 수로 계산 |
