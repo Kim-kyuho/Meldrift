@@ -46,7 +46,7 @@ const getAttachmentCards = (planned: PlannedBoard): Rect[] => [
 ];
 
 describe("memoBlocksToHtml", () => {
-    it("converts each block type to TipTap compatible markup", () => {
+    it("converts each block type to memo editor compatible markup", () => {
         const html = memoBlocksToHtml([
             { type: "heading", level: 2, text: "Overview" },
             { type: "paragraph", text: "First line" },

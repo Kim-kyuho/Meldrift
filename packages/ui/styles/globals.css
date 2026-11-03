@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* 엔진의 문서 테마(.meldrift-markdown)는 쓰지 않고 코드 언어 입력칸과 변수만 쓴다. */
+@import "@meldrift/markdown-engine/style.css";
 /* 공유 패키지는 node_modules 심링크라 자동 탐지 대상이 아니기 때문에 명시적으로 스캔한다. */
 @source "../src";
 
@@ -175,6 +177,14 @@
   background-color: #fbca93;
   border-radius: 0.25rem;
   padding: 0.0625rem 0.1875rem;
+}
+
+.memo-editor-content [data-meldrift-soft-gap] {
+  display: none;
+}
+
+.memo-editor-content [data-meldrift-delimiter] {
+  color: var(--meldrift-syntax-color);
 }
 
 .mermaid-rendered svg {

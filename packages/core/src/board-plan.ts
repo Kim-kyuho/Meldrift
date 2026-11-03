@@ -175,7 +175,7 @@ const escapeHtml = (value: string) =>
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;");
 
-// 줄바꿈은 TipTap HardBreak과 같은 형태로 바꾼다.
+// 줄바꿈은 메모 에디터의 Shift+Enter와 같은 <br>로 바꾼다.
 const escapeInline = (value: string) => escapeHtml(value).replace(/\r?\n/g, "<br>");
 
 // AI가 만든 문자열은 절대 HTML로 신뢰하지 않는다. 블록 구조만 받아서 여기서 태그를 만든다
