@@ -21,7 +21,7 @@
     "test:e2e:install": "playwright install"
   },
   "dependencies": {
-    "@google/genai": "^2.30.0",
+    "@google/genai": "^2.32.0",
     "@meldrift/ai": "*",
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
@@ -31,7 +31,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@vercel/analytics": "^2.0.1",
     "fflate": "^0.8.3",
-    "lucide-react": "^1.61.0",
+    "lucide-react": "^1.66.0",
     "mermaid": "^11.17.2",
     "next": "16.4.2",
     "react": "19.3.1",
