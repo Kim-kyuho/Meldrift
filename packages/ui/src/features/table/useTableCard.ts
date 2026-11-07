@@ -67,7 +67,7 @@ export function useTableCard<T extends BoardTable>({
             x: Math.round(current.x),
             y: Math.round(current.y),
             width: Math.max(Math.round(current.width), getTableCardMinWidth(sourceRef.current.columns.length)),
-            height: Math.max(Math.round(current.height), getTableCardMinHeight(sourceRef.current.rows.length)),
+            height: Math.max(Math.round(current.height), getTableCardMinHeight(sourceRef.current.rows)),
         };
 
         if (table.id < 0) {
@@ -165,7 +165,7 @@ export function useTableCard<T extends BoardTable>({
             x: position.x,
             y: position.y,
             width: Math.max(ref.offsetWidth, getTableCardMinWidth(sourceRef.current.columns.length)),
-            height: Math.max(ref.offsetHeight, getTableCardMinHeight(sourceRef.current.rows.length)),
+            height: Math.max(ref.offsetHeight, getTableCardMinHeight(sourceRef.current.rows)),
         };
         cardStateRef.current = next;
         setCardState(next);

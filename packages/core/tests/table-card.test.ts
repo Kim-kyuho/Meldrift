@@ -11,6 +11,19 @@ describe("tableSourceSchema", () => {
         expect(tableSourceSchema.safeParse(defaultTableSource).success).toBe(true);
     });
 
+    it("keeps saved row heights", () => {
+        const parsed = tableSourceSchema.parse({
+            columns: [{ id: "name", name: "Name" }],
+            rows: [{ id: "row-1", cells: { name: "Kyu" }, height: 64 }],
+        });
+
+        expect(parsed.rows[0].height).toBe(64);
+        expect(tableSourceSchema.safeParse({
+            columns: [{ id: "name", name: "Name" }],
+            rows: [{ id: "row-1", cells: { name: "Kyu" }, height: 0 }],
+        }).success).toBe(false);
+    });
+
     it("rejects empty columns and invalid cell values", () => {
         expect(tableSourceSchema.safeParse({ columns: [], rows: [] }).success).toBe(false);
         expect(tableSourceSchema.safeParse({

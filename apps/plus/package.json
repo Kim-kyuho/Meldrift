@@ -32,7 +32,6 @@
     "@meldrift/ui": "*",
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
     "@neondatabase/serverless": "^1.2.0",
-    "@tanstack/react-table": "^8.21.3",
     "@vercel/analytics": "^2.0.1",
     "cloudinary": "^2.11.0",
     "drizzle-orm": "^0.45.4",

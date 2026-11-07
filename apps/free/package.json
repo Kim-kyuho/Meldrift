@@ -28,7 +28,6 @@
     "@meldrift/ui": "*",
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
     "@sqlite.org/sqlite-wasm": "3.50.4-build1",
-    "@tanstack/react-table": "^8.21.3",
     "@vercel/analytics": "^2.0.1",
     "fflate": "^0.8.3",
     "lucide-react": "^1.66.0",

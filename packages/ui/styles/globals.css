@@ -1,6 +1,7 @@
 @import "tailwindcss";
 /* 엔진의 문서 테마(.meldrift-markdown)는 쓰지 않고 코드 언어 입력칸과 변수만 쓴다. */
 @import "@meldrift/markdown-engine/style.css";
+@import "@meldrift/table-engine/style.css";
 /* 공유 패키지는 node_modules 심링크라 자동 탐지 대상이 아니기 때문에 명시적으로 스캔한다. */
 @source "../src";
 
@@ -115,10 +116,18 @@
   list-style-type: disc;
 }
 
+/* 번호는 본문 밖에 그려지므로 두 자리 번호까지 잘리지 않게 들여쓴다. */
 .memo-editor-content ol {
   margin: 0.5rem 0;
-  padding-left: 1.25rem;
+  padding-left: 2em;
   list-style-type: decimal;
+}
+
+/* LINE Seed는 숫자 폭이 제각각이라 번호만 고정폭 숫자가 있는 시스템 글꼴로 맞춘다. */
+.memo-editor-content ol > li::marker,
+.board-markdown-content ol > li::marker {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 .memo-editor-content li {
@@ -185,6 +194,11 @@
 
 .memo-editor-content [data-meldrift-delimiter] {
   color: var(--meldrift-syntax-color);
+}
+
+/* 표는 카드 너비에 맞춰지지만 겹친 테두리 1px만큼 넓어져 가로 스크롤바가 생기므로 가로 스크롤을 막는다. */
+.meldrift-table-scroll {
+  overflow-x: hidden;
 }
 
 .mermaid-rendered svg {
@@ -262,6 +276,7 @@
 }
 
 .board-markdown-content ol {
+  padding-left: 2em;
   list-style-type: decimal;
 }
 

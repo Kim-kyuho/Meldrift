@@ -60,9 +60,9 @@
 
 | 요소 | 조건 | 비고 |
 | --- | --- | --- |
-| `Rnd` | 항상 | 저장된 `z` 또는 편집 중 활성 레이어, 부모 경계, 하단 핸들 이동. `minWidth=360`, `minHeight=getTableCardMinHeight(source.rows.length)` |
-| 내부 wrapper `div` (86줄) | 항상 | `overflow-hidden` — 표 스크롤은 `TableGrid` 내부(`overflow-auto`)가 담당, `onClick`(stopPropagation), `onDoubleClick={editTable}`, `onPointerDown={handleDoubleTap}` |
-| `TableGrid` (92줄) | 항상 렌더(편집 여부 무관) | `isEditing`에 따라 내부 표시만 전환(레이아웃 크기 변화 방지) |
+| `Rnd` | 항상 | 저장된 `z` 또는 편집 중 활성 레이어, 부모 경계, 하단 핸들 이동. `minWidth=getTableCardMinWidth(source.columns.length)`, `minHeight=getTableCardMinHeight(source.rows)` |
+| 내부 wrapper `div` (100줄) | 항상 | `overflow-hidden` — 표 스크롤은 엔진의 `.meldrift-table-scroll`이 담당, `onClick`(stopPropagation), `onDoubleClick={editTable}`, `onPointerDown={handleDoubleTap}` |
+| `TableGrid` (105줄) | 항상 렌더(편집 여부 무관) | `isEditing`에 따라 엔진의 편집 가능 여부만 전환(레이아웃 크기 변화 방지). 상세: [table-grid.md](./table-grid.md) |
 | 드래그 핸들 바 (95줄) | `isEditing`일 때만 | 하단 중앙, `cursor-grab`/`active:cursor-grabbing`, 눌림 상태에 따라 `bg-black/70` ↔ `bg-black/25` |
 | `TableToolBar` (110줄) | `isEditing`일 때만 | `onDelete={openDeleteDialog}` — 즉시 삭제가 아니라 확인 다이얼로그를 연다 |
 | `ConfirmDialog` (117줄) | `deleteDialogOpen`일 때만 | 메시지 "Delete this table?", `onConfirm={confirmDelete}`, `onCancel={closeDeleteDialog}` |
@@ -73,8 +73,15 @@
 - 전역 `pointerdown`/`pointerup` 리스너가 테이블 카드 인스턴스마다 하나씩 등록된다 — 보드에 표 카드가 많으면 그만큼 리스너도 늘어난다(다른 카드 타입, 예: `useMemoCard`도 유사 패턴을 쓰는지 비교 확인 필요 시 해당 문서 참조).
 - Plus 미리보기는 서버 저장 완료 버전을 기준으로 갱신한다. 삭제·레이어 변경·Undo/Redo도 같은 저장 경로를 사용한다.
 
-## 가용 영역과 최소 높이
+## 가용 영역과 최소 크기
 
 `TableGrid`가 카드의 가용 너비·높이를 채운다. 추가 행·열 도구 영역은 편집 중 흰색, 비편집 중 연회색이다. 실제 표 셀은 흰색이고 렌더 영역 밖 배경은 투명하다.
 
-`table-layout.ts`의 최소 높이는 `max(128, 49 + 40 + 5 + 행 수 × 37)`이다. 도구 영역 49px, 헤더 40px, 테두리 보정 5px, 각 본문 행 최소 37px을 반영한다. 표시·리사이즈 종료·저장 모두 이 하한을 적용하여 행 수보다 작게 줄여 잘라내지 않는다. 여러 줄 셀 내용의 실제 높이는 최소 행 높이와 별개다.
+`table-layout.ts`가 엔진 상수(`TABLE_SELECT_COLUMN_WIDTH` 40px, `TABLE_ROW_MIN_HEIGHT` 37px, `TABLE_COLUMN_MIN_WIDTH` 80px)로 최소 크기를 계산한다.
+
+| 함수 | 계산 |
+| --- | --- |
+| `getTableCardMinWidth(열 수)` | `max(360, 40 + 2 + 열 수 × 80)` — 체크박스 열, 좌우 테두리, 열 최소 너비 |
+| `getTableCardMinHeight(행 목록)` | `max(128, 49 + 40 + 5 + Σ 행 높이)` — 도구 영역 49px, 헤더 40px, 테두리 보정 5px, 각 행의 저장된 높이(없거나 37px보다 작으면 37px) |
+
+표시·리사이즈 종료·저장 모두 이 하한을 적용해 행을 잘라내지 않는다. 엔진에서 행 높이를 늘리면 하한이 커지므로 카드도 함께 커진다. 여러 줄 셀 내용으로 늘어난 실제 높이는 저장된 행 높이와 별개라, 넘치면 표 안에서 세로로 스크롤된다.

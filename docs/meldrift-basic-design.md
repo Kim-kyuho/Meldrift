@@ -38,7 +38,7 @@ Meldrift는 캔버스 기반 Markdown 컴파일러를 만드는 개인 프로젝
 | 영역 | 기술 |
 | --- | --- |
 | 화면 | Next.js App Router, React, TypeScript, Tailwind CSS |
-| 카드·편집 | react-rnd, Meldrift Markdown Engine, CodeMirror 6, TanStack Table |
+| 카드·편집 | react-rnd, Meldrift Markdown Engine, Meldrift Table Engine, CodeMirror 6 |
 | 다이어그램 | Mermaid, ZenUML 플러그인 |
 | 로컬 저장 | Web Worker의 SQLite WASM, IndexedDB의 SQLite 파일 |
 | 서버 저장 | Neon PostgreSQL, Drizzle의 Neon HTTP 드라이버 |
@@ -105,7 +105,7 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 | Memo | 메모 에디터가 만든 HTML, 배경색, `sortOrder` | 300 × 200 | 180 × 180 |
 | Image | 이미지 바이너리, MIME, label, `assetId` | 비율 유지, 최대 400 × 300 | 48 × 48 |
 | Mermaid | 문법 문자열 | 480 × 360 | 180 × 180 |
-| Table | 열·행·셀을 가진 `TableSource` | 560 × 360 | 폭 360, 높이는 전체 행 수로 계산 |
+| Table | 열·행·셀을 가진 `TableSource` | 560 × 360 | 폭은 열 수, 높이는 전체 행 높이로 계산 |
 
 메모·Mermaid·표는 임시 음수 ID로 만들고, 편집 완료 시 로컬 양수 ID로 확정한다. 이미지는 변환 완료 후 로컬 양수 ID로 추가한다. 서버 ID를 받기 위해 카드별 API를 호출하지 않는다. 서버 동기화는 불변 `syncId`로 식별한다.
 
@@ -123,7 +123,7 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 
 ### 표
 
-열 이름·셀·열 폭 편집, 행·열 추가와 삭제를 제공한다. 표는 카드 안의 가용 높이를 채우며 추가 버튼 영역은 흰색이다. 최소 높이는 `max(128, 49 + 40 + 5 + 행 수 × 37)`이고 Rnd 표시, 리사이즈 완료, 저장에서 같은 계산을 적용한다.
+Meldrift Table Engine으로 셀 선택·편집, 열 이름 편집, 행·열 추가·삭제·이동, 열 너비·행 높이 조절, Excel·Google Sheets와의 복사·붙여넣기를 제공한다. 표는 카드 안의 가용 높이를 채우며 추가 버튼 영역은 흰색이다. 최소 높이는 `max(128, 49 + 40 + 5 + Σ 행 높이)`(행 높이 하한 37)이고 Rnd 표시, 리사이즈 완료, 저장에서 같은 계산을 적용한다.
 
 ## 8. 선택·검색·메모 순서
 
