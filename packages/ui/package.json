@@ -66,8 +66,7 @@
     "./useMemoToolBar": "./src/features/memo/useMemoToolBar.ts",
     "./useMermaidCard": "./src/features/mermaid/useMermaidCard.ts",
     "./useMermaidRenderer": "./src/features/mermaid/useMermaidRenderer.ts",
-    "./useTableCard": "./src/features/table/useTableCard.ts",
-    "./useTableEdit": "./src/features/table/useTableEdit.tsx"
+    "./useTableCard": "./src/features/table/useTableCard.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -81,8 +80,8 @@
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
     "@meldrift/markdown-engine": "^0.2.0",
+    "@meldrift/table-engine": "^0.1.0",
     "@mermaid-js/mermaid-zenuml": "^0.2.3",
-    "@tanstack/react-table": "^8.21.3",
     "lucide-react": "^1.61.0",
     "mermaid": "^11.17.2",
     "react-markdown": "^10.1.0",

@@ -29,10 +29,32 @@ const props = {
 
 describe("TableCard minimum height", () => {
     it("accounts for toolbar, header, rows and borders", () => {
-        expect(getTableCardMinHeight(0)).toBe(128);
-        expect(getTableCardMinHeight(1)).toBe(131);
-        expect(getTableCardMinHeight(2)).toBe(168);
-        expect(getTableCardMinHeight(10)).toBe(464);
+        const rows = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `row-${index}`, cells: {} }));
+
+        expect(getTableCardMinHeight(rows(0))).toBe(128);
+        expect(getTableCardMinHeight(rows(1))).toBe(131);
+        expect(getTableCardMinHeight(rows(2))).toBe(168);
+        expect(getTableCardMinHeight(rows(10))).toBe(464);
+    });
+
+    it("uses saved row heights but never less than the minimum row height", () => {
+        expect(getTableCardMinHeight([
+            { id: "tall", cells: {}, height: 100 },
+            { id: "short", cells: {}, height: 10 },
+        ])).toBe(49 + 40 + 5 + 100 + 37);
+    });
+
+    it("grows the card when a saved row is taller", () => {
+        const tallTable = {
+            ...table,
+            source: {
+                ...table.source,
+                rows: [{ ...table.source.rows[0], height: 120 }, table.source.rows[1]],
+            },
+        };
+
+        render(<TableCard {...props} table={tallTable} />);
+        expect(screen.getByTestId("table-card")).toHaveStyle({ minHeight: "251px", height: "251px" });
     });
 
     it("updates the resize minimum and grows the card when a row is added", () => {

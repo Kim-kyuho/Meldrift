@@ -60,7 +60,7 @@ React도 DOM도 쓰지 않는다. 그래서 브라우저 컴포넌트와 서버 
 
 | 이름 | 동작 |
 | --- | --- |
-| `tableSourceSchema` | 컬럼 1개 이상, 행 1개 이상. 컬럼은 `{ id, name, width? }`, 행은 `{ id, cells }` |
+| `tableSourceSchema` | 컬럼 1개 이상, 행 1개 이상. 컬럼은 `{ id, name, width? }`, 행은 `{ id, cells, height? }` (`height`는 표 엔진에서 조절한 행 높이) |
 | `TableSource` | 위 스키마의 추론 타입 |
 | `createTableItemId()` | 시간 + 난수 기반 문자열 id |
 | `tableSourceToMarkdown(source)` | GFM 표로 변환 |

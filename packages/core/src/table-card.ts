@@ -9,6 +9,7 @@ const tableColumnSchema = z.object({
 const tableRowSchema = z.object({
     id: z.string().min(1),
     cells: z.record(z.string(), z.string()),
+    height: z.number().positive().optional(),
 });
 
 export const tableSourceSchema = z.object({

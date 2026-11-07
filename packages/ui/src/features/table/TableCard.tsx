@@ -72,7 +72,7 @@ export default function TableCard<T extends BoardTable>({
         onGeometryChange,
     });
     const minWidth = getTableCardMinWidth(source.columns.length);
-    const minHeight = getTableCardMinHeight(source.rows.length);
+    const minHeight = getTableCardMinHeight(source.rows);
     return (
         <>
             <Rnd

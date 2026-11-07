@@ -26,7 +26,7 @@ export function useBoardTables({
     const handleCreateTempTable = () => {
         const locationElement = cardLocationRef.current;
         const width = TABLE_CARD_MIN_WIDTH;
-        const height = getTableCardMinHeight(defaultTableSource.rows.length);
+        const height = getTableCardMinHeight(defaultTableSource.rows);
         const x = locationElement
             ? Math.max(0, (locationElement.scrollLeft + locationElement.clientWidth / 2) / boardZoom - width / 2)
             : 0;

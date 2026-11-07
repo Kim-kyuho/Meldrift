@@ -1,84 +1,82 @@
 # TableGrid 상세설계
 
-소스: `packages/ui/src/features/table/TableGrid.tsx`, `packages/ui/src/features/table/useTableEdit.tsx`, `packages/core/src/table-card.ts`
+소스: `packages/ui/src/features/table/TableGrid.tsx`, `packages/core/src/table-card.ts`
+표 엔진: `@meldrift/table-engine` (`packages/ui` 의존성)
 
-## TableGrid Props
+`TableGrid`는 React 어댑터다. 표의 DOM, 셀 선택·편집, 행·열 추가·삭제·이동, 크기 조절, 클립보드, IME 처리는 모두 엔진이 맡고, 이 컴포넌트는 엔진을 만들고 `source`·`isEditing`·`onChange`를 연결만 한다.
+
+## Props
 
 | Prop | 타입 | 사용처 |
 | --- | --- | --- |
-| `source` | `TableSource` | `useTableEdit`에 그대로 전달 (23줄) |
-| `isEditing` | `boolean` | `useTableEdit`에 전달, 툴 영역 스타일 분기(27줄), 버튼 `disabled` 조건(31, 38, 47줄) |
-| `onChange` | `(source: TableSource) => void` | `useTableEdit`에 전달 |
+| `source` | `TableSource` | 마운트 시 엔진 `source` 옵션(31줄), 이후 바뀌면 `table.setSource`(52~55줄) |
+| `isEditing` | `boolean` | 마운트 시 엔진 `editable` 옵션(32줄), 이후 바뀌면 `table.setEditable`(46~49줄) |
+| `onChange` | `(source: TableSource) => void` | 엔진 `onChange`가 표 안에서 바뀐 값을 넘길 때 호출(33~36줄) |
 
-`TableGrid.tsx` 자체에는 `useState`/`useRef`가 없다 — 모든 상태는 `useTableEdit`가 소유한다.
+## Ref
 
-## `useTableEdit` State (122~283줄)
+이 컴포넌트에는 `useState`가 없다. 표 상태는 엔진의 모델(`table.model`)이 가진다.
 
-| State | 타입/초기값 | 갱신 지점 | 소비 지점 |
-| --- | --- | --- | --- |
-| `sourceRef` | `useRef(source)`, 매 렌더 후 최신 `source`로 동기화 (129~131줄) | `useEffect([source])` | `updateCell`/`renameColumn`/`deleteColumn`/`addColumn`/`addRow`/`deleteSelectedRows` 전부가 최신 값을 읽기 위해 이 ref를 사용(클로저에 갇힌 stale `source` 방지) |
-| `rowSelection` | `RowSelectionState`, `{}` (124줄) | `tableInstance.onRowSelectionChange`(233줄), `isEditing`이 false로 바뀌면 자동 초기화(134~137줄), `deleteSelectedRows` 성공 후 초기화(269줄) | `TableGrid`의 "선택 삭제" 버튼 노출 조건(43줄), `canDeleteSelectedRows` 계산 |
-| `columnSizing` | `ColumnSizingState`, 초기값은 `source.columns`의 `width ?? 160` 맵 (125~127줄) | `tableInstance.onColumnSizingChange`(234줄, 헤더 드래그 리사이즈) | 컬럼 폭 변경 감지용 `useEffect`(139~154줄)가 이 값을 `column.width`와 비교 |
+| Ref | 역할 |
+| --- | --- |
+| `containerRef` | 엔진이 표를 그리는 `div`(`h-full`) |
+| `tableRef` | `createTable` 반환값(`setSource`, `setEditable`, `destroy` 등) |
+| `sourceRef` / `isEditingRef` | 마운트 effect가 최신 값으로 엔진을 만들도록 보관 |
+| `onChangeRef` | 최신 `onChange`. 엔진 콜백은 마운트 때 한 번만 넘기므로 ref로 최신 값을 참조한다(20~22줄) |
 
-## 부수효과(Effect) 목록
+## Effect
 
 | Effect | 의존성 | 동작 |
 | --- | --- | --- |
-| 129~131줄 | `[source]` | `sourceRef.current = source` |
-| 133~137줄 | `[isEditing]` | `isEditing`이 false가 되는 순간 `setRowSelection({})` — 편집 모드를 벗어나면 선택 상태를 버림 |
-| 139~154줄 | `[columnSizing, onChange]` | `columnSizing`과 현재 `source.columns`의 `width`를 반올림 비교해 다르면 `onChange`로 새 폭을 반영. **의존성 배열에 `sourceRef`나 `source`가 없어 `onChange`가 바뀌지 않는 한 이 effect의 클로저 안 `source` 비교 대상은 매 렌더 재평가되지만, effect 자체의 재실행 트리거는 `columnSizing` 변경 시점에 한정된다** |
+| 20~22줄 | `[onChange]` | `onChangeRef` 갱신 |
+| 24~44줄 | `[]` | `createTable(container, { source, editable, onChange })`로 엔진 생성, 언마운트 시 `table.destroy()` |
+| 46~49줄 | `[isEditing]` | `table.setEditable(isEditing)` — 편집을 끝내면 엔진이 셀 선택과 체크한 행을 비운다 |
+| 52~55줄 | `[source]` | `table.setSource(source)` — 엔진이 알린 값과 같은 객체면 엔진이 무시하므로, 실행 취소처럼 밖에서 바뀐 값만 다시 들어간다. 이때는 `onChange`가 다시 불리지 않는다 |
 
-## 핸들러 (156~270줄)
+## 엔진이 제공하는 편집 기능
 
-| 함수 | 동작 |
+| 기능 | 조작 |
 | --- | --- |
-| `updateCell(rowId, columnId, value)` (156~165줄) | 해당 `rowId`의 `cells[columnId]`만 교체해 `onChange` 호출 |
-| `renameColumn(columnId, name)` (167~174줄) | 해당 컬럼의 `name`만 교체해 `onChange` 호출 |
-| `deleteColumn(columnId)` (176~188줄) | **컬럼이 1개뿐이면 조용히 return(삭제 거부)**. 아니면 해당 컬럼 제거 + 모든 행의 `cells`에서 그 컬럼 키 삭제 |
-| `addColumn()` (241~248줄) | `createTableItemId()`로 새 id 생성, 이름 `Column {n+1}`, 폭 160, 모든 기존 행에 빈 문자열 셀 추가 |
-| `addRow()` (250~259줄) | 새 행 id 생성, 현재 컬럼 목록 기준으로 빈 문자열 셀 채운 행 추가 |
-| `deleteSelectedRows()` (261~270줄) | 선택된 행 id 집합을 `tableInstance.getSelectedRowModel()`에서 구해 제외. **남는 행이 0개면 조용히 return(전체 삭제 거부)**. 성공 시 `onChange` + `setRowSelection({})` |
+| 셀 선택 | 클릭, 드래그, Shift+클릭, 방향키, Tab, Ctrl(⌘)+A |
+| 셀 편집 | 바로 입력, Enter, F2, 더블클릭. Shift+Enter로 셀 안 줄바꿈 |
+| 열 이름 | 머리글 입력칸 |
+| 행·열 추가 | 위쪽 `Row`·`Column` 버튼. 새 열 이름은 `Column {n}`, 너비는 첫 열 너비 |
+| 행 삭제 | 체크박스로 고른 뒤 휴지통 버튼. 마지막 1행은 남는다 |
+| 열 삭제 | 열 이름 옆 ×. 마지막 1열은 남는다 |
+| 행·열 이동 | ⋮ 손잡이 드래그 |
+| 열 너비·행 높이 | 머리글 오른쪽 경계, 행 왼쪽 칸 아래 경계 드래그 |
+| 복사·붙여넣기 | Excel·Google Sheets와 TSV·HTML 표로 주고받음 |
 
-## 파생 값
+버튼과 입력칸의 접근성 이름(`Row`, `Column`, `Column name`, `Select row`, `Delete selected rows`, `Delete {열 이름}`)은 엔진 기본값을 쓴다. 보드 확대·축소(`transform: scale`) 상태에서도 엔진이 포인터 이동 거리를 맞춰 계산한다.
 
-- `columnStructureKey` (190~192줄): `id:width` 페어를 이어붙인 문자열. `columns` `useMemo`(194~215줄)의 유일한 의존성 — 셀 값이나 열 이름이 바뀌어도 이 키가 그대로면 컬럼 정의 객체를 재생성하지 않아 **입력 중 포커스 손실을 방지**한다(213줄 주석).
-- `canDeleteSelectedRows` (273줄): `source.rows.length - selectedRowCount >= 1` — 선택 삭제 후 최소 1행이 남는지 미리 계산해 버튼 `disabled`에 사용(48줄).
-
-## 렌더 구조 (`TableGrid.tsx` 25~102줄)
-
-| 요소 | 조건 | 비고 |
-| --- | --- | --- |
-| Row 추가 버튼 (29줄) | 항상 노출, `disabled={!isEditing}` | 아이콘 `Plus` |
-| Column 추가 버튼 (36줄) | 항상 노출, `disabled={!isEditing}` | 아이콘 `Plus` |
-| 선택 삭제 버튼 (44줄) | `Object.keys(rowSelection).length > 0`일 때만 노출, `disabled={!isEditing \|\| !canDeleteSelectedRows}` | 아이콘 `Trash2`, `text-rose-600` |
-| `<thead>` 헤더 셀 (62줄) | `isEditing && header.column.getCanResize()`일 때만 리사이즈 핸들(72줄) 노출 | 폭은 `getSize()/getTotalSize()`의 퍼센트로 계산 |
-| `<tbody>` 행 (84줄) | `row.getIsSelected()`면 `bg-sky-50`, 아니면 `bg-white` | - |
-
-## 셀/헤더 서브컴포넌트 (`useTableEdit.tsx` 32~120줄)
-
-표는 `h-full w-full`로 가용 영역을 채운다. 상단 추가 도구는 편집 중 흰색, 비편집 중 연회색이며 헤더 높이는 40px이다. 본문 셀은 `TABLE_ROW_MIN_HEIGHT`(37px)를 하한으로 사용한다. 전체 카드 하한은 [TableCard](./table-card.md#가용-영역과-최소-높이)에서 행 수로 계산한다.
-
-| 컴포넌트 | 편집 모드 | 비편집 모드 |
-| --- | --- | --- |
-| `SelectHeader` (32~45줄) | 전체 선택 체크박스, `disabled={!meta.isEditing}` | 동일 마크업이지만 checkbox `disabled` |
-| `SelectCell` (47~60줄) | 행 선택 체크박스 | 동일, `disabled` |
-| `TableColumnHeader` (62~92줄) | `<input>`으로 컬럼명 수정 + (컬럼이 2개 이상일 때만) 삭제 `X` 버튼 | `<span>` 표시 전용 |
-| `TableColumnCell` (94~120줄) | `<textarea>`, `useLayoutEffect`(99~106줄)로 `scrollHeight`에 맞춰 높이 자동 조절 | `<span className="whitespace-pre-wrap wrap-break-words">` |
+편집 중이 아니면 엔진이 값만 보여 준다. `Row`·`Column` 버튼과 체크박스는 비활성이고, 열 이름은 글자로만 보이며, 이동 손잡이와 크기 조절 경계는 숨는다.
 
 ## 데이터 구조 (`packages/core/src/table-card.ts`)
 
 ```ts
 type TableSource = {
-    columns: Array<{ id: string; name: string; width?: number }>; // min 1
-    rows: Array<{ id: string; cells: Record<string, string> }>;   // min 1
+    columns: Array<{ id: string; name: string; width?: number }>;               // min 1
+    rows: Array<{ id: string; cells: Record<string, string>; height?: number }>; // min 1
 };
 ```
 
-- `tableSourceSchema`(14~17줄): Zod로 최소 컬럼 1개·행 1개 강제 — `deleteColumn`/`deleteSelectedRows`의 "마지막 하나는 거부" 런타임 로직과 스키마 제약이 이중으로 일치해야 한다.
-- `createTableItemId()`(21~22줄): `Date.now().toString(36)-Math.random().toString(36)` 조합, DB 시퀀스가 아닌 클라이언트 생성 문자열 id.
-- `tableSourceToMarkdown()`(29~37줄): `|`는 `\|`로, 개행은 `<br>`로 이스케이프(24~27줄) 후 GFM 표 문자열 생성 — `app/api/boards/[boardId]/markdown/route.ts`가 이 함수를 그대로 사용.
+- 엔진의 `TableSource`와 같은 모양이다. 행 높이(`height`)는 엔진에서 행 높이를 조절할 때 생기며, 없으면 최소 높이 37px을 쓴다.
+- `tableSourceSchema`: Zod로 최소 컬럼 1개·행 1개를 강제한다. Free 보드 스냅샷과 Plus 변경분 검증이 이 스키마를 거치므로, 행 높이도 스키마에 있어야 저장 과정에서 지워지지 않는다.
+- `createTableItemId()`: `Date.now().toString(36)-Math.random().toString(36)` 조합, 클라이언트에서 만드는 문자열 id.
+- `tableSourceToMarkdown()`: `|`는 `\|`로, 개행은 `<br>`로 이스케이프한 GFM 표. Markdown 컴파일과 Plus Markdown 라우트가 사용한다.
+
+## 스타일
+
+- `packages/ui/styles/globals.css`가 엔진 `style.css`를 불러온다. 엔진 스타일의 색(머리글 `#f5f5f5`, 테두리 `#e5e5e5`, 체크한 행 `#f0f9ff` 등)과 버튼 모양은 기존 테이블 카드와 같게 만들어져 있다.
+- 엔진은 열 너비를 스크롤 영역 너비에 맞춰 나누지만, 겹친 테두리(`border-collapse`) 1px만큼 표가 넓어져 가로 스크롤바가 생긴다. 표는 항상 카드 너비에 맞춰지므로 `globals.css`에서 `.meldrift-table-scroll`의 `overflow-x`를 `hidden`으로 둔다. 세로 스크롤은 셀 내용이 길어 행이 늘어날 때를 위해 남긴다.
+- 체크박스 열 너비는 엔진의 `TABLE_SELECT_COLUMN_WIDTH`(40px)다. 카드 최소 크기는 [TableCard](./table-card.md#가용-영역과-최소-크기)에서 계산한다.
+
+## 테스트
+
+- `apps/free/tests/unit/TableGrid.test.tsx`: 초기 값 표시, 열 이름 변경 알림, 행·열 추가, 마지막 행·열 보존, 읽기 전용, 편집 모드 전환, 밖에서 바꾼 값 반영
+- `apps/free/tests/e2e/table-card.spec.ts`: 셀 입력 저장, 최소 크기에서 스크롤바 없음, 행 높이 조절 후 새로고침해도 유지
 
 ## 알려진 특이사항
 
-- 정렬/필터/그룹/페이지네이션 없음 — `getCoreRowModel()`만 사용.
-- `deleteColumn`과 `deleteSelectedRows` 모두 "실패 시 에러를 던지지 않고 조용히 return"하는 방식이라, UI에서 버튼이 `disabled`로 막히지 않는 경로(예: 외부에서 직접 호출)로 들어오면 아무 피드백 없이 무시된다.
+- 엔진에는 실행 취소 기능이 없다. 보드 실행 취소는 카드 단위로 편집 전후 상태를 되돌린다.
+- 셀 편집은 표 전체에서 숨은 입력칸 하나를 선택한 셀 위로 옮겨 쓰는 방식이라, 셀마다 입력 요소가 있지 않다.

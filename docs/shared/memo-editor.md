@@ -81,6 +81,7 @@
 - `globals.css`가 엔진 `style.css`를 불러오는 이유는 `document.body`에 뜨는 코드 블록 언어 입력칸의 스타일과 CSS 변수 때문이다.
 - 편집 표시용 규칙 2개를 `.memo-editor-content`에 둔다: Shift+Enter 줄의 `[data-meldrift-soft-gap]` 숨김, 커서가 있는 서식의 기호(`**` 등)인 `[data-meldrift-delimiter]` 색.
 - 편집 표시용 요소는 엔진 `getHTML()`이 제거하므로 저장된 HTML에는 들어가지 않는다.
+- 번호 목록은 번호가 본문 밖에 그려지므로 `ol`을 `2em` 들여써서 두 자리 번호까지 잘리지 않게 한다. LINE Seed는 숫자 폭이 제각각이라(`1`이 좁음) 번호(`li::marker`)만 고정폭 숫자가 있는 시스템 글꼴(`tabular-nums`)로 그려 줄을 맞춘다. Markdown 미리보기(`.board-markdown-content`)도 같은 규칙을 쓴다.
 
 ## 테스트
 
