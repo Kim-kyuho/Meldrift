@@ -87,7 +87,8 @@ for (const [key, type] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
             if (type === "memo") {
                 await card.locator('[contenteditable="true"]').fill(text);
             } else if (type === "table") {
-                await card.getByRole("textbox", { name: "Column name" }).first().fill(text);
+                await card.locator(".meldrift-table-column-name").first().dblclick();
+                await card.getByRole("textbox", { name: "Column name" }).fill(text);
             } else {
                 await page.getByLabel("Mermaid source").fill(`flowchart TD\nA[${text}] --> B[End]`);
             }

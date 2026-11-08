@@ -1,4 +1,4 @@
-# Meldrift v1.4 Beta 문서
+# Meldrift v1.5 Beta 문서
 
 Meldrift는 같은 보드 기능을 두 Edition으로 배포한다. 두 Edition이 공유하는 것과 각자 다른 것을 폴더로 갈라 둔다.
 

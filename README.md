@@ -1,4 +1,4 @@
-# Meldrift v1.4 Beta
+# Meldrift v1.5 Beta
 
 Meldrift is a personal project for organizing ideas on a visual board and compiling them into Markdown documents.
 
@@ -14,6 +14,7 @@ Ideas do not always begin in a clear order. Meldrift allows memos, images, table
 - Create and manage multiple boards in Plus, or use a single local board in Free.
 - Write rich text memo cards.
 - [New] Write memos with the Meldrift Markdown Engine, which replaces TipTap and turns Markdown syntax into formatting as you type.
+- [New] Edit tables with the Meldrift Table Engine, which replaces TanStack Table.
 - Add image, Mermaid, and table cards.
 - Drag and drop images onto the board while preserving transparent backgrounds.
 - Choose Mermaid diagram types and edit them with contextual code completion, existing-node suggestions, and a hand-drawn rendering option.

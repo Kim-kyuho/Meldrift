@@ -34,8 +34,8 @@ Free Edition은 로그인도 안내 화면도 없이 바로 보드로 들어간�
 
 | 판정 | 라벨 | aria-label |
 | --- | --- | --- |
-| `Macintosh|Mac OS X|iPhone|iPad|iPod` | `⌘ ⇧ H` | `Help shortcut: Command Shift H` |
-| 그 외 | `Ctrl ⇧ H` | `Help shortcut: Control Shift H` |
+| `Macintosh|Mac OS X|iPhone|iPad|iPod` | `⌘ ⇧ P` | `Help shortcut: Command Shift P` |
+| 그 외 | `Ctrl ⇧ P` | `Help shortcut: Control Shift P` |
 
 `navigator`가 없는 환경에서는 빈 문자열을 넘겨 기본(Ctrl) 표기가 나온다.
 

@@ -162,8 +162,8 @@ test.describe("Meldrift Free Edition Help", () => {
         );
         await expect(helpDialog.getByLabel(
             usesCommandKey
-                ? "Help shortcut: Command Shift H"
-                : "Help shortcut: Control Shift H"
+                ? "Help shortcut: Command Shift P"
+                : "Help shortcut: Control Shift P"
         )).toBeVisible();
         await expect(helpDialog.getByRole("heading", { name: "Welcome to Meldrift!" })).toBeVisible();
         await expect(helpDialog.getByRole("img", { name: "Meldrift help 1" })).toBeVisible();
@@ -192,11 +192,11 @@ test.describe("Meldrift Free Edition Help", () => {
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
         await expect(helpDialog).toHaveCount(0);
 
-        await page.keyboard.press("Control+Shift+H");
+        await page.keyboard.press("Control+Shift+P");
         await expect(helpDialog).toBeVisible();
 
         await helpDialog.getByRole("button", { name: "Close Help" }).click();
-        await page.keyboard.press("Meta+Shift+H");
+        await page.keyboard.press("Meta+Shift+P");
         await expect(helpDialog).toBeVisible();
     });
 });
