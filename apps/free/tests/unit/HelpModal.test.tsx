@@ -30,7 +30,7 @@ describe("HelpModal", () => {
         );
         expect(screen.queryByRole("button", { name: /download/i })).not.toBeInTheDocument();
         expect(fetchMock).toHaveBeenCalledWith(helpMarkdownUrl, expect.objectContaining({ signal: expect.any(AbortSignal) }));
-        expect(screen.getByLabelText("Help shortcut: Control Shift H")).toHaveTextContent("Ctrl ⇧ H");
+        expect(screen.getByLabelText("Help shortcut: Control Shift P")).toHaveTextContent("Ctrl ⇧ P");
         expect(screen.getByRole("button", { name: "Close Help" })).toHaveClass(
             "border-0",
             "outline-none",
@@ -43,12 +43,12 @@ describe("HelpModal", () => {
 
     it("uses the Command label on Apple platforms", () => {
         expect(getHelpShortcut("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")).toEqual({
-            label: "⌘ ⇧ H",
-            ariaLabel: "Help shortcut: Command Shift H",
+            label: "⌘ ⇧ P",
+            ariaLabel: "Help shortcut: Command Shift P",
         });
         expect(getHelpShortcut("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")).toEqual({
-            label: "Ctrl ⇧ H",
-            ariaLabel: "Help shortcut: Control Shift H",
+            label: "Ctrl ⇧ P",
+            ariaLabel: "Help shortcut: Control Shift P",
         });
     });
 });

@@ -8,7 +8,7 @@ export function useBoardShortcuts({ onOpenHelp }: UseBoardShortcutsOptions) {
     useEffect(() => {
         const handleHelpShortcut = (event: KeyboardEvent) => {
             const modifierPressed = event.ctrlKey || event.metaKey;
-            if (!modifierPressed || !event.shiftKey || event.key.toLowerCase() !== "h") {
+            if (!modifierPressed || !event.shiftKey || event.key.toLowerCase() !== "p") {
                 return;
             }
             event.preventDefault();
