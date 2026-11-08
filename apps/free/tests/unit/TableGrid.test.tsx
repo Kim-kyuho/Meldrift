@@ -34,7 +34,18 @@ function TableHarness({
 
 const readSource = () => JSON.parse(screen.getByTestId("source").textContent ?? "") as TableSource;
 
-const getColumnNames = () => screen.getAllByLabelText<HTMLInputElement>("Column name").map((input) => input.value);
+const COLUMN_NAME = ".meldrift-table-column-name";
+
+const getColumnNames = () => Array.from(document.querySelectorAll(COLUMN_NAME), (name) => name.textContent);
+
+const doubleClickColumn = (name: string) => {
+    fireEvent.doubleClick(screen.getByText(name, { selector: COLUMN_NAME }));
+};
+
+const editColumnName = (name: string) => {
+    doubleClickColumn(name);
+    return screen.getByLabelText<HTMLTextAreaElement>("Column name");
+};
 
 describe("TableGrid", () => {
     it("renders the saved columns and cells with the table engine", () => {
@@ -47,14 +58,15 @@ describe("TableGrid", () => {
         expect(screen.getByText("User")).toBeInTheDocument();
     });
 
-    it("reports column name changes without remounting the input", () => {
+    it("reports column name changes while the editor stays open", () => {
         render(<TableHarness />);
-        const columnInput = screen.getAllByLabelText("Column name")[0];
+        const editor = editColumnName("Name");
 
-        fireEvent.input(columnInput, { target: { value: "Member" } });
+        expect(editor).toHaveValue("Name");
+        fireEvent.input(editor, { target: { value: "Member" } });
 
         expect(readSource().columns[0].name).toBe("Member");
-        expect(screen.getAllByLabelText("Column name")[0]).toBe(columnInput);
+        expect(screen.getByLabelText("Column name")).toBe(editor);
     });
 
     it("adds a column and a row with initialized cells", () => {
@@ -106,22 +118,25 @@ describe("TableGrid", () => {
         expect(screen.getByRole("button", { name: /Row$/ })).toBeDisabled();
         expect(screen.getByRole("button", { name: /Column$/ })).toBeDisabled();
         screen.getAllByRole("checkbox").forEach((checkbox) => expect(checkbox).toBeDisabled());
+
+        doubleClickColumn("Name");
         expect(screen.queryByLabelText("Column name")).not.toBeInTheDocument();
     });
 
     it("switches between read-only and editing when the card mode changes", () => {
         const { rerender } = render(<TableGrid source={initialSource} isEditing={false} onChange={() => {}} />);
+        doubleClickColumn("Name");
         expect(screen.queryByLabelText("Column name")).not.toBeInTheDocument();
 
         rerender(<TableGrid source={initialSource} isEditing onChange={() => {}} />);
-        expect(getColumnNames()).toEqual(["Name", "Role"]);
+        expect(editColumnName("Name")).toHaveValue("Name");
         expect(screen.getByRole("button", { name: /Row$/ })).toBeEnabled();
     });
 
     it("shows a source replaced from outside the table", () => {
         render(<TableHarness />);
 
-        fireEvent.input(screen.getAllByLabelText("Column name")[0], { target: { value: "Member" } });
+        fireEvent.input(editColumnName("Name"), { target: { value: "Member" } });
         expect(getColumnNames()).toEqual(["Member", "Role"]);
 
         fireEvent.click(screen.getByRole("button", { name: "Restore" }));
