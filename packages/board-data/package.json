@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/turndown": "^5.0.6",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "scripts": {
     "test": "vitest run",
