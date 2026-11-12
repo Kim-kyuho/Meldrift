@@ -38,6 +38,20 @@ describe("useMermaidRenderer", () => {
         expect(document.querySelector("[id^='meldrift-mermaid-5-']")).toBeNull();
     });
 
+    it("keeps the size of shapes and labels when the root SVG has no height", async () => {
+        mermaidMock.render.mockResolvedValue({
+            svg: '<svg width="100%" viewBox="0 0 168 146"><rect width="152" height="45"></rect>'
+                + '<foreignObject width="120" height="21"></foreignObject></svg>',
+        });
+
+        const { result } = renderHook(() => useMermaidRenderer({ source: "flowchart TD\nA-->B", mermaidId: 13 }));
+
+        await waitFor(() => expect(result.current.svg).toContain("<svg"));
+        expect(result.current.svg).not.toContain('width="100%"');
+        expect(result.current.svg).toContain('<rect width="152" height="45">');
+        expect(result.current.svg).toContain('<foreignObject width="120" height="21">');
+    });
+
     it("reports syntax errors and clears an empty source", async () => {
         mermaidMock.render.mockRejectedValue(new Error("Syntax error"));
         const { result, rerender } = renderHook(

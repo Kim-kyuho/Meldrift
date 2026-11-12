@@ -16,11 +16,14 @@ mermaidRenderer.initialize({
 
 const mermaidReady = mermaidRenderer.registerExternalDiagrams([zenuml]);
 
+// 루트 svg 태그에만 적용한다. 루트에 없는 속성을 찾느라 안쪽 노드의 width·height를 지우면 도형과 라벨이 사라진다.
 const makeMermaidSvgResponsive = (svg: string) =>
-    svg
-        .replace(/\swidth="[^"]*"/, "")
-        .replace(/\sheight="[^"]*"/, "")
-        .replace("<svg", "<svg preserveAspectRatio=\"xMidYMid meet\"");
+    svg.replace(/<svg\b[^>]*>/, (rootTag) =>
+        rootTag
+            .replace(/\swidth="[^"]*"/, "")
+            .replace(/\sheight="[^"]*"/, "")
+            .replace("<svg", "<svg preserveAspectRatio=\"xMidYMid meet\""),
+    );
         
 // zenUml의 스타일 설정이 글로벌Css를 덮어버리는 문제를 막기위한 처리
 const removeZenUmlGlobalStyles = () => {
