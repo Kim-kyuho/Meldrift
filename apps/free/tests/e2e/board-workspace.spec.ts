@@ -181,6 +181,38 @@ test.describe("보드 작업 화면", () => {
         expect(Math.abs(startRestored.width - start.width)).toBeLessThan(2);
     });
 
+    test("Mermaid 선택 영역과 핸들은 보드 줌 변경을 따른다", async ({ page }) => {
+        await getBoardToolButton(page, "lucide-workflow").click();
+        const card = page.locator('[class*="mermaid-rnd-"][data-editing="true"]');
+        const nodes = card.locator(".mermaid-card-diagram g.node");
+        await expect(nodes).toHaveCount(2);
+        await nodes.nth(1).click();
+
+        const checkAlignment = async () => {
+            await expect.poll(() => card.evaluate((element) => {
+                const node = element.querySelectorAll(".mermaid-card-diagram g.node")[1].getBoundingClientRect();
+                const selection = element.querySelector<HTMLElement>(".meldrift-diagram-selection:not([hidden])")?.getBoundingClientRect();
+                const handle = element.querySelector<HTMLElement>('.meldrift-diagram-handle:not(.meldrift-diagram-target-handle)[data-side="right"]')?.getBoundingClientRect();
+                if (!selection || !handle) {
+                    return Infinity;
+                }
+                return Math.max(
+                    Math.abs(selection.x + selection.width / 2 - node.x - node.width / 2),
+                    Math.abs(selection.y + selection.height / 2 - node.y - node.height / 2),
+                    Math.abs(handle.x + handle.width / 2 - node.right),
+                    Math.abs(handle.y + handle.height / 2 - node.y - node.height / 2),
+                );
+            })).toBeLessThan(2);
+        };
+        await checkAlignment();
+        for (const [name, steps] of [["Zoom out", 5], ["Zoom in", 15]] as const) {
+            for (let step = 0; step < steps; step++) {
+                await page.getByRole("button", { name, exact: true }).click();
+            }
+            await checkAlignment();
+        }
+    });
+
     test("Mermaid 소스는 카드 크기를 맞추고 Rnd 리사이즈는 노드 배율만 바꾼다", async ({ page }) => {
         await getBoardToolButton(page, "lucide-workflow").click();
         const card = page.locator('[class*="mermaid-rnd-"][data-editing="true"]');

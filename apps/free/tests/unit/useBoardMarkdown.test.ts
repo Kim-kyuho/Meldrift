@@ -38,13 +38,13 @@ function markdownSnapshot(): BoardSnapshot {
     };
 }
 
-describe("useBoardMarkdown", () => {
+describe("useBoardMarkdown 동작", () => {
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
-    it("compiles local board state with Mermaid source blocks", () => {
+    it("로컬 보드 상태를 Mermaid 소스 블록과 함께 컴파일한다", () => {
         const { result } = renderHook(() => useBoardMarkdown(markdownSnapshot()));
         expect(result.current.loading).toBe(false);
         expect(result.current.errorMessage).toBe("");
@@ -53,7 +53,7 @@ describe("useBoardMarkdown", () => {
         expect(result.current.markdown).toContain("flowchart LR\nA-->B");
     });
 
-    it("compiles overlapping URL images without a server request", () => {
+    it("서버 요청 없이 겹친 URL 이미지를 컴파일한다", () => {
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
         snapshot.images = [{
@@ -69,7 +69,7 @@ describe("useBoardMarkdown", () => {
         vi.unstubAllGlobals();
     });
 
-    it("uses temporary Blob URLs for local image previews and revokes them", async () => {
+    it("로컬 이미지 미리보기에 임시 Blob URL을 사용하고 해제한다", async () => {
         const { createObjectURL, revokeObjectURL } = installObjectUrlMock();
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
@@ -89,7 +89,7 @@ describe("useBoardMarkdown", () => {
         expect(revokeObjectURL).toHaveBeenCalledWith("blob:test-1");
     });
 
-    it("renders a compiled local image from its temporary Blob URL", async () => {
+    it("임시 Blob URL로 컴파일된 로컬 이미지를 렌더링한다", async () => {
         installObjectUrlMock();
         const snapshot = markdownSnapshot();
         snapshot.mermaids = [];
@@ -105,7 +105,7 @@ describe("useBoardMarkdown", () => {
             .toHaveAttribute("src", "blob:test-1"));
     });
 
-    it("downloads Markdown and local PNG images in one ZIP archive", async () => {
+    it("마크다운과 로컬 PNG 이미지를 하나의 ZIP 파일로 다운로드한다", async () => {
         const { blobs, revokeObjectURL } = installObjectUrlMock();
         let downloadName = "";
         vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {

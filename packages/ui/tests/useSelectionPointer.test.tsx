@@ -54,8 +54,8 @@ function setup(selectionBounds: SelectionRect | null = null) {
     return { ...view, scroll, onSelectCards, onMoveSelection, onClearSelection };
 }
 
-describe("useSelectionPointer", () => {
-    it("draws a marquee in board coordinates and selects on release", () => {
+describe("useSelectionPointer 동작", () => {
+    it("보드 좌표로 선택 사각형을 그리고 놓을 때 선택을 확정한다", () => {
         const state = setup();
         fireEvent.pointerDown(state.scroll, pointer({ clientX: 10, clientY: 20 }));
         fireEvent.pointerMove(state.scroll, pointer({ clientX: 60, clientY: 80 }));
@@ -67,7 +67,7 @@ describe("useSelectionPointer", () => {
         expect(state.queryByTestId("marquee")).toBeNull();
     });
 
-    it("moves the selection when the drag starts inside the selection box", () => {
+    it("선택 영역 안에서 드래그를 시작하면 선택한 카드를 이동한다", () => {
         const state = setup({ x: 0, y: 0, width: 200, height: 200 });
         fireEvent.pointerDown(state.scroll, pointer({ clientX: 10, clientY: 10 }));
         fireEvent.pointerMove(state.scroll, pointer({ clientX: 40, clientY: 25 }));
@@ -77,7 +77,7 @@ describe("useSelectionPointer", () => {
         expect(state.onSelectCards).not.toHaveBeenCalled();
     });
 
-    it("clears the selection on a press outside the box that stays under 5px", () => {
+    it("영역 밖을 누르고 5px 미만으로 움직이면 선택을 해제한다", () => {
         const state = setup({ x: 0, y: 0, width: 20, height: 20 });
         fireEvent.pointerDown(state.scroll, pointer({ clientX: 100, clientY: 100 }));
         fireEvent.pointerMove(state.scroll, pointer({ clientX: 103, clientY: 102 }));
@@ -87,7 +87,7 @@ describe("useSelectionPointer", () => {
         expect(state.scroll.setPointerCapture).not.toHaveBeenCalled();
     });
 
-    it("keeps the selection on a press inside the box without dragging", () => {
+    it("영역 안을 누른 뒤 드래그하지 않으면 선택을 유지한다", () => {
         const state = setup({ x: 0, y: 0, width: 200, height: 200 });
         fireEvent.pointerDown(state.scroll, pointer({ clientX: 10, clientY: 10 }));
         fireEvent.pointerUp(state.scroll, pointer({ clientX: 10, clientY: 10 }));
@@ -96,7 +96,7 @@ describe("useSelectionPointer", () => {
         expect(state.onMoveSelection).not.toHaveBeenCalled();
     });
 
-    it("discards the marquee when a second touch arrives", () => {
+    it("두 번째 터치가 들어오면 선택 사각형을 버린다", () => {
         const state = setup();
         const touch = (pointerId: number, extra: Record<string, unknown>) => pointer({ pointerId, pointerType: "touch", ...extra });
         fireEvent.pointerDown(state.scroll, touch(1, { clientX: 0, clientY: 0 }));

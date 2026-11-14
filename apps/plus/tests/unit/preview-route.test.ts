@@ -34,7 +34,7 @@ function request() {
     return next;
 }
 
-describe("preview API", () => {
+describe("미리보기 API", () => {
     beforeEach(() => {
         vi.stubEnv("CLOUDINARY_CLOUD_NAME", "demo");
         vi.stubEnv("CLOUDINARY_API_KEY", "key");
@@ -83,7 +83,7 @@ describe("preview API", () => {
     });
 });
 
-describe("boardPreviewUrl", () => {
+describe("boardPreviewUrl 동작", () => {
     it("version이 있으면 URL에 넣어 업로드마다 새 주소가 된다", () => {
         expect(boardPreviewUrl("demo", 7, 1790000000))
             .toBe("https://res.cloudinary.com/demo/image/upload/v1790000000/meldrift/boards/7/PreviewIMG.webp");

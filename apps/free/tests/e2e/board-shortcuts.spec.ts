@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
     await openTestBoard(page);
 });
 
-test("toggles selection and drawing back to panning and switches modes exclusively", async ({ page }) => {
+test("선택·드로잉에서 패닝으로 전환하고 두 모드가 동시에 활성화되지 않게 한다", async ({ page }) => {
     const board = page.locator(".board-scroll-layer");
     const drawing = page.locator('[data-drawing-capture="true"]');
 
@@ -30,7 +30,7 @@ test("toggles selection and drawing back to panning and switches modes exclusive
 });
 
 for (const [key, cardType] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
-    test(`creates a ${cardType} card with ${key}`, async ({ page }) => {
+    test(`${key} 키로 ${cardType} 카드를 생성한다`, async ({ page }) => {
         const cards = page.locator(`[class*="${cardType}-rnd-"]`);
         const count = await cards.count();
         await page.keyboard.press(key);
@@ -45,14 +45,14 @@ for (const [key, cardType] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]])
     });
 }
 
-test("opens the image chooser with i", async ({ page }) => {
+test("i 키로 이미지 선택창을 연다", async ({ page }) => {
     const chooserPromise = page.waitForEvent("filechooser");
     await page.keyboard.press("i");
     const chooser = await chooserPromise;
     expect(await chooser.element().getAttribute("aria-label")).toBe("Upload image");
 });
 
-test("does not trigger shortcuts while editing a memo or typing into search", async ({ page }) => {
+test("메모 편집이나 검색어 입력 중에는 단축키를 실행하지 않는다", async ({ page }) => {
     await getBoardToolButton(page, "lucide-search").click();
     const search = page.getByPlaceholder("Search memos");
     await search.pressSequentially("m12itd");

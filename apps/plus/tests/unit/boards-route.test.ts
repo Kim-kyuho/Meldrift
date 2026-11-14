@@ -17,7 +17,7 @@ const create = (body: unknown) => POST(new NextRequest("http://localhost/api/boa
     method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" },
 }));
 
-describe("POST /api/boards", () => {
+describe("보드 생성 API: POST /api/boards", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.user.mockResolvedValue({ id: 1, role: "admin" });

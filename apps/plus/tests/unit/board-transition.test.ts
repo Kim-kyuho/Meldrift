@@ -36,7 +36,7 @@ const withImage = (): BoardSnapshot => ({
 
 const digest = "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81";
 
-describe("transitionBoard", () => {
+describe("transitionBoard 동작", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.limit.mockResolvedValue([{ boardId: 7, mode: "snapshot", revision: 4 }]);
@@ -47,14 +47,14 @@ describe("transitionBoard", () => {
         mocks.execute.mockResolvedValue({ rows: [] });
     });
 
-    it("refuses to move a board back from change sync", async () => {
+    it("변경분 동기화에서 이전 방식으로 보드를 되돌리지 못하게 한다", async () => {
         mocks.limit.mockResolvedValue([{ boardId: 7, mode: "delta", revision: 9 }]);
 
         await expect(transitionBoard(board)).rejects.toThrow(TransitionError);
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("uses the card tables when the board never stored a snapshot", async () => {
+    it("스냅샷을 저장한 적 없는 보드는 카드 테이블을 사용한다", async () => {
         const report = await transitionBoard(board);
 
         expect(report.source).toBe("tables");
@@ -64,7 +64,7 @@ describe("transitionBoard", () => {
         expect(statements().at(-1)).toContain("SET mode = 'delta'");
     });
 
-    it("blocks both writers while it moves the board", async () => {
+    it("보드 저장 방식을 전환하는 동안 양쪽 쓰기 경로를 차단한다", async () => {
         mocks.saved.mockResolvedValue(withImage());
         mocks.state.mockResolvedValue(withImage());
         mocks.execute.mockResolvedValue({
@@ -80,7 +80,7 @@ describe("transitionBoard", () => {
         expect(statements().at(-1)).toContain("mode = 'migrating'");
     });
 
-    it("stops when a card is missing after the move", async () => {
+    it("전환 후 누락된 카드가 있으면 중단한다", async () => {
         mocks.saved.mockResolvedValue(withImage());
         mocks.state.mockResolvedValue({ ...withImage(), memos: [] });
 
@@ -88,7 +88,7 @@ describe("transitionBoard", () => {
         expect(statements().some((sql) => sql.includes("SET mode = 'delta'"))).toBe(false);
     });
 
-    it("stops when the stored image bytes do not hash to the source", async () => {
+    it("저장된 이미지 바이트의 해시가 원본과 다르면 중단한다", async () => {
         mocks.saved.mockResolvedValue(withImage());
         mocks.state.mockResolvedValue(withImage());
         mocks.execute.mockResolvedValue({

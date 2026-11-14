@@ -8,8 +8,8 @@ import {
     sessionMaxAgeSeconds,
 } from "@/lib/auth/session";
 
-describe("session tokens", () => {
-    it("uses the expected cookie name and creates a random token", () => {
+describe("세션 토큰", () => {
+    it("예정된 쿠키 이름을 사용하고 난수 토큰을 생성한다", () => {
         const firstToken = createSessionToken();
         const secondToken = createSessionToken();
 
@@ -19,7 +19,7 @@ describe("session tokens", () => {
         expect(firstToken).not.toBe(secondToken);
     });
 
-    it("hashes a valid session token with SHA-256", () => {
+    it("유효한 세션 토큰을 SHA-256으로 해시한다", () => {
         const token = createSessionToken();
         const tokenHash = hashSessionToken(token);
 
@@ -34,11 +34,11 @@ describe("session tokens", () => {
         "a".repeat(42),
         "a".repeat(44),
         `${"a".repeat(42)}+`,
-    ])("rejects invalid token %s", (token) => {
+    ])("잘못된 토큰 %s를 거부한다", (token) => {
         expect(getSessionTokenHash(token)).toBeNull();
     });
 
-    it("creates a seven-day server expiration", () => {
+    it("서버 만료 기간을 7일로 설정한다", () => {
         const now = Date.UTC(2026, 7, 21, 0, 0, 0);
 
         expect(createSessionExpiresAt(now).getTime()).toBe(

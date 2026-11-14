@@ -114,7 +114,7 @@ const openAndSend = async (
     });
 };
 
-describe("useAiAssistant", () => {
+describe("useAiAssistant 동작", () => {
     beforeEach(() => {
         const element = document.createElement("div");
         Object.defineProperties(element, {
@@ -127,7 +127,7 @@ describe("useAiAssistant", () => {
         locationRef.current = element;
     });
 
-    it("adds the planned cards as temporary cards and marks them pending", async () => {
+    it("계획된 카드를 임시 카드로 추가하고 미확정 상태로 표시한다", async () => {
         mockAi({ plan });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result);
@@ -147,7 +147,7 @@ describe("useAiAssistant", () => {
         expect(added[0].content).toBe("<h2>요약</h2>");
     });
 
-    it("removes the proposal and clears pending on discard", async () => {
+    it("제안을 버리면 해당 카드를 제거하고 미확정 상태를 해제한다", async () => {
         mockAi({ plan });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result);
@@ -161,7 +161,7 @@ describe("useAiAssistant", () => {
         expect(result.current.mermaids).toHaveLength(0);
     });
 
-    it("gives the cards positive ids on save so the board can persist again", async () => {
+    it("제안을 저장하면 카드에 양수 식별자를 부여해 보드 저장을 재개한다", async () => {
         mockAi({ plan });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result);
@@ -179,7 +179,7 @@ describe("useAiAssistant", () => {
         expect(result.current.memos.map((memo) => memo.id)).toEqual([1, 2, 3]);
     });
 
-    it("hides deleted cards but restores them untouched on discard", async () => {
+    it("삭제 제안의 카드는 숨기되 제안을 버리면 원래 상태로 복원한다", async () => {
         mockAi({ deletion: { memoIds: [existingMemo.id], imageIds: [existingImage.imageId] } });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result, "메모랑 이미지 지워줘");
@@ -197,7 +197,7 @@ describe("useAiAssistant", () => {
         expect(result.current.images).toEqual([existingImage]);
     });
 
-    it("keeps the earliest version of a card that is edited twice", async () => {
+    it("같은 카드를 두 번 편집해도 최초 상태를 유지한다", async () => {
         mockAi({ edit: { memos: [{ id: existingMemo.id, blocks: [{ type: "paragraph", text: "첫 수정" }] }] } });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result, "메모 고쳐줘");
@@ -219,7 +219,7 @@ describe("useAiAssistant", () => {
         expect(result.current.memos).toEqual([existingMemo]);
     });
 
-    it("refuses to close or lock while a proposal is unsaved", async () => {
+    it("저장하지 않은 제안이 있으면 닫기와 잠그기를 거부한다", async () => {
         mockAi({ plan });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result);
@@ -240,7 +240,7 @@ describe("useAiAssistant", () => {
         expect(result.current.assistant.unlocked).toBe(true);
     });
 
-    it("asks for the password again when the server says the session expired", async () => {
+    it("서버가 세션 만료를 알리면 비밀번호를 다시 요청한다", async () => {
         mockAi({ plan });
         const { result } = renderHook(useAssistantHarness);
         await openAndSend(result);

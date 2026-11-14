@@ -37,8 +37,8 @@ function setup(memos: BoardMemo[] = [memo(1, 0, 0), memo(3, 200, 0)], images: Bo
     return { ...hook, memoState, imageState, mermaidState, tableState, onDeleteMemo, onDeleteImage };
 }
 
-describe("useBoardSelection", () => {
-    it("selects every card the rectangle overlaps, even partially", () => {
+describe("useBoardSelection 동작", () => {
+    it("선택 사각형과 일부라도 겹치는 모든 카드를 선택한다", () => {
         const state = setup();
         act(() => state.result.current.handleSelectCards({ x: 90, y: 90, width: 120, height: 20 }));
         expect(state.result.current.selectedCards).toEqual([
@@ -48,14 +48,14 @@ describe("useBoardSelection", () => {
         expect(state.result.current.selectionBounds).toEqual({ x: 0, y: 0, width: 300, height: 100 });
     });
 
-    it("selects nothing when the rectangle only touches an edge", () => {
+    it("선택 사각형이 가장자리에 닿기만 하면 선택하지 않는다", () => {
         const state = setup();
         act(() => state.result.current.handleSelectCards({ x: 100, y: 0, width: 50, height: 50 }));
         expect(state.result.current.selectedCards).toEqual([]);
         expect(state.result.current.selectionBounds).toBeNull();
     });
 
-    it("moves only the selected cards by the same offset", () => {
+    it("선택한 카드만 같은 거리만큼 이동한다", () => {
         const state = setup();
         act(() => state.result.current.handleSelectCards({ x: 0, y: 0, width: 10, height: 10 }));
         act(() => state.result.current.handleMoveSelection({ x: 40, y: 30 }));
@@ -63,7 +63,7 @@ describe("useBoardSelection", () => {
         expect(state.imageState.setter).not.toHaveBeenCalled();
     });
 
-    it("clamps the move so the group box stays on the board", () => {
+    it("그룹 영역이 보드 안에 남도록 이동 거리를 제한한다", () => {
         const state = setup();
         act(() => state.result.current.handleSelectCards({ x: 0, y: 0, width: 1000, height: 800 }));
         const offset = state.result.current.clampSelectionOffset({ x: -50, y: 900 });
@@ -74,7 +74,7 @@ describe("useBoardSelection", () => {
         expect(state.imageState.getState()[0]).toMatchObject({ x: 500, y: 700 });
     });
 
-    it("deletes every selected card through its collection handler and clears the selection", () => {
+    it("각 컬렉션 핸들러로 선택한 카드를 모두 삭제하고 선택을 해제한다", () => {
         const state = setup();
         act(() => state.result.current.handleSelectCards({ x: 0, y: 0, width: 1000, height: 800 }));
         act(() => state.result.current.handleDeleteSelection());
@@ -83,7 +83,7 @@ describe("useBoardSelection", () => {
         expect(state.result.current.selectedCards).toEqual([]);
     });
 
-    it("clears the selection when the mode is turned off", () => {
+    it("모드를 종료하면 선택을 해제한다", () => {
         const state = setup();
         act(() => state.result.current.handleToggleSelectionMode());
         act(() => state.result.current.handleSelectCards({ x: 0, y: 0, width: 10, height: 10 }));

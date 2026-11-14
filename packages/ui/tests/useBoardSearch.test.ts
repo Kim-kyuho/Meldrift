@@ -8,8 +8,8 @@ const memos = [
     { id: 3, content: "Gamma", sortOrder: 3 },
 ];
 
-describe("useBoardSearch", () => {
-    it("filters case-insensitively and focuses the first match", () => {
+describe("useBoardSearch 동작", () => {
+    it("대소문자를 구분하지 않고 검색해 첫 결과에 초점을 맞춘다", () => {
         const focusMemoById = vi.fn();
         const { result } = renderHook(() => useBoardSearch({
             memos,
@@ -24,7 +24,7 @@ describe("useBoardSearch", () => {
         expect(result.current.searchIndex).toBe(0);
     });
 
-    it("cycles through next and previous results", () => {
+    it("이전·다음 결과를 순환한다", () => {
         const focusMemoById = vi.fn();
         const { result } = renderHook(() => useBoardSearch({
             memos,
@@ -46,7 +46,7 @@ describe("useBoardSearch", () => {
         expect(focusMemoById).toHaveBeenLastCalledWith(2);
     });
 
-    it("walks results in the order the user set, not the order memos were made", () => {
+    it("메모 생성 순서가 아니라 사용자가 지정한 순서대로 결과를 탐색한다", () => {
         const focusMemoById = vi.fn();
         // 배열 순서(생성 순서)와 사용자가 정한 순서가 어긋난 보드.
         const reordered = [
@@ -65,7 +65,7 @@ describe("useBoardSearch", () => {
         expect(focusMemoById).toHaveBeenCalledWith(2);
     });
 
-    it("reports an empty result set", () => {
+    it("검색 결과가 없음을 알린다", () => {
         const setMemoMessage = vi.fn();
         const { result } = renderHook(() => useBoardSearch({
             memos,

@@ -3,7 +3,7 @@ import { getBoardToolButton } from "./helpers";
 
 test.describe.configure({ timeout: 60000 });
 
-// Only board metadata is read from Neon. Every browser API request is intercepted.
+// Neon에서는 보드 메타데이터만 읽고 브라우저의 모든 API 요청은 가로챈다.
 async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 0) {
     let bytes: Buffer | null = null;
     let revision = 0;
@@ -68,10 +68,10 @@ async function openBoard(page: Page) {
     } else {
         await page.goto("/plus");
         const link = page.locator('a[href^="/plus/boards/"]').first();
-        await expect(link, "A board metadata fixture is required").toBeVisible();
+        await expect(link, "보드 메타데이터 픽스처가 필요하다").toBeVisible();
         await link.click();
     }
-    // Client-side navigation includes cold dev compilation and SQLite worker initialization.
+    // 클라이언트 화면 이동에는 개발 서버의 최초 컴파일과 SQLite 워커 초기화가 포함된다.
     await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: 20000 });
     await expect(page.getByRole("status", { name: "" }).filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
 }
@@ -89,7 +89,7 @@ async function createMemo(page: Page, text: string) {
     await saveEditingCard(page);
 }
 
-test("persists locally, uploads SQLite after debounce, and restores memo and image after reload", async ({ page, context }) => {
+test("로컬 저장 후 디바운스로 SQLite를 업로드하고 새로고침 후 메모·이미지를 복원한다", async ({ page, context }) => {
     const server = await mockSnapshotServer(context);
     await openBoard(page);
     const baseline = server.uploads.length;
@@ -114,7 +114,7 @@ test("persists locally, uploads SQLite after debounce, and restores memo and ima
     expect(server.legacyWrites).toEqual([]);
 });
 
-test("exports, resets and imports the current board without resetting its server revision", async ({ page, context }) => {
+test("서버 리비전을 초기화하지 않고 현재 보드를 내보내고 초기화하고 가져온다", async ({ page, context }) => {
     const server = await mockSnapshotServer(context);
     await openBoard(page);
     await createMemo(page, "Original imported memo");
@@ -148,14 +148,14 @@ test("exports, resets and imports the current board without resetting its server
     expect(server.legacyWrites).toEqual([]);
 });
 
-test("waits for board initialization that exceeds the default assertion timeout", async ({ page, context }) => {
+test("기본 검증 제한 시간을 넘는 보드 초기화도 기다린다", async ({ page, context }) => {
     const server = await mockSnapshotServer(context, 6000);
     await openBoard(page);
     expect(server.uploads).toHaveLength(1);
     expect(server.legacyWrites).toEqual([]);
 });
 
-test("retains unsynced edits through reload and opens the board in a second tab", async ({ page, context }) => {
+test("새로고침 후 미동기화 편집을 유지하고 두 번째 탭에서 보드를 연다", async ({ page, context }) => {
     const server = await mockSnapshotServer(context);
     await openBoard(page);
     server.setOffline(true);

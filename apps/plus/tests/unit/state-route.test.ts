@@ -22,7 +22,7 @@ const image = {
 };
 const state = (boardId = "7") => GET(new Request("http://localhost"), { params: params(boardId) });
 
-describe("GET /api/boards/[boardId]/state", () => {
+describe("보드 상태 조회 API: GET /api/boards/[boardId]/state", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.boardRows.mockResolvedValue([board]);

@@ -8,8 +8,8 @@ import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import DrawingToolBar from "@meldrift/ui/DrawingToolBar";
 import PressableButton from "@meldrift/ui/PressableButton";
 
-describe("PressableButton", () => {
-    it("applies and clears touch feedback while forwarding callbacks", () => {
+describe("PressableButton 동작", () => {
+    it("콜백을 전달하면서 터치 피드백을 적용하고 해제한다", () => {
         const onTouchStart = vi.fn();
         const onTouchEnd = vi.fn();
         render(<PressableButton onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>Action</PressableButton>);
@@ -25,8 +25,8 @@ describe("PressableButton", () => {
     });
 });
 
-describe("ConfirmDialog", () => {
-    it("renders through a portal and dispatches confirm and cancel", () => {
+describe("ConfirmDialog 동작", () => {
+    it("포탈로 렌더링하고 확인·취소 동작을 전달한다", () => {
         const onConfirm = vi.fn();
         const onCancel = vi.fn();
         render(<ConfirmDialog title="Reset Meldrift Free Edition?" message="Once deleted, your board data cannot be recovered." onConfirm={onConfirm} onCancel={onCancel} />);
@@ -40,10 +40,10 @@ describe("ConfirmDialog", () => {
     });
 });
 
-describe("Free Edition board controls", () => {
+describe("프리 보드 컨트롤", () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it("disables Export while a card is being edited", () => {
+    it("카드 편집 중에는 내보내기를 비활성화한다", () => {
         const onReset = vi.fn();
         const setMenuOpen = vi.fn();
         render(<BoardMenu
@@ -81,7 +81,7 @@ describe("Free Edition board controls", () => {
         expect(onReset).toHaveBeenCalledOnce();
     });
 
-    it("shows contact links in the About modal and closes with Escape", () => {
+    it("앱 정보 모달에 연락처 링크를 표시하고 Escape 키로 닫는다", () => {
         const onClose = vi.fn();
         render(<AboutModal onClose={onClose} />);
 
@@ -94,7 +94,7 @@ describe("Free Edition board controls", () => {
         expect(onClose).toHaveBeenCalledOnce();
     });
 
-    it("keeps drawing controls focused on drawing and erasing without a duplicate pan tool", () => {
+    it("중복 패닝 도구 없이 드로잉·지우개 컨트롤만 제공한다", () => {
         const portalTarget = document.createElement("div");
         portalTarget.id = "card-tool-portal";
         document.body.appendChild(portalTarget);
@@ -117,7 +117,7 @@ describe("Free Edition board controls", () => {
     });
 });
 
-describe("Beta board toolbar layout", () => {
+describe("베타 보드 툴바 배치", () => {
     const renderToolbar = (cardEditing: boolean, drawingMode: boolean) => render(
         <BoardToolBar
             cardEditing={cardEditing}
@@ -139,7 +139,7 @@ describe("Beta board toolbar layout", () => {
         />
     );
 
-    it("keeps drawing start and finish in the separate lower-left control", () => {
+    it("드로잉 시작·종료 컨트롤을 왼쪽 아래 별도 영역에 유지한다", () => {
         const { rerender } = renderToolbar(false, false);
         const startButton = screen.getByRole("button", { name: "Start drawing" });
         expect(startButton.parentElement).toHaveClass("bottom-10", "left-10");
@@ -172,8 +172,8 @@ describe("Beta board toolbar layout", () => {
     });
 });
 
-describe("BoardNavigator", () => {
-    it("moves with arrows and focuses the entered memo number immediately", () => {
+describe("BoardNavigator 동작", () => {
+    it("화살표로 이동하고 입력한 메모 번호에 즉시 초점을 맞춘다", () => {
         const onPrev = vi.fn();
         const onNext = vi.fn();
         const onMemoNumberChange = vi.fn();
@@ -203,7 +203,7 @@ describe("BoardNavigator", () => {
     });
 });
 
-describe("BoardToolBar panel controls", () => {
+describe("보드 툴바 패널 제어", () => {
     const toolbarProps = {
         cardEditing: false,
         drawingMode: false,
@@ -221,7 +221,7 @@ describe("BoardToolBar panel controls", () => {
         onSelectionToggleClick: vi.fn(),
     };
 
-    it("marks the open search or navigator button with the active color", () => {
+    it("열린 검색·탐색 패널의 버튼을 활성 색상으로 표시한다", () => {
         const { rerender } = render(
             <BoardToolBar
                 {...toolbarProps}
@@ -247,7 +247,7 @@ describe("BoardToolBar panel controls", () => {
         expect(navigatorButton.querySelector("svg")).toHaveStyle({ color: "#ec4899" });
     });
 
-    it("closes the opposite panel before toggling search or navigation", () => {
+    it("검색·탐색 패널을 전환하기 전에 반대쪽 패널을 닫는다", () => {
         const setSearchBarOpen = vi.fn();
         const setBoardNavigatorOpen = vi.fn();
         render(

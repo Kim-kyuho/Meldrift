@@ -57,7 +57,7 @@ const chunk = (bytes: Buffer, digest = createHash("sha256").update(bytes).digest
     { params: Promise.resolve({ boardId: "7", uploadId: "u1", index: "0" }) },
 );
 
-describe("asset upload routes", () => {
+describe("자산 업로드 라우트", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.user.mockResolvedValue({ id: 5, isApproved: true });
@@ -66,7 +66,7 @@ describe("asset upload routes", () => {
         mocks.execute.mockResolvedValue({ rows: [{ upload_id: "u1", chunk_index: 0, asset_id: "asset-1" }] });
     });
 
-    it("splits the asset into chunks and guards the session insert", async () => {
+    it("자산을 청크로 나누고 업로드 세션 삽입 조건을 검증한다", async () => {
         const response = await start({
             assetId: "asset-1", digest: "a".repeat(64), byteLength: 3 * 1024 * 1024 + 1, mimeType: "image/webp",
         });
@@ -78,7 +78,7 @@ describe("asset upload routes", () => {
     });
 
     it.each([4 * 1024 * 1024 + 1, maxStoredImageBytes])(
-        "accepts a prepared image of %i bytes for chunked upload",
+        "청크 업로드에 준비된 %i바이트 이미지를 허용한다",
         async (byteLength) => {
             const response = await start({
                 assetId: "asset-large", digest: "a".repeat(64), byteLength, mimeType: "image/webp",
@@ -89,7 +89,7 @@ describe("asset upload routes", () => {
         },
     );
 
-    it("accepts three independent images even when their combined size exceeds 4 MiB", async () => {
+    it("합산 크기가 4MiB를 넘어도 독립된 이미지 세 장을 허용한다", async () => {
         for (let index = 0; index < 3; index += 1) {
             const response = await start({
                 assetId: `asset-${index}`, digest: "a".repeat(64),
@@ -101,7 +101,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).toHaveBeenCalledTimes(3);
     });
 
-    it("reports the image size policy when a prepared image is too large", async () => {
+    it("준비된 이미지가 너무 크면 이미지 크기 정책을 알린다", async () => {
         const response = await start({
             assetId: "asset-large", digest: "a".repeat(64),
             byteLength: maxStoredImageBytes + 1, mimeType: "image/webp",
@@ -111,7 +111,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("identifies the invalid upload field without including the request contents", async () => {
+    it("요청 내용을 노출하지 않고 잘못된 업로드 필드를 식별한다", async () => {
         const response = await start({
             assetId: "asset-1", digest: "a".repeat(64), byteLength: 100, mimeType: null,
         });
@@ -120,7 +120,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("skips the upload when the server already holds those bytes", async () => {
+    it("서버에 같은 바이트가 있으면 업로드를 건너뛴다", async () => {
         mocks.rows.mockImplementation((table: string) =>
             table === "assets" ? [{ assetId: "asset-1", digest: "a".repeat(64) }] : []);
 
@@ -132,7 +132,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("refuses to reuse an asset id for different bytes", async () => {
+    it("다른 바이트에 같은 자산 식별자를 재사용하지 못하게 한다", async () => {
         mocks.rows.mockImplementation((table: string) =>
             table === "assets" ? [{ assetId: "asset-1", digest: "b".repeat(64) }] : []);
 
@@ -148,12 +148,12 @@ describe("asset upload routes", () => {
         ["an unsupported type", { assetId: "asset-1", digest: "a".repeat(64), byteLength: 3, mimeType: "image/gif" }],
         ["a short digest", { assetId: "asset-1", digest: "a", byteLength: 3, mimeType: "image/webp" }],
         ["an empty asset", { assetId: "asset-1", digest: "a".repeat(64), byteLength: 0, mimeType: "image/webp" }],
-    ])("rejects %s", async (_label, body) => {
+    ])("%s 요청을 거부한다", async (_label, body) => {
         expect((await start(body)).status).toBe(400);
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("rejects a chunk that is not the declared length", async () => {
+    it("선언된 길이와 다른 청크를 거부한다", async () => {
         mocks.rows.mockImplementation((table: string) => table === "upload_sessions" ? [session] : []);
 
         const response = await chunk(Buffer.from([1, 2]));
@@ -163,7 +163,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("rejects a chunk that does not match its checksum", async () => {
+    it("체크섬이 일치하지 않는 청크를 거부한다", async () => {
         mocks.rows.mockImplementation((table: string) => table === "upload_sessions" ? [session] : []);
 
         const response = await chunk(Buffer.from([1, 2, 3]), "f".repeat(64));
@@ -173,7 +173,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("stores a verified chunk and keeps the upload resumable", async () => {
+    it("검증된 청크를 저장하고 업로드를 재개 가능한 상태로 유지한다", async () => {
         mocks.rows.mockImplementation((table: string) => table === "upload_sessions" ? [session] : []);
 
         expect((await chunk(Buffer.from([1, 2, 3]))).status).toBe(200);
@@ -182,7 +182,7 @@ describe("asset upload routes", () => {
         expect(rendered()).toContain("expires_at > now()");
     });
 
-    it("refuses a chunk once the upload expired", async () => {
+    it("만료된 업로드의 청크를 거부한다", async () => {
         mocks.rows.mockImplementation((table: string) =>
             table === "upload_sessions" ? [{ ...session, expiresAt: new Date(Date.now() - 1) }] : []);
 
@@ -190,7 +190,7 @@ describe("asset upload routes", () => {
         expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("confirms the asset only after checking count, order, length and hash", async () => {
+    it("개수·순서·길이·해시를 확인한 뒤에만 자산을 확정한다", async () => {
         mocks.rows.mockImplementation((table: string) => table === "upload_sessions" ? [session] : []);
 
         const response = await completeUpload(
@@ -208,7 +208,7 @@ describe("asset upload routes", () => {
         expect(mocks.deleteWhere).toHaveBeenCalledOnce();
     });
 
-    it("keeps the upload open when the chunks do not add up", async () => {
+    it("청크의 합이 맞지 않으면 업로드를 열린 상태로 유지한다", async () => {
         mocks.rows.mockImplementation((table: string) => table === "upload_sessions" ? [session] : []);
         mocks.execute.mockResolvedValue({ rows: [] });
 
@@ -221,7 +221,7 @@ describe("asset upload routes", () => {
         expect(mocks.deleteWhere).not.toHaveBeenCalled();
     });
 
-    it("serves chunk bytes without letting the browser interpret them", async () => {
+    it("브라우저가 내용으로 해석하지 못하도록 청크 바이트를 제공한다", async () => {
         mocks.rows.mockReturnValue([{ bytes: Buffer.from([1, 2, 3]) }]);
 
         const response = await getChunk(new Request("http://localhost"), {
@@ -247,7 +247,7 @@ describe("asset upload routes", () => {
         expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
     });
 
-    it("hides an unknown asset chunk", async () => {
+    it("알 수 없는 자산 청크를 노출하지 않는다", async () => {
         mocks.rows.mockReturnValue([]);
 
         const response = await getChunk(new Request("http://localhost"), {

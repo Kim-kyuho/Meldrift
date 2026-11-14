@@ -28,7 +28,7 @@ test.beforeEach(async ({ page }) => {
     await openTestBoard(page);
 });
 
-test("keeps markdown formatting after saving and reopening a memo", async ({ page }) => {
+test("메모를 저장하고 다시 열어도 마크다운 서식을 유지한다", async ({ page }) => {
     await openNewMemo(page, "## Title");
     await page.keyboard.press("Enter");
     await page.keyboard.type("**bold** and ==mark== ");
@@ -49,7 +49,7 @@ test("keeps markdown formatting after saving and reopening a memo", async ({ pag
     expect(await memoContent(page).innerHTML()).toBe(savedHtml);
 });
 
-test("toggles inline formats from the memo toolbar", async ({ page }) => {
+test("메모 툴바에서 인라인 서식을 켜고 끈다", async ({ page }) => {
     await openNewMemo(page, "abc def");
     await selectPreviousCharacters(page, 3);
     await memoTools(page).getByRole("button", { name: "Text formatting" }).click();
@@ -68,7 +68,7 @@ test("toggles inline formats from the memo toolbar", async ({ page }) => {
     }
 });
 
-test("toggles headings from the memo toolbar", async ({ page }) => {
+test("메모 툴바에서 제목 서식을 켜고 끈다", async ({ page }) => {
     await openNewMemo(page, "abc");
     await memoTools(page).getByRole("button", { name: "Text formatting" }).click();
 
@@ -84,7 +84,7 @@ test("toggles headings from the memo toolbar", async ({ page }) => {
     }
 });
 
-test("toggles quote and code blocks from the memo toolbar", async ({ page }) => {
+test("메모 툴바에서 인용문과 코드 블록을 켜고 끈다", async ({ page }) => {
     await openNewMemo(page, "abc");
     await memoTools(page).getByRole("button", { name: "Block formatting" }).click();
 
@@ -102,7 +102,7 @@ test("toggles quote and code blocks from the memo toolbar", async ({ page }) => 
     await expect(editor(page).locator("p")).toHaveText("abc");
 });
 
-test("continues typing in a paragraph after a divider at the end", async ({ page }) => {
+test("문서 끝의 구분선 뒤에서 새 문단 입력을 이어간다", async ({ page }) => {
     await openNewMemo(page, "abc");
     await memoTools(page).getByRole("button", { name: "Block formatting" }).click();
     await memoTools(page).getByRole("button", { name: "Divider" }).click();

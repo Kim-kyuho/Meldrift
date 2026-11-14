@@ -101,7 +101,7 @@ beforeEach(() => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
-describe("assistantModels", () => {
+describe("assistantModels 동작", () => {
     it("할당량이 여유로운 모델을 먼저 시도한다", async () => {
         await expect(loadAssistantModels()).resolves.toEqual([
             "gemini-3.6-flash",
@@ -127,7 +127,7 @@ describe("assistantModels", () => {
     });
 });
 
-describe("createAssistantSystemPrompt", () => {
+describe("createAssistantSystemPrompt 동작", () => {
     it("제품마다 다른 조각을 그대로 끼워 넣는다", () => {
         const prompt = createAssistantSystemPrompt(product);
 

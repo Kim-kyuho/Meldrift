@@ -5,7 +5,7 @@ import ImageToolBar from "../src/features/image/ImageToolBar";
 import MermaidToolBar from "../src/features/mermaid/MermaidToolBar";
 import TableToolBar from "../src/features/table/TableToolBar";
 
-describe("Card toolbars layerDisabled support", () => {
+describe("카드 툴바의 레이어 비활성화 지원", () => {
     let portalContainer: HTMLElement;
 
     beforeEach(() => {
@@ -17,7 +17,7 @@ describe("Card toolbars layerDisabled support", () => {
     afterEach(() => {
         portalContainer.remove();
     });
-    describe("MemoToolBar", () => {
+    describe("MemoToolBar 동작", () => {
         const renderMemo = (layerDisabled: boolean) => render(
             <MemoToolBar
                 onChangeColor={vi.fn()}
@@ -36,21 +36,21 @@ describe("Card toolbars layerDisabled support", () => {
             />
         );
 
-        it("disables layer buttons when layerDisabled is true", () => {
+        it("layerDisabled가 참이면 레이어 버튼을 비활성화한다", () => {
             renderMemo(true);
             expect(screen.getByRole("button", { name: "Bring memo to front" })).toBeDisabled();
             expect(screen.getByRole("button", { name: "Send memo to back" })).toBeDisabled();
         });
 
-        it("enables layer buttons when layerDisabled is false", () => {
+        it("layerDisabled가 거짓이면 레이어 버튼을 활성화한다", () => {
             renderMemo(false);
             expect(screen.getByRole("button", { name: "Bring memo to front" })).not.toBeDisabled();
             expect(screen.getByRole("button", { name: "Send memo to back" })).not.toBeDisabled();
         });
     });
 
-    describe("ImageToolBar", () => {
-        it("disables and enables layer buttons based on layerDisabled", () => {
+    describe("ImageToolBar 동작", () => {
+        it("layerDisabled에 따라 레이어 버튼을 비활성화하거나 활성화한다", () => {
             const { rerender } = render(
                 <ImageToolBar
                     onBringToFront={vi.fn()}
@@ -75,8 +75,8 @@ describe("Card toolbars layerDisabled support", () => {
         });
     });
 
-    describe("MermaidToolBar", () => {
-        it("disables and enables layer buttons based on layerDisabled", () => {
+    describe("MermaidToolBar 동작", () => {
+        it("layerDisabled에 따라 레이어 버튼을 비활성화하거나 활성화한다", () => {
             const { rerender } = render(
                 <MermaidToolBar
                     onBringToFront={vi.fn()}
@@ -101,8 +101,8 @@ describe("Card toolbars layerDisabled support", () => {
         });
     });
 
-    describe("TableToolBar", () => {
-        it("disables and enables layer buttons based on layerDisabled", () => {
+    describe("TableToolBar 동작", () => {
+        it("layerDisabled에 따라 레이어 버튼을 비활성화하거나 활성화한다", () => {
             const { rerender } = render(
                 <TableToolBar
                     onBringToFront={vi.fn()}

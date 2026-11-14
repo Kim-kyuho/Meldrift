@@ -2,8 +2,8 @@ import { fireEvent, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useBoardShortcuts } from "../src/features/board/useBoardShortcuts";
 
-describe("useBoardShortcuts", () => {
-    it.each(["1", "2", "m", "i", "t", "d"] as const)("runs the action for %s", (key) => {
+describe("useBoardShortcuts 동작", () => {
+    it.each(["1", "2", "m", "i", "t", "d"] as const)("%s 키에 해당하는 동작을 실행한다", (key) => {
         const action = vi.fn();
         renderHook(() => useBoardShortcuts({ enabled: true, actions: { [key]: action } }));
 
@@ -14,14 +14,14 @@ describe("useBoardShortcuts", () => {
     it.each([
         { repeat: true }, { isComposing: true }, { keyCode: 229 },
         { ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true },
-    ])("ignores held keys, composition and modifiers: %j", (flags) => {
+    ])("길게 누른 키·조합 입력·수정키 조합을 무시한다: %j", (flags) => {
         const action = vi.fn();
         renderHook(() => useBoardShortcuts({ enabled: true, actions: { m: action } }));
         fireEvent.keyDown(document, { key: "m", ...flags });
         expect(action).not.toHaveBeenCalled();
     });
 
-    it.each(["input", "textarea", "select", "contenteditable", "codemirror"])("ignores typing in %s", (kind) => {
+    it.each(["input", "textarea", "select", "contenteditable", "codemirror"])("%s 입력 중에는 단축키를 무시한다", (kind) => {
         const action = vi.fn();
         renderHook(() => useBoardShortcuts({ enabled: true, actions: { m: action } }));
         const input = document.createElement(kind === "contenteditable" || kind === "codemirror" ? "div" : kind);
@@ -45,7 +45,7 @@ describe("useBoardShortcuts", () => {
         }
     });
 
-    it.each(["modal", "dialog"])("does not operate behind an open %s", (kind) => {
+    it.each(["modal", "dialog"])("%s 창이 열려 있으면 뒤쪽에서 동작하지 않는다", (kind) => {
         const action = vi.fn();
         renderHook(() => useBoardShortcuts({ enabled: true, actions: { m: action } }));
         const modal = document.createElement(kind === "dialog" ? "dialog" : "div");
@@ -59,7 +59,7 @@ describe("useBoardShortcuts", () => {
         }
     });
 
-    it("ignores disabled, unavailable, unknown and already handled keys", () => {
+    it("비활성·사용 불가·알 수 없는 키와 이미 처리된 키를 무시한다", () => {
         const action = vi.fn();
         const { rerender } = renderHook(({ enabled }) => useBoardShortcuts({ enabled, actions: { m: action } }), {
             initialProps: { enabled: false },
@@ -74,7 +74,7 @@ describe("useBoardShortcuts", () => {
         expect(action).not.toHaveBeenCalled();
     });
 
-    it("uses the latest action and removes the listener on unmount", () => {
+    it("최신 동작을 사용하고 언마운트 시 리스너를 제거한다", () => {
         const first = vi.fn();
         const second = vi.fn();
         const { rerender, unmount } = renderHook(({ action }) => useBoardShortcuts({ enabled: true, actions: { "1": action } }), {

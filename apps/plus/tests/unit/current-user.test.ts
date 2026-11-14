@@ -25,7 +25,7 @@ function createAuthenticatedRequest(token: string) {
     });
 }
 
-describe("getCurrentUserFromRequest", () => {
+describe("getCurrentUserFromRequest 동작", () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-08-21T00:00:00.000Z"));
@@ -45,7 +45,7 @@ describe("getCurrentUserFromRequest", () => {
         vi.useRealTimers();
     });
 
-    it("returns the user for a matching unexpired session", async () => {
+    it("일치하는 만료 전 세션의 사용자를 반환한다", async () => {
         const token = createSessionToken();
         mocks.selectLimit.mockResolvedValue([{
             id: 7,
@@ -64,7 +64,7 @@ describe("getCurrentUserFromRequest", () => {
         expect(mocks.eq.mock.calls[0][1]).toBe(hashSessionToken(token));
     });
 
-    it("queries only sessions whose expiration is later than the current time", async () => {
+    it("만료 시각이 현재보다 뒤인 세션만 조회한다", async () => {
         mocks.selectLimit.mockResolvedValue([]);
 
         await expect(getCurrentUserFromRequest(createAuthenticatedRequest(createSessionToken())))
@@ -77,14 +77,14 @@ describe("getCurrentUserFromRequest", () => {
         );
     });
 
-    it("rejects a token that does not match a stored session", async () => {
+    it("저장된 세션과 일치하지 않는 토큰을 거부한다", async () => {
         mocks.selectLimit.mockResolvedValue([]);
 
         await expect(getCurrentUserFromRequest(createAuthenticatedRequest(createSessionToken())))
             .resolves.toBeNull();
     });
 
-    it("rejects malformed tokens without querying the database", async () => {
+    it("잘못된 토큰은 데이터베이스 조회 없이 거부한다", async () => {
         await expect(getCurrentUserFromRequest(createAuthenticatedRequest("invalid")))
             .resolves.toBeNull();
         expect(mocks.getDb).not.toHaveBeenCalled();

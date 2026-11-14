@@ -23,7 +23,7 @@ const params = (boardId: string) => Promise.resolve({ boardId });
 const renderedSql = () =>
     new PgDialect().sqlToQuery(mocks.execute.mock.calls[0][0] as SQL).sql.replace(/\s+/g, " ").trim();
 
-describe("GET /api/boards/[boardId]/markdown", () => {
+describe("보드 마크다운 조회 API: GET /api/boards/[boardId]/markdown", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.loadSnapshot.mockResolvedValue(null);
@@ -76,7 +76,7 @@ describe("GET /api/boards/[boardId]/markdown", () => {
         expect(data.markdown).toBe("First\n\nSecond");
     });
 
-    it("compiles the saved snapshot instead of reading obsolete card tables", async () => {
+    it("오래된 카드 테이블 대신 저장된 스냅샷을 컴파일한다", async () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.board.boardId = 7;
         snapshot.memos = [{ id: 1, syncId: "memo-1", boardId: 7, content: "<p>Snapshot memo</p>", sortOrder: 1, x: 10, y: 10, z: 1, width: 100, height: 100, color: "#fff" }];

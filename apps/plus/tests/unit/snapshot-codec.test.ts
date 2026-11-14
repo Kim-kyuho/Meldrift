@@ -11,8 +11,8 @@ async function fixture() {
     return db;
 }
 
-describe("SQLite server validation", () => {
-    it("round-trips a board and binary image", async () => {
+describe("서버 SQLite 검증", () => {
+    it("보드와 이미지 바이너리를 직렬화한 뒤 복원한다", async () => {
         const db = await fixture();
         db.run("INSERT INTO images (board_id, image_data, mime_type, width, height) VALUES (7, ?, 'image/png', 100, 100)", [new Uint8Array([1, 2, 3])]);
         try {
@@ -23,7 +23,7 @@ describe("SQLite server validation", () => {
             db.close();
         }
     });
-    it("rejects a board ID mismatch", async () => {
+    it("보드 식별자 불일치를 거부한다", async () => {
         const db = await fixture();
         try {
             await expect(decodeSnapshot(db.export(), 8)).rejects.toThrow();
@@ -31,7 +31,7 @@ describe("SQLite server validation", () => {
             db.close();
         }
     });
-    it("rejects multiple boards", async () => {
+    it("여러 보드가 포함된 데이터를 거부한다", async () => {
         const db = await fixture();
         db.run("INSERT INTO boards (board_id, title, width, height) VALUES (8, 'Other', 100, 100)");
         try {
@@ -40,7 +40,7 @@ describe("SQLite server validation", () => {
             db.close();
         }
     });
-    it("rejects URL-only images in a server snapshot", async () => {
+    it("서버 스냅샷에서 URL만 있는 이미지를 거부한다", async () => {
         const db = await fixture();
         db.run("INSERT INTO images (board_id, url) VALUES (7, 'https://example.com/image.png')");
         try {
@@ -49,7 +49,7 @@ describe("SQLite server validation", () => {
             db.close();
         }
     });
-    it("rejects malformed and oversized uploads", async () => {
+    it("형식이 잘못되었거나 크기를 초과한 업로드를 거부한다", async () => {
         await expect(decodeSnapshot(new Uint8Array([1, 2, 3]), 7)).rejects.toThrow("Invalid SQLite");
         await expect(decodeSnapshot(new Uint8Array(4 * 1024 * 1024 + 1), 7)).rejects.toThrow("4 MiB");
     });

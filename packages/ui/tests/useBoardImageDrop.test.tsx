@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { useBoardImageDrop } from "../src/features/board/useBoardImageDrop";
 import BoardImageDropOverlay from "../src/features/board/BoardImageDropOverlay";
 
-describe("useBoardImageDrop", () => {
+describe("useBoardImageDrop 동작", () => {
     const setup = (zoom = 1) => {
         const boardScrollRef = createRef<HTMLDivElement>();
         const container = document.createElement("div");
@@ -36,12 +36,12 @@ describe("useBoardImageDrop", () => {
         return { ...hook, onDropImages, boardScrollRef };
     };
 
-    it("tracks drag enter and leave with nested counter logic", () => {
+    it("중첩 카운터로 드래그 진입과 이탈을 추적한다", () => {
         const { result } = setup();
 
         expect(result.current.isDraggingOverBoard).toBe(false);
 
-        // Enter container
+        // 컨테이너에 진입한다.
         act(() => {
             result.current.handleDragEnter({
                 preventDefault: vi.fn(),
@@ -50,7 +50,7 @@ describe("useBoardImageDrop", () => {
         });
         expect(result.current.isDraggingOverBoard).toBe(true);
 
-        // Enter child element
+        // 자식 요소에 진입한다.
         act(() => {
             result.current.handleDragEnter({
                 preventDefault: vi.fn(),
@@ -59,7 +59,7 @@ describe("useBoardImageDrop", () => {
         });
         expect(result.current.isDraggingOverBoard).toBe(true);
 
-        // Leave child element (counter drops to 1, still dragging)
+        // 자식 요소를 벗어나면 카운터가 1로 줄어들지만 드래그 상태는 유지한다.
         act(() => {
             result.current.handleDragLeave({
                 preventDefault: vi.fn(),
@@ -67,7 +67,7 @@ describe("useBoardImageDrop", () => {
         });
         expect(result.current.isDraggingOverBoard).toBe(true);
 
-        // Leave container (counter drops to 0)
+        // 컨테이너를 벗어나면 카운터가 0이 된다.
         act(() => {
             result.current.handleDragLeave({
                 preventDefault: vi.fn(),
@@ -76,7 +76,7 @@ describe("useBoardImageDrop", () => {
         expect(result.current.isDraggingOverBoard).toBe(false);
     });
 
-    it("sets dropEffect on drag over", () => {
+    it("드래그 중 dropEffect를 설정한다", () => {
         const { result } = setup();
         const dataTransfer = { dropEffect: "" };
         const preventDefault = vi.fn();
@@ -92,8 +92,8 @@ describe("useBoardImageDrop", () => {
         expect(dataTransfer.dropEffect).toBe("copy");
     });
 
-    it("filters image files and computes zoom-adjusted coordinates on drop", async () => {
-        const { result, onDropImages } = setup(2); // zoom = 2
+    it("드롭 시 이미지 파일을 선별하고 줌을 반영한 좌표를 계산한다", async () => {
+        const { result, onDropImages } = setup(2); // 줌 배율은 2다.
 
         const imageFile = new File(["data"], "test.png", { type: "image/png" });
         const textFile = new File(["text"], "test.txt", { type: "text/plain" });
@@ -111,12 +111,12 @@ describe("useBoardImageDrop", () => {
 
         expect(result.current.isDraggingOverBoard).toBe(false);
         expect(onDropImages).toHaveBeenCalledOnce();
-        // dropX = (scrollLeft(100) + 200) / 2 = 150
-        // dropY = (scrollTop(50) + 100) / 2 = 75
+        // 가로 드롭 좌표: (가로 스크롤 100 + 포인터 200) / 2 = 150
+        // 세로 드롭 좌표: (세로 스크롤 50 + 포인터 100) / 2 = 75
         expect(onDropImages).toHaveBeenCalledWith([imageFile], { x: 150, y: 75 });
     });
 
-    it("ignores drop when no image files are present", async () => {
+    it("이미지 파일이 없는 드롭은 무시한다", async () => {
         const { result, onDropImages } = setup();
         const textFile = new File(["text"], "test.txt", { type: "text/plain" });
 
@@ -135,18 +135,18 @@ describe("useBoardImageDrop", () => {
     });
 });
 
-describe("BoardImageDropOverlay", () => {
-    it("renders nothing when isDragging is false", () => {
+describe("BoardImageDropOverlay 동작", () => {
+    it("isDragging이 거짓이면 아무것도 렌더링하지 않는다", () => {
         const { container } = render(<BoardImageDropOverlay isDragging={false} />);
         expect(container.firstChild).toBeNull();
     });
 
-    it("renders overlay with message when isDragging is true", () => {
+    it("isDragging이 참이면 안내 메시지가 있는 오버레이를 렌더링한다", () => {
         render(<BoardImageDropOverlay isDragging={true} />);
         expect(screen.getByText("Drop image here to add to board")).toBeInTheDocument();
     });
 
-    it("renders custom message when provided", () => {
+    it("별도 메시지가 주어지면 해당 메시지를 렌더링한다", () => {
         render(<BoardImageDropOverlay isDragging={true} message="Custom drop message" />);
         expect(screen.getByText("Custom drop message")).toBeInTheDocument();
     });

@@ -2,10 +2,10 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import BoardMessage from "../src/shared/BoardMessage";
 
-describe("BoardMessage", () => {
+describe("BoardMessage 동작", () => {
     afterEach(() => vi.useRealTimers());
 
-    it("dismisses a visible message after 3.5 seconds", () => {
+    it("표시된 메시지를 3.5초 후에 닫는다", () => {
         vi.useFakeTimers();
         const onDismiss = vi.fn();
         render(
@@ -22,7 +22,7 @@ describe("BoardMessage", () => {
         expect(onDismiss).toHaveBeenCalledOnce();
     });
 
-    it("renders inline messages without toast positioning", () => {
+    it("토스트 위치 지정 없이 인라인 메시지를 렌더링한다", () => {
         render(<BoardMessage variant="inline" message="Invalid title." />);
 
         const message = screen.getByText("Invalid title.");

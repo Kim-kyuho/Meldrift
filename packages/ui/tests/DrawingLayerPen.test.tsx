@@ -23,8 +23,8 @@ function setup() {
 
 const pen = (extra: Record<string, unknown>) => ({ pointerId: 1, pointerType: "pen", isPrimary: true, ...extra });
 
-describe("Apple Pencil stroke handling", () => {
-    it("starts a new stroke even when the previous pointerup was missed", () => {
+describe("Apple Pencil 획 처리", () => {
+    it("이전 pointerup을 놓쳐도 새 획을 시작한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, clientX: 0, clientY: 0 }));
@@ -36,7 +36,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd).toHaveBeenCalledTimes(2);
     });
 
-    it("ends the stroke when the pen lifts into hover instead of drawing on", () => {
+    it("펜이 공중으로 떠오르면 계속 그리지 않고 획을 종료한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, clientX: 0, clientY: 0 }));
@@ -47,7 +47,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[0][0]).toEqual([[0, 0], [10, 10]]);
     });
 
-    it("keeps drawing when Apple Pencil reports pressure with no button flag", () => {
+    it("Apple Pencil이 버튼 플래그 없이 압력을 보고해도 그리기를 유지한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, pressure: 0.5, clientX: 0, clientY: 0 }));
@@ -58,7 +58,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[0][0]).toEqual([[0, 0], [10, 10]]);
     });
 
-    it("accepts a recontact reported as a non-primary pen pointer", () => {
+    it("주 포인터가 아닌 펜 포인터의 재접촉을 허용한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ isPrimary: false, buttons: 1, pressure: 0.5, clientX: 0, clientY: 0 }));
@@ -69,7 +69,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[0][0]).toEqual([[0, 0], [10, 10]]);
     });
 
-    it("keeps a new stroke active when capture loss follows a quick recontact", () => {
+    it("빠른 재접촉 뒤 포인터 캡처를 잃어도 새 획을 활성 상태로 유지한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, pressure: 0.5, clientX: 0, clientY: 0 }));
@@ -84,7 +84,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[1][0]).toEqual([[40, 40], [50, 50]]);
     });
 
-    it("ignores a second finger while a stroke is in progress", () => {
+    it("획을 그리는 중에는 두 번째 손가락을 무시한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, clientX: 0, clientY: 0 }));
@@ -96,7 +96,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[0][0]).toEqual([[0, 0], [10, 10]]);
     });
 
-    it("discards an in-progress palm stroke when Apple Pencil is detected", () => {
+    it("Apple Pencil을 감지하면 진행 중인 손바닥 획을 버린다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, { pointerId: 2, pointerType: "touch", isPrimary: true, buttons: 1, clientX: 90, clientY: 90 });
@@ -109,7 +109,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[0][0]).toEqual([[0, 0], [10, 10]]);
     });
 
-    it("ignores primary touch input while Apple Pencil is in contact", () => {
+    it("Apple Pencil 접촉 중에는 주 터치 입력을 무시한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, pressure: 0.5, clientX: 0, clientY: 0 }));
@@ -123,7 +123,7 @@ describe("Apple Pencil stroke handling", () => {
         expect(onStrokeEnd.mock.calls[0][0]).toEqual([[0, 0], [10, 10]]);
     });
 
-    it("allows touch drawing again after Apple Pencil lifts", () => {
+    it("Apple Pencil을 떼면 터치 드로잉을 다시 허용한다", () => {
         const { layer, onStrokeEnd } = setup();
 
         fireEvent.pointerDown(layer, pen({ buttons: 1, pressure: 0.5, clientX: 0, clientY: 0 }));

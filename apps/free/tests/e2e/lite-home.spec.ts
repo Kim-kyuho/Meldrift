@@ -12,12 +12,12 @@ const onePixelPng = Buffer.from(
     "base64",
 );
 
-test.describe("Meldrift Free Edition home", () => {
+test.describe("Meldrift 프리 보드 첫 화면", () => {
     test.beforeEach(async ({ page }) => {
         await gotoHydratedPage(page, "/");
     });
 
-    test("opens the single board directly without authentication controls", async ({ page }) => {
+    test("인증 컨트롤 없이 단일 보드를 바로 연다", async ({ page }) => {
         await expect(page).toHaveTitle(/^Meldrift$/i);
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
         const wordmark = page.getByRole("link", { name: "Meldrift home" });
@@ -40,7 +40,7 @@ test.describe("Meldrift Free Edition home", () => {
         );
     });
 
-    test("stores a local image in browser SQLite across reloads", async ({ page }) => {
+    test("새로고침 후에도 브라우저 SQLite에 로컬 이미지를 유지한다", async ({ page }) => {
         const chooserPromise = page.waitForEvent("filechooser");
         await getBoardToolButton(page, "lucide-camera").click();
         const chooser = await chooserPromise;
@@ -59,7 +59,7 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(page.locator('[class*="image-rnd-"] img').first()).toBeVisible();
     });
 
-    test("exports and imports an actual SQLite save file without reloading", async ({ page }) => {
+    test("새로고침 없이 실제 SQLite 저장 파일을 내보내고 가져온다", async ({ page }) => {
         await getBoardToolButton(page, "lucide-square-pen").click();
         await page.locator('.card-editing [contenteditable="true"]').fill("SQLite import fixture");
         await page.locator(".meldrift-board").click({ position: { x: 20, y: 20 } });
@@ -97,7 +97,7 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(page.locator('[class*="memo-rnd-"]')).toContainText("SQLite import fixture");
     });
 
-    test("disables Export while a card is being edited", async ({ page }) => {
+    test("카드 편집 중에는 내보내기를 비활성화한다", async ({ page }) => {
         await page.locator(".board-toolbar button").filter({
             has: page.locator("svg.lucide-square-pen"),
         }).click();
@@ -106,7 +106,7 @@ test.describe("Meldrift Free Edition home", () => {
         await expect(page.getByText("Finish editing before exporting.")).toBeVisible();
     });
 
-    test("resets only after confirmation without reloading and can undo the reset", async ({ page }) => {
+    test("확인 후에만 새로고침 없이 초기화하고 실행 취소로 복원할 수 있다", async ({ page }) => {
         const chooserPromise = page.waitForEvent("filechooser");
         await getBoardToolButton(page, "lucide-camera").click();
         const chooser = await chooserPromise;
@@ -150,8 +150,8 @@ test.describe("Meldrift Free Edition home", () => {
     });
 });
 
-test.describe("Meldrift Free Edition Help", () => {
-    test("opens for an empty board and reopens with the Ctrl and Command Help shortcuts", async ({ page }) => {
+test.describe("Meldrift 프리 보드 도움말", () => {
+    test("빈 보드에서 도움말을 열고 Ctrl·Command 도움말 단축키로 다시 연다", async ({ page }) => {
         await page.goto("/");
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
 

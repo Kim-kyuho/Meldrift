@@ -16,7 +16,7 @@ function setup(initialStrokes: BoardStroke[] = []) {
     }));
 }
 
-describe("useBoardDrawing", () => {
+describe("useBoardDrawing 동작", () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -25,7 +25,7 @@ describe("useBoardDrawing", () => {
         vi.unstubAllGlobals();
     });
 
-    it("adds a stroke with the current pen color and width", () => {
+    it("현재 펜 색상과 굵기로 획을 추가한다", () => {
         const { result } = setup();
 
         act(() => result.current.handleToggleDrawingMode());
@@ -41,7 +41,7 @@ describe("useBoardDrawing", () => {
         });
     });
 
-    it("ignores a stroke that has fewer than two points", () => {
+    it("점이 두 개 미만인 획은 무시한다", () => {
         const { result } = setup();
 
         act(() => result.current.handleToggleDrawingMode());
@@ -50,7 +50,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.strokes).toHaveLength(0);
     });
 
-    it("keeps the changed strokes when drawing mode turns off", async () => {
+    it("드로잉 모드를 종료해도 변경된 획을 유지한다", async () => {
         const { result } = setup();
 
         act(() => result.current.handleToggleDrawingMode());
@@ -61,7 +61,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.strokes).toHaveLength(1);
     });
 
-    it("keeps an empty drawing unchanged", async () => {
+    it("빈 드로잉은 그대로 유지한다", async () => {
         const { result } = setup();
 
         act(() => result.current.handleToggleDrawingMode());
@@ -70,7 +70,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.strokes).toEqual([]);
     });
 
-    it("undoes the last stroke", () => {
+    it("마지막 획을 실행 취소한다", () => {
         const { result } = setup([existingStroke]);
 
         act(() => result.current.handleToggleDrawingMode());
@@ -81,7 +81,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.strokes[0].id).toBe("s1");
     });
 
-    it("toggles between the draw and erase tools", () => {
+    it("그리기와 지우개 도구를 전환한다", () => {
         const { result } = setup();
 
         act(() => result.current.handleToggleDrawingMode());
@@ -94,7 +94,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.drawingTool).toBe("draw");
     });
 
-    it("returns to the draw tool when drawing mode turns off", async () => {
+    it("드로잉 모드를 종료하면 그리기 도구로 돌아간다", async () => {
         const { result } = setup();
 
         act(() => result.current.handleToggleDrawingMode());
@@ -104,7 +104,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.drawingTool).toBe("draw");
     });
 
-    it("erases only the part of a stroke inside the circle", () => {
+    it("원 안에 있는 획의 부분만 지운다", () => {
         const crossing: BoardStroke = {
             id: "s2",
             color: defaultPenColor,
@@ -121,7 +121,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.strokes[1].points).toEqual([[30, 0], [40, 0]]);
     });
 
-    it("keeps an erased result when drawing mode turns off", async () => {
+    it("드로잉 모드를 종료해도 지운 결과를 유지한다", async () => {
         const { result } = setup([existingStroke]);
 
         act(() => result.current.handleToggleDrawingMode());
@@ -131,7 +131,7 @@ describe("useBoardDrawing", () => {
         expect(result.current.strokes).toEqual([]);
     });
 
-    it("does not change strokes when the eraser touches nothing", async () => {
+    it("지우개가 아무 획에도 닿지 않으면 획을 변경하지 않는다", async () => {
         const { result } = setup([existingStroke]);
 
         act(() => result.current.handleToggleDrawingMode());

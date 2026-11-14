@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import AiChatPanel from "../src/features/ai/AiChatPanel";
 import AiUnlockPanel from "../src/features/ai/AiUnlockPanel";
 
-describe("AiChatPanel", () => {
-    it("submits messages and exposes chat actions", () => {
+describe("AiChatPanel 동작", () => {
+    it("메시지를 전송하고 채팅 동작을 제공한다", () => {
         Object.defineProperty(HTMLElement.prototype, "scrollTo", {
             configurable: true,
             value: vi.fn(),
@@ -45,8 +45,8 @@ describe("AiChatPanel", () => {
     });
 });
 
-describe("AiUnlockPanel", () => {
-    it("submits the password and clears the input", () => {
+describe("AiUnlockPanel 동작", () => {
+    it("비밀번호를 전송하고 입력값을 지운다", () => {
         const onUnlock = vi.fn();
 
         render(

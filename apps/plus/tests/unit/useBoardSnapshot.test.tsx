@@ -29,7 +29,7 @@ function makeDatabase() {
     };
 }
 
-describe("Plus snapshot lifecycle", () => {
+describe("플러스 스냅샷 생명주기", () => {
     beforeEach(() => {
         sessionStorage.clear();
         sync = { revision: 1, generation: 1, dirty: false, changedAt: 0 };
@@ -47,7 +47,7 @@ describe("Plus snapshot lifecycle", () => {
         vi.unstubAllGlobals();
     });
 
-    it("loads a matching local revision without importing and closes the database on unmount", async () => {
+    it("같은 로컬 리비전은 가져오기 없이 불러오고 언마운트 시 데이터베이스를 닫는다", async () => {
         const { result, unmount } = renderHook(() => useBoardSnapshot(board));
         await waitFor(() => expect(result.current.canEdit).toBe(true));
         expect(database.import).not.toHaveBeenCalled();
@@ -56,13 +56,13 @@ describe("Plus snapshot lifecycle", () => {
         await waitFor(() => expect(database.close).toHaveBeenCalledOnce());
     });
 
-    it("survives StrictMode initialization", async () => {
+    it("StrictMode에서도 초기화를 완료한다", async () => {
         const { result, unmount } = renderHook(() => useBoardSnapshot(board), { wrapper: StrictMode });
         await waitFor(() => expect(result.current.canEdit).toBe(true));
         unmount();
     });
 
-    it("opens a second view of the same board instead of refusing it", async () => {
+    it("같은 보드의 두 번째 화면을 거부하지 않고 연다", async () => {
         const first = renderHook(() => useBoardSnapshot(board));
         await waitFor(() => expect(first.result.current.canEdit).toBe(true));
         const second = renderHook(() => useBoardSnapshot(board));
@@ -72,7 +72,7 @@ describe("Plus snapshot lifecycle", () => {
         second.unmount();
     });
 
-    it("preserves conflicting local data until explicit server restore", async () => {
+    it("서버 복원을 명시적으로 선택하기 전까지 충돌한 로컬 데이터를 보존한다", async () => {
         sync = { revision: 0, generation: 3, dirty: true, changedAt: Date.now(), mutationId: "local-change" };
         const { result, unmount } = renderHook(() => useBoardSnapshot(board));
         await waitFor(() => expect(result.current.status).toBe("blocked"));
@@ -81,7 +81,7 @@ describe("Plus snapshot lifecycle", () => {
         unmount();
     });
 
-    it("acknowledges a previously accepted upload whose response was lost", async () => {
+    it("응답이 유실되었지만 이미 승인된 업로드를 확인 처리한다", async () => {
         sync = { revision: 0, generation: 3, dirty: true, changedAt: Date.now(), mutationId: "accepted-change" };
         const original = vi.mocked(fetch).getMockImplementation()!;
         vi.mocked(fetch).mockImplementation(async (...args) => {

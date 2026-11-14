@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import HelpModal from "@/components/HelpModal";
 import { getHelpShortcut, helpMarkdownUrl } from "@/lib/help";
 
-describe("HelpModal", () => {
+describe("HelpModal 동작", () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it("loads the Help Markdown without a download control and closes with Escape", async () => {
+    it("다운로드 버튼 없이 도움말 마크다운을 불러오고 Escape 키로 닫는다", async () => {
         const onClose = vi.fn();
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,
@@ -41,7 +41,7 @@ describe("HelpModal", () => {
         expect(onClose).toHaveBeenCalledOnce();
     });
 
-    it("uses the Command label on Apple platforms", () => {
+    it("Apple 기기에서는 Command 키 표시를 사용한다", () => {
         expect(getHelpShortcut("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")).toEqual({
             label: "⌘ ⇧ P",
             ariaLabel: "Help shortcut: Command Shift P",

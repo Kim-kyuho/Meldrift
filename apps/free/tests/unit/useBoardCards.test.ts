@@ -44,7 +44,7 @@ const table: BoardTable = {
     x: 10, y: 20, z: 4, width: 560, height: 360,
 };
 
-describe("board card collection hooks", () => {
+describe("보드 카드 컬렉션 훅", () => {
     beforeEach(() => {
         setLocation();
         vi.spyOn(Date, "now").mockReturnValue(1000);
@@ -59,7 +59,7 @@ describe("board card collection hooks", () => {
 
     afterEach(() => vi.unstubAllGlobals());
 
-    it("creates and persists memos without an authentication gate", async () => {
+    it("인증 검사 없이 메모를 생성하고 저장한다", async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal("fetch", fetchMock);
         const { result } = renderHook(() => useBoardMemos({
@@ -74,7 +74,7 @@ describe("board card collection hooks", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("uses getTopmostZ when creating a temporary memo", () => {
+    it("임시 메모를 생성할 때 getTopmostZ를 사용한다", () => {
         const getTopmostZ = vi.fn().mockReturnValue(99);
         const { result } = renderHook(() => useBoardMemos({
             initialMemos: [memo], boardId: 5, boardZoom: 2,
@@ -85,7 +85,7 @@ describe("board card collection hooks", () => {
         expect(result.current.memos[1].z).toBe(99);
     });
 
-    it("creates Mermaid and table drafts in the visible center", () => {
+    it("현재 표시 영역의 중앙에 Mermaid·테이블 초안을 생성한다", () => {
         const mermaids = renderHook(() => useBoardMermaids({
             initialMermaids: [mermaid], boardId: 5, boardZoom: 2,
             cardLocationRef: locationRef,
@@ -101,7 +101,7 @@ describe("board card collection hooks", () => {
         expect(tables.result.current.tables[1]).toMatchObject({ id: -1000, x: 220, y: 166, width: 360, height: 168 });
     });
 
-    it("uses getTopmostZ when creating Mermaid and table drafts", () => {
+    it("Mermaid·테이블 초안을 생성할 때 getTopmostZ를 사용한다", () => {
         const getTopmostZ = vi.fn().mockReturnValue(99);
         const mermaids = renderHook(() => useBoardMermaids({
             initialMermaids: [mermaid], boardId: 5, boardZoom: 2,
@@ -118,7 +118,7 @@ describe("board card collection hooks", () => {
         expect(tables.result.current.tables[1].z).toBe(99);
     });
 
-    it("creates an image card from compressed local bytes", async () => {
+    it("압축된 로컬 바이트로 이미지 카드를 생성한다", async () => {
         const setMessage = vi.fn();
         const { result } = renderHook(() => useBoardImages({
             initialImages: [], boardId: 5, boardZoom: 2,
@@ -148,7 +148,7 @@ describe("board card collection hooks", () => {
         expect(setMessage).toHaveBeenCalledWith("");
     });
 
-    it("updates geometry and deletes a persisted image", async () => {
+    it("저장된 이미지의 위치·크기를 갱신하고 삭제한다", async () => {
         const { result } = renderHook(() => useBoardImages({
             initialImages: [image], boardId: 5, boardZoom: 2,
             cardLocationRef: locationRef,
@@ -161,7 +161,7 @@ describe("board card collection hooks", () => {
         expect(result.current.images).toEqual([]);
     });
 
-    it("handles dropped image files and adds images at drop location", async () => {
+    it("드롭한 이미지 파일을 처리하고 드롭 위치에 이미지를 추가한다", async () => {
         const { result } = renderHook(() => useBoardImages({
             initialImages: [], boardId: 5, boardZoom: 2,
             cardLocationRef: locationRef,
@@ -178,7 +178,7 @@ describe("board card collection hooks", () => {
         expect(result.current.images[0].y).toBe(50);
     });
 
-    it("uses getTopmostZ when uploading/dropping images", async () => {
+    it("이미지 업로드·드롭 시 getTopmostZ를 사용한다", async () => {
         const getTopmostZ = vi.fn().mockReturnValue(99);
         const { result } = renderHook(() => useBoardImages({
             initialImages: [], boardId: 5, boardZoom: 2,

@@ -2,8 +2,8 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useMemoToolBar } from "@meldrift/ui/useMemoToolBar";
 
-describe("useMemoToolBar", () => {
-    it("offers the full beta memo color palette", () => {
+describe("useMemoToolBar 동작", () => {
+    it("베타 메모 색상 팔레트를 모두 제공한다", () => {
         const { result } = renderHook(() => useMemoToolBar({}));
 
         expect(result.current.memoColors).toEqual([
@@ -18,7 +18,7 @@ describe("useMemoToolBar", () => {
         ]);
     });
 
-    it("keeps color and heading submenus mutually exclusive", () => {
+    it("색상·제목 하위 메뉴가 동시에 열리지 않게 한다", () => {
         const { result } = renderHook(() => useMemoToolBar({}));
         act(() => result.current.toggleColorMenu());
         expect(result.current.openMemoColorMenu).toBe(true);
@@ -29,7 +29,7 @@ describe("useMemoToolBar", () => {
         expect(result.current.openHeadingMenu).toBe(true);
     });
 
-    it("selects formatting values and closes their submenu", () => {
+    it("서식 값을 선택하고 해당 하위 메뉴를 닫는다", () => {
         const onChangeColor = vi.fn();
         const onHeading = vi.fn();
         const { result } = renderHook(() => useMemoToolBar({ onChangeColor, onHeading }));
@@ -45,7 +45,7 @@ describe("useMemoToolBar", () => {
         expect(result.current.openHeadingMenu).toBe(false);
     });
 
-    it("changes tool modes and closes open submenus", () => {
+    it("도구 모드를 변경하고 열린 하위 메뉴를 닫는다", () => {
         const { result } = renderHook(() => useMemoToolBar({}));
         act(() => result.current.toggleColorMenu());
         act(() => result.current.openBlockTools());

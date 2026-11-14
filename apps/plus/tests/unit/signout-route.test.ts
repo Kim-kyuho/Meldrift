@@ -23,7 +23,7 @@ function createSignOutRequest(token?: string) {
     });
 }
 
-describe("POST /api/signout", () => {
+describe("로그아웃 API: POST /api/signout", () => {
     beforeEach(() => {
         mocks.eq.mockImplementation((column, value) => ({ column, value }));
         mocks.updateWhere.mockResolvedValue(undefined);
@@ -33,7 +33,7 @@ describe("POST /api/signout", () => {
         });
     });
 
-    it("clears the matching database session and browser cookie", async () => {
+    it("일치하는 데이터베이스 세션과 브라우저 쿠키를 지운다", async () => {
         const token = createSessionToken();
         const response = await POST(createSignOutRequest(token));
 
@@ -48,7 +48,7 @@ describe("POST /api/signout", () => {
         expect(response.headers.get("set-cookie")).toContain("Expires=Thu, 01 Jan 1970 00:00:00 GMT");
     });
 
-    it("deletes the browser cookie without a database query when no token exists", async () => {
+    it("토큰이 없으면 데이터베이스 조회 없이 브라우저 쿠키를 삭제한다", async () => {
         const response = await POST(createSignOutRequest());
 
         expect(response.status).toBe(200);

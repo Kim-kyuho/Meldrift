@@ -11,13 +11,13 @@ const boards = [
     { boardId: 2, title: "Two", width: 200, height: 200, previewUrl: "https://example.com/2.webp" },
 ];
 
-describe("useBoardList", () => {
+describe("useBoardList 동작", () => {
     afterEach(() => {
         window.sessionStorage.clear();
         vi.unstubAllGlobals();
     });
 
-    it("allows only administrators to open create and action controls", () => {
+    it("관리자에게만 생성·작업 컨트롤 열기를 허용한다", () => {
         const denied = renderHook(() => useBoardList({ boards, currentUser: null }));
         act(() => denied.result.current.handleCreateBoardClick());
         expect(denied.result.current.createBoardOpen).toBe(false);
@@ -37,7 +37,7 @@ describe("useBoardList", () => {
         expect(admin.result.current.actionMenuOpen).toBe(true);
     });
 
-    it("updates a renamed board and routes to a newly created board", () => {
+    it("이름을 바꾼 보드를 갱신하고 새 보드로 이동한다", () => {
         const { result } = renderHook(() => useBoardList({
             boards,
             currentUser: { email: "admin@example.com", isApproved: true, role: "admin" },
@@ -49,7 +49,7 @@ describe("useBoardList", () => {
         expect(router.push).toHaveBeenCalledWith("/boards/9");
     });
 
-    it("schedules an initial preview when a board preview is missing", () => {
+    it("보드 미리보기가 없으면 최초 미리보기 생성을 예약한다", () => {
         const { result } = renderHook(() => useBoardList({
             boards,
             currentUser: null,
@@ -60,7 +60,7 @@ describe("useBoardList", () => {
         expect(window.sessionStorage.getItem("meldrift-preview-board-id")).toBe("1");
     });
 
-    it("deletes the selected board and refreshes the route", async () => {
+    it("선택한 보드를 삭제하고 경로를 새로고침한다", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             ok: true,
             json: vi.fn().mockResolvedValue({ ok: true }),

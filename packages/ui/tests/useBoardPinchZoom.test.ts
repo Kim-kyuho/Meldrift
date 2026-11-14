@@ -2,7 +2,7 @@ import { act, renderHook, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBoardPinchZoom } from "../src/features/viewport/useBoardPinchZoom";
 
-describe("useBoardPinchZoom", () => {
+describe("useBoardPinchZoom 동작", () => {
     let viewport: HTMLDivElement;
     let size: HTMLDivElement;
     let board: HTMLDivElement;
@@ -74,7 +74,7 @@ describe("useBoardPinchZoom", () => {
         return { ...hook, setBoardZoom };
     };
 
-    it("keeps scroll and layout size unchanged while translating and scaling", () => {
+    it("평행 이동·확대 중에는 스크롤과 배치 크기를 변경하지 않는다", () => {
         const { setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -98,7 +98,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom).toHaveBeenCalledExactlyOnceWith(1.5);
     });
 
-    it("commits the latest move even when touch ends before the next frame", () => {
+    it("다음 프레임 전에 터치가 끝나도 최신 이동을 반영한다", () => {
         const { setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -110,7 +110,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom).toHaveBeenCalledExactlyOnceWith(1.5);
     });
 
-    it("restores scrolling on cancellation even if two touches remain", () => {
+    it("두 터치가 남아 있어도 취소 시 스크롤을 복원한다", () => {
         setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -121,7 +121,7 @@ describe("useBoardPinchZoom", () => {
         expect(board.style.willChange).toBe("");
     });
 
-    it("leaves single-touch panning alone", () => {
+    it("한 손가락 패닝에는 개입하지 않는다", () => {
         setup();
         const event = touch("touchstart", [100]);
 
@@ -130,7 +130,7 @@ describe("useBoardPinchZoom", () => {
         expect(board.style.transform).toBe("scale(0.75)");
     });
 
-    it("removes temporary transforms and restores scrolling on unmount", () => {
+    it("언마운트 시 임시 변환을 제거하고 스크롤을 복원한다", () => {
         const { unmount, setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -144,7 +144,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom).not.toHaveBeenCalled();
     });
 
-    it("coalesces moves into one frame and never writes scroll during the pinch", () => {
+    it("이동을 한 프레임으로 합치고 핀치 중에는 스크롤 값을 쓰지 않는다", () => {
         const { setBoardZoom } = setup();
         const setLeft = vi.fn();
         const setTop = vi.fn();
@@ -169,7 +169,7 @@ describe("useBoardPinchZoom", () => {
         expect(setTop).toHaveBeenCalledExactlyOnceWith(700);
     });
 
-    it("uses the committed zoom and position as the next pinch baseline", () => {
+    it("확정된 줌과 위치를 다음 핀치의 기준으로 사용한다", () => {
         const { rerender, setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -192,7 +192,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom.mock.calls).toEqual([[1.5], [0.75]]);
     });
 
-    it("preserves an active gesture across unrelated renders", () => {
+    it("관계없는 렌더링이 발생해도 진행 중인 제스처를 유지한다", () => {
         const { rerender } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -205,7 +205,7 @@ describe("useBoardPinchZoom", () => {
         expect(viewport.style.overflow).toBe("auto");
     });
 
-    it("calculates the anchor relative to the viewport, not the screen origin", () => {
+    it("화면 원점이 아니라 뷰포트를 기준으로 기준점을 계산한다", () => {
         vi.spyOn(viewport, "getBoundingClientRect").mockReturnValue({
             x: 50, y: 25, left: 50, top: 25, right: 850, bottom: 625,
             width: 800, height: 600, toJSON: () => ({}),
@@ -224,7 +224,7 @@ describe("useBoardPinchZoom", () => {
     it.each([
         { xs: [149, 151], zoom: 0.5 },
         { xs: [0, 300], zoom: 1.25 },
-    ])("clamps the committed zoom to $zoom", ({ xs, zoom }) => {
+    ])("확정되는 줌 배율을 $zoom으로 제한한다", ({ xs, zoom }) => {
         const { setBoardZoom } = setup({ minZoom: 0.5, maxZoom: 1.25 });
         touch("touchstart", [100, 200]);
         touch("touchmove", xs);
@@ -237,7 +237,7 @@ describe("useBoardPinchZoom", () => {
         expect(size.style.height).toBe(`${3000 * zoom}px`);
     });
 
-    it("rounds zoom to one percent increments", () => {
+    it("줌 배율을 1% 단위로 반올림한다", () => {
         const { setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [100, 201]);
@@ -247,7 +247,7 @@ describe("useBoardPinchZoom", () => {
         expect(board.style.transform).toBe("scale(0.76)");
     });
 
-    it("restores CSS-controlled overflow when ending without movement", () => {
+    it("이동 없이 끝나면 CSS가 제어하는 overflow를 복원한다", () => {
         viewport.style.overflow = "";
         const { setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
@@ -262,7 +262,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom).not.toHaveBeenCalled();
     });
 
-    it("cancels a queued frame when disabled and accepts gestures after re-enabling", () => {
+    it("비활성화 시 예약된 프레임을 취소하고 다시 활성화하면 제스처를 허용한다", () => {
         const { rerender, setBoardZoom } = setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);
@@ -283,7 +283,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom).toHaveBeenCalledExactlyOnceWith(1.5);
     });
 
-    it("does not calculate a scale when the initial touch distance is zero", () => {
+    it("초기 터치 거리가 0이면 배율을 계산하지 않는다", () => {
         const { setBoardZoom } = setup();
         touch("touchstart", [150, 150]);
         touch("touchmove", [100, 200]);
@@ -295,7 +295,7 @@ describe("useBoardPinchZoom", () => {
         expect(setBoardZoom).not.toHaveBeenCalled();
     });
 
-    it("does not intercept one-finger movement after a cancelled pinch", () => {
+    it("핀치 취소 후 한 손가락 이동을 가로채지 않는다", () => {
         setup();
         touch("touchstart", [100, 200]);
         touch("touchmove", [50, 250]);

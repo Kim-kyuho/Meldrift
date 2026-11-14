@@ -50,7 +50,7 @@ function request(payload: unknown, headers: Record<string, string> = {}) {
 const statements = () => (mocks.batch.mock.calls[0][0] as SQL[])
     .map((statement) => dialect.sqlToQuery(statement).sql.replace(/\s+/g, " ").trim());
 
-describe("POST /api/boards/[boardId]/changes", () => {
+describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.user.mockResolvedValue({ id: 5, isApproved: true });
@@ -64,7 +64,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
             queries.map((_, index) => ({ rows: index === queries.length - 1 ? [{ revision: 3 }] : [] })));
     });
 
-    it("rejects unauthenticated writes before touching the database", async () => {
+    it("데이터베이스에 접근하기 전에 미인증 쓰기를 거부한다", async () => {
         mocks.user.mockResolvedValue(null);
         mocks.permission.mockReturnValue("Please sign in before editing cards.");
 
@@ -77,7 +77,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
     });
 
 
-    it("rejects a request over the byte limit before parsing it", async () => {
+    it("파싱 전에 바이트 제한을 초과한 요청을 거부한다", async () => {
         const oversized = request(body([{
             type: "memo", syncId: "memo-1", action: "update", changes: { content: "x".repeat(1024 * 1024 + 1) },
         }]));
@@ -86,7 +86,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
-    it("moves an image without touching its bytes", async () => {
+    it("바이너리를 변경하지 않고 이미지를 이동한다", async () => {
         const response = await POST(request(body([
             { type: "image", syncId: "image-1", action: "update", changes: { x: 420, y: 180 } },
         ])), context);
@@ -96,7 +96,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(statements()[1]).toContain("UPDATE images SET x = $");
     });
 
-    it("maps image fields onto the existing image columns", async () => {
+    it("이미지 필드를 기존 이미지 열에 대응시킨다", async () => {
         mocks.assetRows.mockReturnValue([{ assetId: "asset-1" }]);
 
         await POST(request(body([{
@@ -112,7 +112,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(sql).toContain("asset_id = excluded.asset_id");
     });
 
-    it("refuses a card that points at bytes the server does not have", async () => {
+    it("서버에 없는 바이트를 참조하는 카드를 거부한다", async () => {
         mocks.assetRows.mockReturnValue([]);
 
         const response = await POST(request(body([{
@@ -125,7 +125,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
-    it("writes strokes one row at a time", async () => {
+    it("획을 한 행씩 저장한다", async () => {
         await POST(request(body([
             { type: "stroke", syncId: "stroke-1", action: "create", changes: { color: "#000", width: 4, points: [[0, 0], [1, 1]] } },
             { type: "stroke", syncId: "stroke-2", action: "delete", changes: {} },
@@ -137,7 +137,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(sql[2]).toContain("DELETE FROM drawing_strokes");
     });
 
-    it("locks the board first, writes cards, then raises the revision", async () => {
+    it("보드를 먼저 잠그고 카드를 저장한 뒤 리비전을 올린다", async () => {
         const response = await POST(request(body([
             { type: "memo", syncId: "memo-1", action: "update", changes: { x: 30, sortOrder: 4 } },
         ])), context);
@@ -153,7 +153,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(sql[2]).toContain("INSERT INTO sync_mutations");
     });
 
-    it("guards every card write and the revision bump with the same condition", async () => {
+    it("모든 카드 쓰기와 리비전 증가에 같은 보호 조건을 적용한다", async () => {
         await POST(request(body([
             { type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } },
             { type: "mermaid", syncId: "mermaid-2", action: "delete", changes: {} },
@@ -168,7 +168,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         }
     });
 
-    it("creates cards as an upsert on the sync id so a resend cannot duplicate them", async () => {
+    it("동기화 식별자 기준의 업서트로 카드를 생성해 재전송 중복을 방지한다", async () => {
         await POST(request(body([
             { type: "memo", syncId: "memo-1", action: "create", changes: memoFields },
         ])), context);
@@ -179,7 +179,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(sql).toContain("sort_order = excluded.sort_order, updated_at = now()");
     });
 
-    it("deletes by sync id and casts table sources to jsonb", async () => {
+    it("동기화 식별자로 삭제하고 표 소스를 jsonb로 변환한다", async () => {
         const source = { columns: [{ id: "c", name: "C" }], rows: [{ id: "r", cells: { c: "1" } }] };
         await POST(request(body([
             { type: "table", syncId: "table-1", action: "update", changes: { source } },
@@ -192,7 +192,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(sql[2]).toContain("sync_id = $");
     });
 
-    it("returns the stored revision when the same request arrives twice", async () => {
+    it("같은 요청을 두 번 받아도 저장된 리비전을 반환한다", async () => {
         const payload = body([{ type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } }]);
         const digest = changeRequestDigest(parseChangeRequest(payload));
         mocks.batch.mockImplementation(async (queries: SQL[]) => queries.map(() => ({ rows: [] })));
@@ -204,7 +204,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(await response.json()).toEqual({ ok: true, revision: 3 });
     });
 
-    it("refuses to reuse a request id for different changes", async () => {
+    it("다른 변경에 같은 요청 식별자를 재사용하지 못하게 한다", async () => {
         mocks.batch.mockImplementation(async (queries: SQL[]) => queries.map(() => ({ rows: [] })));
         mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: mutationId, digest: "other", revision: 3 }]);
 
@@ -216,7 +216,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect((await response.json()).message).toContain("already committed different changes");
     });
 
-    it("commits a staged payload and then discards it", async () => {
+    it("임시 저장한 본문을 확정한 뒤 정리한다", async () => {
         const operations = [{ type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } }];
         mocks.readAssetBytes.mockResolvedValue({
             mimeType: "application/json", bytes: Buffer.from(JSON.stringify(operations), "utf8"),
@@ -229,7 +229,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(mocks.discardAsset).toHaveBeenCalledWith(expect.anything(), 7, mutationId);
     });
 
-    it("answers a resend once the staged payload is gone", async () => {
+    it("임시 본문이 삭제된 뒤의 재전송에도 응답한다", async () => {
         mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: mutationId, digest: "x", revision: 9 }]);
 
         const response = await POST(request({ baseRevision: 2, mutationId: mutationId, staged: true }), context);
@@ -238,14 +238,14 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
-    it("refuses a staged commit whose payload never arrived", async () => {
+    it("본문이 도착하지 않은 임시 변경 확정을 거부한다", async () => {
         const response = await POST(request({ baseRevision: 2, mutationId: mutationId, staged: true }), context);
 
         expect(response.status).toBe(409);
         expect((await response.json()).message).toContain("no longer available");
     });
 
-    it("tells a client whether an unfinished save landed", async () => {
+    it("완료되지 않은 저장이 반영되었는지 클라이언트에 알린다", async () => {
         mocks.limit.mockResolvedValue([{ boardId: 7, mutationId: "m-1", revision: 12 }]);
 
         const found = await GET(request({}), context);
@@ -256,7 +256,7 @@ describe("POST /api/boards/[boardId]/changes", () => {
         expect(await missing.json()).toEqual({ ok: true, applied: false, revision: null });
     });
 
-    it("reports a stale revision or lost lease as a conflict", async () => {
+    it("오래된 리비전이나 리스 상실을 충돌로 알린다", async () => {
         mocks.batch.mockImplementation(async (queries: SQL[]) => queries.map(() => ({ rows: [] })));
 
         const response = await POST(request(body([

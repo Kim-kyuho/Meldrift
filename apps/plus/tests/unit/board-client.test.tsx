@@ -48,7 +48,7 @@ vi.mock("@/components/BoardMenu", () => ({ default: () => null }));
 vi.mock("@/components/SignInModal", () => ({ default: () => null }));
 vi.mock("@/components/SignUpModal", () => ({ default: () => null }));
 
-describe("Plus shared board integration", () => {
+describe("플러스 공통 보드 통합", () => {
     const files = {
         exportSnapshot: vi.fn(async () => new ArrayBuffer(16)),
         readSnapshotFile: vi.fn(async () => createEmptyBoardSnapshot()),
@@ -61,7 +61,7 @@ describe("Plus shared board integration", () => {
     });
     afterEach(() => vi.useRealTimers());
 
-    it("coalesces changes and does not save after unmount", async () => {
+    it("변경을 합치고 언마운트 후에는 저장하지 않는다", async () => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
         const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
@@ -85,7 +85,7 @@ describe("Plus shared board integration", () => {
         expect(onSnapshotChange).toHaveBeenCalledTimes(1);
     });
 
-    it.each(["editing", "permission"])("cancels a queued save on %s changes and resumes with the latest snapshot", async (reason) => {
+    it.each(["editing", "permission"])("%s 변경 시 예약된 저장을 취소하고 최신 스냅샷으로 재개한다", async (reason) => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
         const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
@@ -107,7 +107,7 @@ describe("Plus shared board integration", () => {
         expect(onSnapshotChange).toHaveBeenCalledExactlyOnceWith(latest);
     });
 
-    it("does not reupload initial data and saves edited data 150ms after editing ends", async () => {
+    it("초기 데이터는 재전송하지 않고 편집 종료 150ms 후 변경 데이터를 저장한다", async () => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
         const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
@@ -133,7 +133,7 @@ describe("Plus shared board integration", () => {
         expect(mocks.schedulePreviewUpdate).toHaveBeenCalledOnce();
     });
 
-    it("passes both account and lease permissions to the shared editor and blocks saves", async () => {
+    it("계정·리스 권한을 공통 에디터에 전달하고 저장을 차단한다", async () => {
         const initialSnapshot = createEmptyBoardSnapshot();
         const onSnapshotChange = vi.fn();
         const props = { initialSnapshot, onSnapshotChange, editingAllowed: false, serverSaveVersion: 0, ...files };

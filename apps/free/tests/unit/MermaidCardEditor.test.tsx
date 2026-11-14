@@ -141,14 +141,14 @@ const createCard = ({ isEditing = true, x = 0, y = 0, onUpdate, onEditingClear, 
     );
 };
 
-describe("MermaidCard with the diagram engine", () => {
+describe("다이어그램 엔진을 사용하는 Mermaid 카드", () => {
     beforeEach(() => {
         engine.state.renderers.length = 0;
         engine.state.editors.length = 0;
         setMobile(false);
     });
 
-    it("opens the editor and the shape palette in a panel outside the card on desktop", () => {
+    it("데스크톱에서 카드 밖의 패널에 에디터와 도형 팔레트를 연다", () => {
         const { container } = render(createCard());
 
         const panel = screen.getByRole("region", { name: "Mermaid editor" });
@@ -163,7 +163,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(editor.options.value).toBe(initialSource);
     });
 
-    it("minimizes the desktop panel without destroying the editor or ending card editing", () => {
+    it("에디터를 제거하거나 카드 편집을 종료하지 않고 데스크톱 패널을 최소화한다", () => {
         const onEditingClear = vi.fn();
         const onUpdate = vi.fn();
         render(createCard({ onEditingClear, onUpdate }));
@@ -195,7 +195,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(onUpdate).toHaveBeenCalledWith(1, 1, next, 0, 0, 480, 360);
     });
 
-    it("can finish editing from the minimized desktop title bar", () => {
+    it("최소화된 데스크톱 제목 표시줄에서 편집을 종료할 수 있다", () => {
         const onUpdate = vi.fn();
         const onEditingClear = vi.fn();
         render(createCard({ onUpdate, onEditingClear }));
@@ -205,7 +205,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(onEditingClear).toHaveBeenCalledOnce();
     });
 
-    it("fixes the editor to the screen bottom outside the card and hides the mobile palette", () => {
+    it("모바일에서는 에디터를 카드 밖 화면 하단에 고정하고 팔레트를 숨긴다", () => {
         setMobile(true);
         const { container } = render(createCard());
 
@@ -223,7 +223,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(screen.queryByRole("button", { name: "Minimize mermaid editor" })).not.toBeInTheDocument();
     });
 
-    it("draws what is typed and inserts the chosen shape into the editor", () => {
+    it("입력 내용을 렌더링하고 선택한 도형을 에디터에 삽입한다", () => {
         render(createCard());
         const [renderer] = engine.state.renderers;
         const [editor] = engine.state.editors;
@@ -240,7 +240,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(editor.insertPaletteItem).toHaveBeenCalledWith(item);
     });
 
-    it("writes changes made on the drawing back into the editor without drawing again", () => {
+    it("다시 렌더링하지 않고 그림에서 변경한 내용을 에디터에 반영한다", () => {
         render(createCard());
         const [renderer] = engine.state.renderers;
         const [editor] = engine.state.editors;
@@ -256,7 +256,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(renderer.setSource).not.toHaveBeenCalled();
     });
 
-    it("synchronizes visual source edits without requesting a second render", () => {
+    it("중복 렌더링 없이 그림에서 수정한 소스를 동기화한다", () => {
         const onUpdate = vi.fn();
         render(createCard({ onUpdate }));
         const [renderer] = engine.state.renderers;
@@ -275,7 +275,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(onUpdate).toHaveBeenCalledWith(1, 1, nextSource, 0, 0, 480, 360);
     });
 
-    it("keeps the current draft and engine instances when switching between desktop and mobile", () => {
+    it("데스크톱과 모바일 사이를 전환해도 초안과 엔진 인스턴스를 유지한다", () => {
         const onUpdate = vi.fn();
         const { rerender } = render(createCard({ onUpdate }));
         const [renderer] = engine.state.renderers;
@@ -299,7 +299,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(onUpdate).toHaveBeenCalledWith(1, 1, nextSource, 0, 0, 480, 360);
     });
 
-    it("destroys the renderer and editor and removes the portal when unmounted", () => {
+    it("언마운트 시 렌더러와 에디터를 제거하고 포탈을 정리한다", () => {
         const { unmount } = render(createCard());
         const [renderer] = engine.state.renderers;
         const [editor] = engine.state.editors;
@@ -312,7 +312,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(screen.queryByRole("region", { name: "Mermaid editor" })).not.toBeInTheDocument();
     });
 
-    it("saves and stops editing from the panel close button", () => {
+    it("패널 닫기 버튼으로 저장하고 편집을 종료한다", () => {
         const onUpdate = vi.fn();
         const onEditingClear = vi.fn();
         render(createCard({ onUpdate, onEditingClear }));
@@ -326,7 +326,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(onEditingClear).toHaveBeenCalled();
     });
 
-    it("shows only the drawing while the card is not being edited", () => {
+    it("카드를 편집하지 않을 때는 그림만 표시한다", () => {
         const { container } = render(createCard({ isEditing: false }));
         const [renderer] = engine.state.renderers;
 
@@ -336,7 +336,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(renderer.palette.isConnected).toBe(false);
     });
 
-    it("fits changed source and shrinks it again without growing on viewport resize", async () => {
+    it("소스에 맞춰 카드를 확대·축소하되 화면 크기 변경만으로는 확대하지 않는다", async () => {
         const onGeometryChange = vi.fn();
         const { container } = render(createCard({ x: 100, y: 20, onGeometryChange }));
         const [renderer] = engine.state.renderers;
@@ -372,7 +372,7 @@ describe("MermaidCard with the diagram engine", () => {
         await waitFor(() => expect(onGeometryChange).toHaveBeenLastCalledWith({ x: 100, y: 20, width: 284, height: 224 }));
     });
 
-    it("does not take drawing height away for the mobile editor", () => {
+    it("모바일 에디터가 그림의 표시 높이를 줄이지 않는다", () => {
         setMobile(true);
         render(createCard());
         const [editor] = engine.state.editors;
@@ -381,7 +381,7 @@ describe("MermaidCard with the diagram engine", () => {
         expect(editor.container.style.height).toBe("");
     });
 
-    it("clears the selection on the drawing and detaches the editor when editing ends", () => {
+    it("편집 종료 시 그림의 선택을 해제하고 에디터를 분리한다", () => {
         const { rerender } = render(createCard());
         const [renderer] = engine.state.renderers;
         const [editor] = engine.state.editors;
