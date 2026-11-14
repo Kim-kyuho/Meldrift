@@ -11,7 +11,7 @@ type Asset = {
 const chunkBytes = 1024 * 1024;
 const digest = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 
-// The page reads real board metadata; browser writes never reach Neon.
+// 보드 메타데이터는 실제로 조회하지만 브라우저의 쓰기 요청은 Neon에 전달하지 않는다.
 export function createDeltaServer() {
     let revision = 0;
     let offline = false;
@@ -32,7 +32,7 @@ export function createDeltaServer() {
         await context.exposeBinding("recordBoardPreview", (_source, file: { base64: string; mimeType: string }) => {
             previews.push({ bytes: Buffer.from(file.base64, "base64"), mimeType: file.mimeType });
         });
-        // WebKit's intercepted multipart body omits file bytes. Observe the real Blob before fetch.
+        // WebKit이 가로챈 multipart 본문에는 파일 바이트가 없어 fetch 전에 실제 Blob을 확인한다.
         await context.addInitScript(() => {
             const originalFetch = window.fetch;
             window.fetch = async (input, init) => {

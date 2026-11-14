@@ -25,8 +25,8 @@ function setup(initial = fixture()) {
     });
 }
 
-describe("useBoardHistory", () => {
-    it.each(["memos", "images", "mermaids", "tables", "strokes"] as const)("restores %s creation and deletion", (key) => {
+describe("useBoardHistory 동작", () => {
+    it.each(["memos", "images", "mermaids", "tables", "strokes"] as const)("%s 카드의 생성과 삭제를 복원한다", (key) => {
         const original = fixture();
         const { result } = setup(original);
         act(() => result.current.setSnapshot((previous) => ({ ...previous, [key]: [] })));
@@ -39,7 +39,7 @@ describe("useBoardHistory", () => {
         expect(result.current.canRedo).toBe(false);
     });
 
-    it("restores content, geometry, layers and order as one atomic board change", () => {
+    it("내용·위치·크기·레이어·순서를 하나의 원자적 보드 변경으로 복원한다", () => {
         const original = fixture();
         const { result } = setup(original);
         const next = {
@@ -58,7 +58,7 @@ describe("useBoardHistory", () => {
         expect(result.current.snapshot).toEqual(next);
     });
 
-    it("groups pointer frames into one operation on release", () => {
+    it("포인터를 놓으면 이동 프레임들을 하나의 작업으로 묶는다", () => {
         const original = fixture();
         const { result } = setup(original);
         act(() => result.current.setPaused(true));
@@ -72,7 +72,7 @@ describe("useBoardHistory", () => {
         expect(result.current.canUndo).toBe(false);
     });
 
-    it("does not add identical values or viewport and board metadata changes", () => {
+    it("같은 값이나 뷰포트·보드 메타데이터 변경은 이력에 추가하지 않는다", () => {
         const { result } = setup();
         act(() => result.current.setSnapshot((previous) => ({
             ...previous, board: { ...previous.board, title: "Other title" },
@@ -81,7 +81,7 @@ describe("useBoardHistory", () => {
         expect(result.current.canUndo).toBe(false);
     });
 
-    it("shares unchanged objects and binary data across history entries", () => {
+    it("이력 항목 사이에서 변경되지 않은 객체와 바이너리 데이터를 공유한다", () => {
         const original = fixture();
         const { result } = setup(original);
         act(() => result.current.setSnapshot((previous) => ({ ...previous, images: [{ ...previous.images[0], x: 999 }], memos: previous.memos.map((memo) => ({ ...memo })) })));
@@ -92,7 +92,7 @@ describe("useBoardHistory", () => {
         expect(original.images[0].x).toBe(20);
     });
 
-    it("clears redo only after a new completed change", () => {
+    it("새 변경을 완료한 뒤에만 다시 실행 이력을 비운다", () => {
         const { result } = setup();
         act(() => result.current.setSnapshot((previous) => ({ ...previous, strokes: [] })));
         act(() => result.current.undo());
@@ -102,7 +102,7 @@ describe("useBoardHistory", () => {
         expect(result.current.canRedo).toBe(false);
     });
 
-    it("retains at most fifty operations", () => {
+    it("최근 작업을 최대 50개까지 유지한다", () => {
         const { result } = setup();
         for (let x = 1; x <= 55; x++) {
             act(() => result.current.setSnapshot((previous) => ({ ...previous, memos: [{ ...previous.memos[0], x }] })));
@@ -114,7 +114,7 @@ describe("useBoardHistory", () => {
         expect(result.current.canUndo).toBe(false);
     });
 
-    it("clears history when a new board or restored server state is seeded", () => {
+    it("새 보드나 복원된 서버 상태를 초기값으로 적용하면 이력을 비운다", () => {
         const { result } = setup();
         act(() => result.current.setSnapshot((previous) => ({ ...previous, strokes: [] })));
         const restored = createEmptyBoardSnapshot();
@@ -126,7 +126,7 @@ describe("useBoardHistory", () => {
         expect(result.current.canRedo).toBe(false);
     });
 
-    it("persists undo and redo through the existing local save debounce", async () => {
+    it("기존 로컬 저장 디바운스를 통해 실행 취소·다시 실행을 저장한다", async () => {
         vi.useFakeTimers();
         try {
             const onSave = vi.fn();

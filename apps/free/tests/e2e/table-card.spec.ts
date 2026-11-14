@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
     await openTestBoard(page);
 });
 
-test("saves text typed into a selected cell", async ({ page }) => {
+test("선택한 셀에 입력한 텍스트를 저장한다", async ({ page }) => {
     await openNewTable(page);
     await tableCard(page).locator("td.meldrift-table-cell").first().click();
     await page.keyboard.type("Hello");
@@ -33,7 +33,7 @@ test("saves text typed into a selected cell", async ({ page }) => {
     await expect(tableCard(page).locator("td.meldrift-table-cell").first()).toHaveText("Hello");
 });
 
-test("keeps every row visible without scrollbars at the minimum card size", async ({ page }) => {
+test("최소 카드 크기에서도 스크롤바 없이 모든 행을 표시한다", async ({ page }) => {
     await openNewTable(page);
     for (let index = 0; index < 3; index++) {
         await tableCard(page).getByRole("button", { name: /Row$/ }).click();
@@ -48,7 +48,7 @@ test("keeps every row visible without scrollbars at the minimum card size", asyn
     expect(overflow.horizontal).toBe("hidden");
 });
 
-test("keeps a resized row height after reloading", async ({ page }) => {
+test("새로고침 후에도 변경한 행 높이를 유지한다", async ({ page }) => {
     await openNewTable(page);
     const firstRow = tableCard(page).locator(".meldrift-table-row").first();
     // 표가 카드 높이를 채우도록 행이 늘어나므로, 엔진이 저장된 높이로 지정한 style.height를 비교한다.

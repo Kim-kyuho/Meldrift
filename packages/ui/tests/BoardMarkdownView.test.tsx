@@ -39,10 +39,10 @@ const engine = vi.hoisted(() => {
 
 vi.mock("@meldrift/diagram-engine", () => ({ createDiagramRenderer: engine.createDiagramRenderer }));
 
-describe("BoardMarkdownView", () => {
+describe("BoardMarkdownView 동작", () => {
     beforeEach(() => { engine.renderers.length = 0; });
 
-    it("renders Markdown and Mermaid sections", () => {
+    it("마크다운과 Mermaid 구간을 렌더링한다", () => {
         render(
             <BoardMarkdownView
                 markdown={"# Title\n\n```mermaid\nflowchart LR\nA-->B\n```"}
@@ -60,7 +60,7 @@ describe("BoardMarkdownView", () => {
         });
     });
 
-    it("updates the preview source and fits moved nodes without recreating the read-only renderer", async () => {
+    it("읽기 전용 렌더러를 다시 생성하지 않고 소스를 갱신하며 이동한 노드에 맞춰 미리보기를 조정한다", async () => {
         const { container, rerender } = render(<MermaidDiagramView source="flowchart LR\nA-->B" />);
         const [renderer] = engine.renderers;
         const nextSource = 'flowchart LR\nA["<literal>"]-->B\n%% meldrift-layout: {"B":[-200,50]}';
@@ -76,7 +76,7 @@ describe("BoardMarkdownView", () => {
         expect(renderer.setSource).toHaveBeenCalledOnce();
     });
 
-    it("destroys the read-only renderer when the preview is closed", () => {
+    it("미리보기를 닫으면 읽기 전용 렌더러를 제거한다", () => {
         const { unmount } = render(<MermaidDiagramView source="flowchart LR\nA-->B" />);
         const [renderer] = engine.renderers;
         unmount();
@@ -84,7 +84,7 @@ describe("BoardMarkdownView", () => {
         expect(renderer.element.isConnected).toBe(false);
     });
 
-    it("maps preview images and dispatches view actions", () => {
+    it("미리보기 이미지 경로를 변환하고 화면 동작을 전달한다", () => {
         const onDownload = vi.fn();
         const onClose = vi.fn();
         render(

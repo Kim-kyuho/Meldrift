@@ -32,7 +32,7 @@ describe("허용 필드 목록", () => {
     });
 });
 
-describe("parseChangeRequest", () => {
+describe("parseChangeRequest 동작", () => {
     it("바뀐 필드만 담은 갱신을 받는다", () => {
         const parsed = parse([{ type: "memo", syncId: "memo-1", action: "update", changes: { x: 40 } }]);
 
@@ -118,7 +118,7 @@ describe("parseChangeRequest", () => {
     });
 });
 
-describe("changeRequestDigest", () => {
+describe("changeRequestDigest 동작", () => {
     it("같은 요청은 같은 값, 다른 요청은 다른 값", () => {
         const first = parse([memoCreate]);
         const same = parse([memoCreate]);

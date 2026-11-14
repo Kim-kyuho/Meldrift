@@ -18,10 +18,10 @@ function setup() {
     return { ...hook, replaceSnapshot, setMessage };
 }
 
-describe("useBoardTransfer", () => {
+describe("useBoardTransfer 동작", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("opens and cancels Reset without changing the board", () => {
+    it("보드를 변경하지 않고 초기화 확인을 열거나 취소한다", () => {
         const { result, replaceSnapshot } = setup();
         act(() => result.current.handleResetClick());
         expect(result.current.resetDialogOpen).toBe(true);
@@ -30,7 +30,7 @@ describe("useBoardTransfer", () => {
         expect(replaceSnapshot).not.toHaveBeenCalled();
     });
 
-    it("resets content through the undoable UI replacement without destroying the database", async () => {
+    it("데이터베이스를 제거하지 않고 실행 취소 가능한 UI 교체로 내용을 초기화한다", async () => {
         const { result, replaceSnapshot } = setup();
         await act(async () => result.current.handleResetConfirm());
         expect(replaceSnapshot).toHaveBeenCalledWith(createEmptyBoardSnapshot());
@@ -38,7 +38,7 @@ describe("useBoardTransfer", () => {
         expect(result.current.resetting).toBe(false);
     });
 
-    it("applies an imported snapshot without reloading the page", async () => {
+    it("새로고침 없이 가져온 스냅샷을 적용한다", async () => {
         const snapshot = createEmptyBoardSnapshot();
         vi.mocked(importBoardDatabase).mockResolvedValueOnce(snapshot);
         vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -49,7 +49,7 @@ describe("useBoardTransfer", () => {
         expect(replaceSnapshot).toHaveBeenCalledWith(snapshot);
     });
 
-    it("preserves the current board on a failed import", async () => {
+    it("가져오기에 실패하면 현재 보드를 보존한다", async () => {
         vi.mocked(importBoardDatabase).mockRejectedValueOnce(new Error("Invalid SQLite save"));
         vi.spyOn(window, "confirm").mockReturnValue(true);
         const { result, replaceSnapshot, setMessage } = setup();

@@ -5,8 +5,8 @@ import {
     parseBoardSnapshot,
 } from "@/lib/board-state";
 
-describe("browser SQLite board snapshots", () => {
-    it("accepts a complete local board snapshot", () => {
+describe("브라우저 SQLite 보드 스냅샷", () => {
+    it("완전한 로컬 보드 스냅샷을 허용한다", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.memos.push({
             id: 1, syncId: "memo-1", boardId: 1, content: "Saved memo", x: 1, y: 2, z: 3,
@@ -16,7 +16,7 @@ describe("browser SQLite board snapshots", () => {
         expect(parseBoardSnapshot(snapshot)).toEqual(snapshot);
     });
 
-    it("rejects invalid imported board data", () => {
+    it("가져온 보드 데이터가 잘못되면 거부한다", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.images.push({
             imageId: 1, syncId: "image-1", assetId: "", boardId: 1, url: "javascript:alert(1)", label: null,
@@ -27,7 +27,7 @@ describe("browser SQLite board snapshots", () => {
         expect(() => parseBoardSnapshot(snapshot)).toThrow(/invalid Meldrift Free Edition data/i);
     });
 
-    it("accepts compressed local image bytes", () => {
+    it("압축된 로컬 이미지 바이트를 허용한다", () => {
         const snapshot = createEmptyBoardSnapshot();
         snapshot.images.push({
             imageId: 1, syncId: "image-1", assetId: "asset-1", boardId: 1, url: "", data: new Uint8Array([1, 2, 3]),
@@ -38,7 +38,7 @@ describe("browser SQLite board snapshots", () => {
         expect(parseBoardSnapshot(snapshot).images[0].data).toEqual(new Uint8Array([1, 2, 3]));
     });
 
-    it("allocates positive ids after imported records", () => {
+    it("가져온 레코드 다음의 양수 식별자를 할당한다", () => {
         expect(nextPositiveId([-10, 2, 8, 3])).toBe(9);
     });
 });

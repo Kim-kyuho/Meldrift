@@ -33,8 +33,8 @@ function setup() {
     return { ...hook, memos, images, mermaids, tables };
 }
 
-describe("useCardLayer", () => {
-    it("moves a card to the front and normalizes every local z value", () => {
+describe("useCardLayer 동작", () => {
+    it("카드를 맨 앞으로 옮기고 로컬 z 값을 모두 정규화한다", () => {
         const state = setup();
         act(() => state.result.current.handleCardLayer("memo", 1, "front"));
         expect(state.images.getState()[0].z).toBe(1);
@@ -43,14 +43,14 @@ describe("useCardLayer", () => {
         expect(state.memos.getState()[0].z).toBe(4);
     });
 
-    it("moves a card to the back", () => {
+    it("카드를 맨 뒤로 옮긴다", () => {
         const state = setup();
         act(() => state.result.current.handleCardLayer("table", 4, "back"));
         expect(state.tables.getState()[0].z).toBe(1);
         expect(state.memos.getState()[0].z).toBe(2);
     });
 
-    it("ignores unknown cards regardless of the sign of their IDs", () => {
+    it("식별자의 부호와 관계없이 알 수 없는 카드는 무시한다", () => {
         const state = setup();
         act(() => state.result.current.handleCardLayer("memo", -1, "front"));
         act(() => state.result.current.handleCardLayer("memo", 999, "front"));
@@ -61,7 +61,7 @@ describe("useCardLayer", () => {
         ["memo", "front"], ["memo", "back"],
         ["mermaid", "front"], ["mermaid", "back"],
         ["table", "front"], ["table", "back"],
-    ] as const)("keeps the draft %s layer when inserting after moving it to the %s", async (type, action) => {
+    ] as const)("임시 %s 카드를 %s으로 옮긴 뒤 삽입해도 레이어를 유지한다", async (type, action) => {
         const { result } = renderHook(() => {
             const cardLocationRef = useRef<HTMLDivElement | null>(null);
             const options = { boardId: 1, boardZoom: 1, cardLocationRef };

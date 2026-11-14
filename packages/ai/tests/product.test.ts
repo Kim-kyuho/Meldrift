@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createMeldriftProduct } from "../src/product";
 import { createAssistantSystemPrompt } from "../src/assistant";
 
-describe("createMeldriftProduct", () => {
+describe("createMeldriftProduct 동작", () => {
     it("앱이 넘긴 사용법 본문을 그대로 싣는다", () => {
         const guide = "## 메모\n메모는 더블클릭으로 연다.";
 

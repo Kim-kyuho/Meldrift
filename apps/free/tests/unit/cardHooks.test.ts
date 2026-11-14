@@ -32,11 +32,11 @@ const table: BoardTable = {
     x: 10, y: 20, z: 6, width: 560, height: 360,
 };
 
-describe("card hooks", () => {
+describe("카드 훅", () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
 
-    it("reports geometry separately at drag and resize completion for every card type", () => {
+    it("모든 카드 종류의 드래그·리사이즈 종료 시 위치와 크기를 별도로 전달한다", () => {
         const onGeometryChange = { memo: vi.fn(), image: vi.fn(), mermaid: vi.fn(), table: vi.fn() };
         const common = { isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(), onUpdate: vi.fn(), onInsert: vi.fn(), onDelete: vi.fn() };
         const { result } = renderHook(() => ({
@@ -56,7 +56,7 @@ describe("card hooks", () => {
         expect(common.onInsert).not.toHaveBeenCalled();
     });
 
-    describe("useMemoCard", () => {
+    describe("useMemoCard 동작", () => {
         const setup = (overrides: Partial<Parameters<typeof useMemoCard>[0]> = {}) => {
             const callbacks = {
                 onEditing: vi.fn(), onEditingClear: vi.fn(), onFocus: vi.fn(), onFocusClear: vi.fn(),
@@ -68,14 +68,14 @@ describe("card hooks", () => {
             return { ...hook, ...callbacks };
         };
 
-        it("enters edit mode directly", () => {
+        it("즉시 편집 모드로 진입한다", () => {
             const onEditing = vi.fn();
             const { result } = setup({ onEditing });
             act(() => result.current.editMemo());
             expect(onEditing).toHaveBeenCalledOnce();
         });
 
-        it("saves the latest content and rounded geometry on an empty-board press", () => {
+        it("빈 보드를 누르면 최신 내용과 반올림한 위치·크기를 저장한다", () => {
             const { result, onUpdate, onEditingClear } = setup();
             act(() => result.current.setMemoContent("updated"));
             act(() => result.current.handleDragStop({} as never, { x: 31.6, y: 42.4 } as never));
@@ -87,7 +87,7 @@ describe("card hooks", () => {
             expect(onEditingClear).toHaveBeenCalledOnce();
         });
 
-        it("inserts temporary memos and confirms deletion", () => {
+        it("임시 메모를 삽입하고 삭제를 확정한다", () => {
             const onInsert = vi.fn();
             const onDelete = vi.fn();
             const onEditingClear = vi.fn();
@@ -105,8 +105,8 @@ describe("card hooks", () => {
         });
     });
 
-    describe("useImageCard", () => {
-        it("uses the latest drag state when saving a persisted image", () => {
+    describe("useImageCard 동작", () => {
+        it("저장된 이미지를 저장할 때 최신 드래그 상태를 사용한다", () => {
             const onUpdate = vi.fn();
             const onEditingClear = vi.fn();
             const { result } = renderHook(() => useImageCard({
@@ -120,7 +120,7 @@ describe("card hooks", () => {
             expect(onEditingClear).toHaveBeenCalledOnce();
         });
 
-        it("deletes an image by id", () => {
+        it("식별자로 이미지를 삭제한다", () => {
             const onDelete = vi.fn();
             const { result } = renderHook(() => useImageCard({
                 image, isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(),
@@ -131,8 +131,8 @@ describe("card hooks", () => {
         });
     });
 
-    describe("useMermaidCard", () => {
-        it("inserts current source and geometry after a complete outside press", () => {
+    describe("useMermaidCard 동작", () => {
+        it("카드 밖 누르기가 완료되면 현재 소스와 위치·크기를 삽입한다", () => {
             const onInsert = vi.fn();
             const onEditingClear = vi.fn();
             const { result } = renderHook(() => useMermaidCard({
@@ -150,7 +150,7 @@ describe("card hooks", () => {
             expect(onEditingClear).toHaveBeenCalledOnce();
         });
 
-        it("does not save when the press starts inside the card", () => {
+        it("누르기가 카드 안에서 시작되면 저장하지 않는다", () => {
             const onUpdate = vi.fn();
             renderHook(() => useMermaidCard({
                 mermaid, isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(),
@@ -165,8 +165,8 @@ describe("card hooks", () => {
         });
     });
 
-    describe("useTableCard", () => {
-        it("does not resize or save below the height required by added rows", () => {
+    describe("useTableCard 동작", () => {
+        it("추가된 행에 필요한 최소 높이보다 작게 줄이거나 저장하지 않는다", () => {
             const onUpdate = vi.fn();
             const { result } = renderHook(() => useTableCard({
                 table, isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(),
@@ -188,7 +188,7 @@ describe("card hooks", () => {
             expect(result.current.cardState.height).toBe(464);
         });
 
-        it("updates a persisted table with the latest source and resized geometry", () => {
+        it("저장된 표를 최신 소스와 변경된 위치·크기로 갱신한다", () => {
             const onUpdate = vi.fn();
             const { result } = renderHook(() => useTableCard({
                 table, isEditing: true, onEditing: vi.fn(), onEditingClear: vi.fn(),
@@ -207,7 +207,7 @@ describe("card hooks", () => {
             }));
         });
 
-        it("ignores confirm-dialog presses and confirms deletion explicitly", () => {
+        it("확인 대화상자 누르기는 무시하고 명시적으로 삭제를 확정한다", () => {
             const onUpdate = vi.fn();
             const onDelete = vi.fn();
             const onEditingClear = vi.fn();

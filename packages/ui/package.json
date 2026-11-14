@@ -76,7 +76,7 @@
   "dependencies": {
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
-    "@meldrift/diagram-engine": "^0.1.0",
+    "@meldrift/diagram-engine": "^0.2.0",
     "@meldrift/markdown-engine": "^0.4.0",
     "@meldrift/table-engine": "^0.3.0",
     "lucide-react": "^1.70.0",

@@ -45,8 +45,8 @@ const getAttachmentCards = (planned: PlannedBoard): Rect[] => [
     ...planned.tables,
 ];
 
-describe("memoBlocksToHtml", () => {
-    it("converts each block type to memo editor compatible markup", () => {
+describe("memoBlocksToHtml 동작", () => {
+    it("각 블록을 메모 에디터와 호환되는 마크업으로 변환한다", () => {
         const html = memoBlocksToHtml([
             { type: "heading", level: 2, text: "Overview" },
             { type: "paragraph", text: "First line" },
@@ -64,7 +64,7 @@ describe("memoBlocksToHtml", () => {
         expect(html).toContain("<blockquote><p>quoted</p></blockquote>");
     });
 
-    it("escapes model supplied markup so memo rendering cannot inject nodes", () => {
+    it("모델이 제공한 마크업을 이스케이프해 메모 렌더링 시 노드 삽입을 막는다", () => {
         const html = memoBlocksToHtml([
             { type: "paragraph", text: `<img src=x onerror="alert(1)">` },
             { type: "heading", level: 1, text: "<script>alert(1)</script>" },
@@ -77,13 +77,13 @@ describe("memoBlocksToHtml", () => {
         expect(html).toContain("&lt;script&gt;");
     });
 
-    it("keeps line breaks inside a paragraph as hard breaks", () => {
+    it("문단 안의 줄바꿈을 명시적 줄바꿈으로 유지한다", () => {
         expect(memoBlocksToHtml([{ type: "paragraph", text: "a\nb" }])).toBe("<p>a<br>b</p>");
     });
 });
 
-describe("estimateMemoHeight", () => {
-    it("stays within the configured bounds", () => {
+describe("estimateMemoHeight 동작", () => {
+    it("설정된 경계를 벗어나지 않는다", () => {
         const short = estimateMemoHeight([{ type: "paragraph", text: "hi" }]);
         const huge = estimateMemoHeight([
             { type: "bulletList", items: Array.from({ length: 200 }, () => "a long bullet item text") },
@@ -93,7 +93,7 @@ describe("estimateMemoHeight", () => {
         expect(huge).toBe(maxMemoHeight);
     });
 
-    it("grows vertically as content grows", () => {
+    it("내용이 늘어나면 세로로 확장한다", () => {
         const heights = [1, 5, 15, 30].map((count) =>
             estimateMemoHeight([
                 { type: "bulletList", items: Array.from({ length: count }, () => "bullet item") },
@@ -107,21 +107,21 @@ describe("estimateMemoHeight", () => {
     });
 
     // 한글은 반각 글자의 두 배 폭을 쓴다. 글자 수만 세면 카드 밖으로 넘친다.
-    it("reserves more height for wide characters than for latin text", () => {
+    it("라틴 문자보다 폭이 넓은 문자에 더 많은 높이를 할당한다", () => {
         const latin = estimateMemoHeight([{ type: "paragraph", text: "a".repeat(200) }]);
         const korean = estimateMemoHeight([{ type: "paragraph", text: "가".repeat(200) }]);
 
         expect(korean).toBeGreaterThan(latin);
     });
 
-    it("counts explicit line breaks as separate lines", () => {
+    it("명시적 줄바꿈을 별도 줄로 계산한다", () => {
         const single = estimateMemoHeight([{ type: "paragraph", text: "one line" }]);
         const multi = estimateMemoHeight([{ type: "paragraph", text: "a\nb\nc\nd\ne\nf\ng\nh" }]);
 
         expect(multi).toBeGreaterThan(single);
     });
 
-    it("gives headings more height than a paragraph of the same text", () => {
+    it("같은 텍스트의 일반 문단보다 제목에 더 많은 높이를 할당한다", () => {
         const paragraph = estimateMemoHeight([{ type: "paragraph", text: "제목으로 쓸 문장" }]);
         const heading = estimateMemoHeight([{ type: "heading", level: 1, text: "제목으로 쓸 문장" }]);
 
@@ -129,18 +129,18 @@ describe("estimateMemoHeight", () => {
     });
 });
 
-describe("memo card sizing", () => {
-    it("keeps memo width at the 400 maximum", () => {
+describe("메모 카드 크기 계산", () => {
+    it("메모 너비를 최대 400으로 제한한다", () => {
         expect(memoWidth).toBe(400);
     });
 
-    it("allows memos to grow well past the old fixed height", () => {
+    it("기존 고정 높이보다 훨씬 크게 메모를 확장할 수 있다", () => {
         expect(maxMemoHeight).toBeGreaterThan(minMemoHeight * 2);
     });
 });
 
-describe("planTableToSource", () => {
-    it("maps rows onto generated column ids and pads missing cells", () => {
+describe("planTableToSource 동작", () => {
+    it("행을 생성된 열 식별자에 대응시키고 누락된 셀을 채운다", () => {
         const source = planTableToSource(["Name", "Role"], [["Kyu", "Owner"], ["Solo"]]);
 
         expect(source.columns.map((column) => column.name)).toEqual(["Name", "Role"]);
@@ -152,7 +152,7 @@ describe("planTableToSource", () => {
         expect(source.rows[1].cells[roleColumn.id]).toBe("");
     });
 
-    it("gives every column and row a distinct id", () => {
+    it("각 열과 행에 서로 다른 식별자를 부여한다", () => {
         const source = planTableToSource(["A", "B"], [["1", "2"], ["3", "4"]]);
         const ids = [...source.columns.map((c) => c.id), ...source.rows.map((r) => r.id)];
 
@@ -160,7 +160,7 @@ describe("planTableToSource", () => {
     });
 });
 
-describe("layoutBoardPlan", () => {
+describe("layoutBoardPlan 동작", () => {
     const plan: BoardPlan = {
         sections: [
             {
@@ -181,7 +181,7 @@ describe("layoutBoardPlan", () => {
         ],
     };
 
-    it("creates one memo per section in order", () => {
+    it("섹션마다 메모를 하나씩 순서대로 생성한다", () => {
         const planned = layoutBoardPlan(plan, { x: 0, y: 0 }, largeBoard);
 
         expect(planned.memos).toHaveLength(4);
@@ -190,7 +190,7 @@ describe("layoutBoardPlan", () => {
         expect(planned.memos[0].content).toContain("Architecture");
     });
 
-    it("never places a card at a negative coordinate", () => {
+    it("카드를 음수 좌표에 배치하지 않는다", () => {
         const planned = layoutBoardPlan(plan, { x: 0, y: 0 }, largeBoard);
 
         [...planned.memos, ...getAttachmentCards(planned)].forEach((card) => {
@@ -199,7 +199,7 @@ describe("layoutBoardPlan", () => {
         });
     });
 
-    it("stacks memos in a single column with increasing y", () => {
+    it("y 좌표를 늘리며 한 열에 메모를 쌓는다", () => {
         const planned = layoutBoardPlan(plan, { x: 40, y: 60 }, largeBoard);
 
         planned.memos.forEach((memo) => expect(memo.x).toBe(40));
@@ -208,7 +208,7 @@ describe("layoutBoardPlan", () => {
         });
     });
 
-    it("attaches each card to exactly one memo, at that memo's top-right corner", () => {
+    it("각 카드를 정확히 한 메모의 오른쪽 위 모서리에 연결한다", () => {
         const planned = layoutBoardPlan(plan, { x: 0, y: 0 }, largeBoard);
         // 첨부가 있는 섹션의 인덱스와, 배치된 카드 순서를 맞춰 확인한다.
         const attachedMemoIndexes = [0, 2, 3];
@@ -233,7 +233,7 @@ describe("layoutBoardPlan", () => {
         });
     });
 
-    it("keeps the overlap smaller than every card dimension so containment is strict", () => {
+    it("완전히 포함되지 않도록 겹침 크기를 모든 카드 치수보다 작게 유지한다", () => {
         const planned = layoutBoardPlan(plan, { x: 0, y: 0 }, largeBoard);
 
         getAttachmentCards(planned).forEach((card) => {
@@ -242,7 +242,7 @@ describe("layoutBoardPlan", () => {
         });
     });
 
-    it("leaves sections without an attachment unattached", () => {
+    it("첨부가 없는 섹션에는 카드를 연결하지 않는다", () => {
         const planned = layoutBoardPlan(plan, { x: 0, y: 0 }, largeBoard);
         const unattachedMemo = planned.memos[1];
 
@@ -253,7 +253,7 @@ describe("layoutBoardPlan", () => {
         });
     });
 
-    it("holds the corner contract for a plan where every section has an attachment", () => {
+    it("모든 섹션에 첨부가 있는 계획에서도 모서리 연결 규칙을 유지한다", () => {
         const densePlan: BoardPlan = {
             sections: Array.from({ length: 12 }, (_, index) => ({
                 blocks: [{ type: "paragraph" as const, text: `section ${index}` }],
@@ -276,19 +276,19 @@ describe("layoutBoardPlan", () => {
         });
     });
 
-    it("uses the memo width constant for every memo", () => {
+    it("모든 메모에 메모 너비 상수를 사용한다", () => {
         const planned = layoutBoardPlan(plan, { x: 0, y: 0 }, largeBoard);
 
         planned.memos.forEach((memo) => expect(memo.width).toBe(memoWidth));
     });
 });
 
-describe("boardPlanSchema", () => {
-    it("rejects a plan with no sections", () => {
+describe("boardPlanSchema 동작", () => {
+    it("섹션이 없는 계획을 거부한다", () => {
         expect(boardPlanSchema.safeParse({ sections: [] }).success).toBe(false);
     });
 
-    it("rejects a memo colour outside the allowed palette", () => {
+    it("허용된 팔레트 밖의 메모 색상을 거부한다", () => {
         const result = boardPlanSchema.safeParse({
             sections: [{ blocks: [{ type: "paragraph", text: "x" }], color: "#000000" }],
         });
@@ -296,7 +296,7 @@ describe("boardPlanSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("rejects a heading level outside 1-6", () => {
+    it("1~6 범위를 벗어난 제목 수준을 거부한다", () => {
         const result = boardPlanSchema.safeParse({
             sections: [{ blocks: [{ type: "heading", level: 7, text: "x" }] }],
         });
@@ -304,7 +304,7 @@ describe("boardPlanSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("accepts a minimal valid plan", () => {
+    it("최소 조건을 만족하는 계획을 허용한다", () => {
         const result = boardPlanSchema.safeParse({
             sections: [{ blocks: [{ type: "paragraph", text: "hello" }] }],
         });
@@ -314,7 +314,7 @@ describe("boardPlanSchema", () => {
 });
 
 // 실제로 보드 밖에 카드가 배치되는 버그가 있었다. 아래 테스트가 그 회귀를 막는다.
-describe("layoutBoardPlan board bounds", () => {
+describe("보드 계획 배치의 보드 경계", () => {
     const smallBoard = { width: 3840, height: 2160 };
 
     const makePlan = (count: number): BoardPlan => ({
@@ -330,7 +330,7 @@ describe("layoutBoardPlan board bounds", () => {
         ...planned.tables,
     ];
 
-    it("keeps every card inside the board for a plan that cannot fit in one column", () => {
+    it("한 열에 담을 수 없는 계획도 모든 카드를 보드 안에 유지한다", () => {
         const planned = layoutBoardPlan(makePlan(12), { x: 0, y: 0 }, smallBoard);
 
         expect(planned.memos.length).toBeGreaterThan(0);
@@ -342,14 +342,14 @@ describe("layoutBoardPlan board bounds", () => {
         });
     });
 
-    it("wraps into additional columns instead of running off the bottom", () => {
+    it("보드 아래로 벗어나지 않고 다음 열에 배치한다", () => {
         const planned = layoutBoardPlan(makePlan(8), { x: 0, y: 0 }, smallBoard);
         const columns = new Set(planned.memos.map((memo) => memo.x));
 
         expect(columns.size).toBeGreaterThan(1);
     });
 
-    it("still attaches each card to exactly one memo after wrapping", () => {
+    it("다음 열에 배치한 뒤에도 각 카드를 정확히 한 메모에 연결한다", () => {
         const planned = layoutBoardPlan(makePlan(10), { x: 0, y: 0 }, smallBoard);
 
         planned.tables.forEach((card) => {
@@ -361,7 +361,7 @@ describe("layoutBoardPlan board bounds", () => {
         });
     });
 
-    it("clamps an origin that points outside the board back inside", () => {
+    it("보드 밖을 가리키는 시작점을 보드 안으로 제한한다", () => {
         const planned = layoutBoardPlan(makePlan(2), { x: 99999, y: 99999 }, smallBoard);
 
         allCards(planned).forEach((card) => {
@@ -370,7 +370,7 @@ describe("layoutBoardPlan board bounds", () => {
         });
     });
 
-    it("reports sections it could not place instead of drawing them off board", () => {
+    it("보드 밖에 그리는 대신 배치하지 못한 섹션을 알린다", () => {
         const tinyBoard = { width: 1200, height: 900 };
         const planned = layoutBoardPlan(makePlan(20), { x: 0, y: 0 }, tinyBoard);
 
@@ -382,7 +382,7 @@ describe("layoutBoardPlan board bounds", () => {
         });
     });
 
-    it("drops everything when the board is too small for a single card", () => {
+    it("카드 하나도 담을 수 없을 만큼 작은 보드에서는 모든 섹션을 제외한다", () => {
         const planned = layoutBoardPlan(makePlan(3), { x: 0, y: 0 }, { width: 200, height: 200 });
 
         expect(planned.memos).toHaveLength(0);
@@ -390,19 +390,19 @@ describe("layoutBoardPlan board bounds", () => {
     });
 });
 
-describe("getPlanCapacity", () => {
-    it("reports more capacity for a bigger board", () => {
+describe("getPlanCapacity 동작", () => {
+    it("더 큰 보드에서 더 많은 배치 용량을 반환한다", () => {
         expect(getPlanCapacity({ width: 7680, height: 4320 })).toBeGreaterThan(
             getPlanCapacity({ width: 3840, height: 2160 })
         );
     });
 
-    it("reports zero for a board that cannot hold a section", () => {
+    it("섹션 하나도 담을 수 없는 보드에서는 용량 0을 반환한다", () => {
         expect(getPlanCapacity({ width: 200, height: 200 })).toBe(0);
     });
 });
 
-describe("layoutArrangement", () => {
+describe("layoutArrangement 동작", () => {
     const bounds = { width: 3840, height: 2160 };
     const existing = {
         memos: [
@@ -414,7 +414,7 @@ describe("layoutArrangement", () => {
         tables: [{ id: 20, width: 560, height: 360 }],
     };
 
-    it("moves the referenced cards and keeps the corner contract", () => {
+    it("지정된 카드를 이동하고 모서리 연결 규칙을 유지한다", () => {
         const arranged = layoutArrangement(
             {
                 sections: [
@@ -448,7 +448,7 @@ describe("layoutArrangement", () => {
         });
     });
 
-    it("ignores unknown and duplicated ids", () => {
+    it("알 수 없거나 중복된 식별자는 무시한다", () => {
         const arranged = layoutArrangement(
             {
                 sections: [
@@ -467,7 +467,7 @@ describe("layoutArrangement", () => {
         expect(arranged.tables).toHaveLength(0);
     });
 
-    it("keeps arranged cards inside the board", () => {
+    it("재배치한 카드를 보드 안에 유지한다", () => {
         const many = {
             memos: Array.from({ length: 12 }, (_, index) => ({ id: index + 1, width: 300, height: 200 })),
             mermaids: [],
@@ -489,7 +489,7 @@ describe("layoutArrangement", () => {
     });
 });
 
-describe("layout modes", () => {
+describe("배치 모드", () => {
     const board = { width: 7680, height: 4320 };
 
     const makePlan = (count: number, extra: Partial<BoardPlan> = {}, withParents = false): BoardPlan => ({
@@ -532,7 +532,7 @@ describe("layout modes", () => {
     };
 
     layoutModes.forEach((layout) => {
-        it(`keeps every card in bounds and attached to one memo (${layout})`, () => {
+        it(`모든 카드를 보드 안에 두고 하나의 메모에 연결한다: ${layout}`, () => {
             const planned = layoutBoardPlan(
                 makePlan(12, { layout }, layout === "tree"),
                 { x: 0, y: 0 },
@@ -544,14 +544,14 @@ describe("layout modes", () => {
         });
     });
 
-    it("flows grid sections left to right before wrapping down", () => {
+    it("격자 섹션을 왼쪽에서 오른쪽으로 배치한 뒤 다음 행으로 이동한다", () => {
         const planned = layoutBoardPlan(makePlan(6, { layout: "grid" }), { x: 0, y: 0 }, board);
 
         expect(planned.memos[1].x).toBeGreaterThan(planned.memos[0].x);
         expect(planned.memos[1].y).toBe(planned.memos[0].y);
     });
 
-    it("wraps a grid down when the row is full", () => {
+    it("격자 행이 가득 차면 다음 행에 배치한다", () => {
         const narrowBoard = { width: 2200, height: 4320 };
         const planned = layoutBoardPlan(makePlan(6, { layout: "grid" }), { x: 0, y: 0 }, narrowBoard);
         const rows = new Set(planned.memos.map((memo) => memo.y));
@@ -559,7 +559,7 @@ describe("layout modes", () => {
         expect(rows.size).toBeGreaterThan(1);
     });
 
-    it("puts tree children to the right of their parent", () => {
+    it("트리 자식을 부모의 오른쪽에 배치한다", () => {
         const plan: BoardPlan = {
             layout: "tree",
             sections: [
@@ -579,7 +579,7 @@ describe("layout modes", () => {
         expect(childB.y).toBeGreaterThanOrEqual(childA.y + childA.height);
     });
 
-    it("uses less vertical space for a tree than for a single column", () => {
+    it("트리 배치는 단일 열보다 세로 공간을 적게 사용한다", () => {
         const bottom = (planned: PlannedBoard) =>
             Math.max(...planned.memos.map((memo) => memo.y + memo.height));
 
@@ -589,7 +589,7 @@ describe("layout modes", () => {
         expect(bottom(tree)).toBeLessThan(bottom(column));
     });
 
-    it("treats a forward or self parentIndex as a root instead of looping", () => {
+    it("앞쪽이나 자신을 가리키는 parentIndex는 순환시키지 않고 루트로 취급한다", () => {
         const plan: BoardPlan = {
             layout: "tree",
             sections: [
@@ -604,13 +604,13 @@ describe("layout modes", () => {
         expectContract(planned);
     });
 
-    it("defaults to column when no layout is given", () => {
+    it("배치 모드가 없으면 열 배치를 기본값으로 사용한다", () => {
         const planned = layoutBoardPlan(makePlan(4), { x: 40, y: 40 }, board);
 
         expect(new Set(planned.memos.map((memo) => memo.x)).size).toBe(1);
     });
 
-    it("keeps the contract for an arranged tree of existing cards", () => {
+    it("기존 카드의 트리를 재배치해도 연결 규칙을 유지한다", () => {
         const existing = {
             memos: Array.from({ length: 7 }, (_, index) => ({ id: index + 1, width: 300, height: 200 })),
             mermaids: [{ id: 100, width: 480, height: 360 }],
@@ -653,8 +653,8 @@ describe("layout modes", () => {
     });
 });
 
-describe("boardEditSchema", () => {
-    it("accepts partial memo edits", () => {
+describe("boardEditSchema 동작", () => {
+    it("메모의 일부 필드 편집을 허용한다", () => {
         expect(
             boardEditSchema.safeParse({ memos: [{ id: 3, color: "#e0f2fe" }] }).success
         ).toBe(true);
@@ -665,27 +665,27 @@ describe("boardEditSchema", () => {
         ).toBe(true);
     });
 
-    it("accepts an empty object because every card type is optional", () => {
+    it("모든 카드 종류가 선택 항목이므로 빈 객체를 허용한다", () => {
         expect(boardEditSchema.safeParse({}).success).toBe(true);
     });
 
     // 임시 카드(음수 ID)는 아직 서버에 없으므로 고칠 대상이 될 수 없다.
-    it("rejects non-positive card ids", () => {
+    it("양수가 아닌 카드 식별자를 거부한다", () => {
         expect(boardEditSchema.safeParse({ memos: [{ id: -1, color: "#e0f2fe" }] }).success).toBe(false);
         expect(boardEditSchema.safeParse({ mermaids: [{ id: 0, source: "x" }] }).success).toBe(false);
     });
 
-    it("rejects a colour outside the palette", () => {
+    it("팔레트 밖의 색상을 거부한다", () => {
         expect(boardEditSchema.safeParse({ memos: [{ id: 1, color: "#123456" }] }).success).toBe(false);
     });
 
-    it("rejects an empty mermaid source", () => {
+    it("비어 있는 Mermaid 소스를 거부한다", () => {
         expect(boardEditSchema.safeParse({ mermaids: [{ id: 1, source: "" }] }).success).toBe(false);
     });
 });
 
-describe("boardDeletionSchema", () => {
-    it("accepts id lists for every card type", () => {
+describe("boardDeletionSchema 동작", () => {
+    it("모든 카드 종류의 식별자 목록을 허용한다", () => {
         const result = boardDeletionSchema.safeParse({
             memoIds: [1, 2],
             mermaidIds: [3],
@@ -696,13 +696,13 @@ describe("boardDeletionSchema", () => {
         expect(result.success).toBe(true);
     });
 
-    it("rejects non-positive ids so temporary cards cannot be targeted", () => {
+    it("임시 카드를 대상으로 지정하지 못하도록 양수가 아닌 식별자를 거부한다", () => {
         expect(boardDeletionSchema.safeParse({ memoIds: [-1] }).success).toBe(false);
         expect(boardDeletionSchema.safeParse({ tableIds: [0] }).success).toBe(false);
     });
 });
 
-describe("scatter layout", () => {
+describe("흩뿌리기 배치", () => {
     // 시드 고정 PRNG. 무작위 배치라도 테스트는 재현 가능해야 한다.
     const mulberry32 = (seed: number) => () => {
         seed = (seed + 0x6d2b79f5) | 0;
@@ -728,18 +728,18 @@ describe("scatter layout", () => {
         })),
     });
 
-    it("is accepted as a layout mode", () => {
+    it("배치 모드로 허용한다", () => {
         expect(boardPlanSchema.safeParse(scatterPlan(3)).success).toBe(true);
     });
 
-    it("produces different coordinates for different seeds", () => {
+    it("서로 다른 시드에서는 다른 좌표를 생성한다", () => {
         const a = layoutBoardPlan(scatterPlan(6), { x: 0, y: 0 }, largeBoard, mulberry32(1));
         const b = layoutBoardPlan(scatterPlan(6), { x: 0, y: 0 }, largeBoard, mulberry32(999));
 
         expect(a.memos.map((m) => [m.x, m.y])).not.toEqual(b.memos.map((m) => [m.x, m.y]));
     });
 
-    it("is deterministic for the same seed", () => {
+    it("같은 시드에서는 같은 결과를 생성한다", () => {
         const a = layoutBoardPlan(scatterPlan(6), { x: 0, y: 0 }, largeBoard, mulberry32(7));
         const b = layoutBoardPlan(scatterPlan(6), { x: 0, y: 0 }, largeBoard, mulberry32(7));
 
@@ -747,7 +747,7 @@ describe("scatter layout", () => {
     });
 
     // 핵심 불변식 3개를 여러 시드에서 전수 확인한다.
-    it("never overlaps memos, never crosses corners, never leaves the board", () => {
+    it("메모를 겹치거나 모서리를 침범하거나 보드 밖으로 배치하지 않는다", () => {
         for (let seed = 0; seed < 60; seed += 1) {
             const planned = layoutBoardPlan(scatterPlan(12), { x: 0, y: 0 }, largeBoard, mulberry32(seed));
             const cards = getAttachmentCards(planned);
@@ -778,7 +778,7 @@ describe("scatter layout", () => {
         }
     });
 
-    it("also keeps attachment cards from overlapping each other", () => {
+    it("첨부 카드끼리도 겹치지 않게 한다", () => {
         for (let seed = 0; seed < 30; seed += 1) {
             const planned = layoutBoardPlan(scatterPlan(12), { x: 0, y: 0 }, largeBoard, mulberry32(seed));
             const cards = getAttachmentCards(planned);
@@ -792,7 +792,7 @@ describe("scatter layout", () => {
     });
 
     // 격자에 지터만 주면 행·열이 남아 "삐뚤어진 그리드"가 된다. 좌표가 실제로 흩어져야 한다.
-    it("does not line cards up in rows or columns", () => {
+    it("카드를 행이나 열에 맞춰 정렬하지 않는다", () => {
         const gridded = layoutBoardPlan({ ...scatterPlan(12), layout: "grid" }, { x: 0, y: 0 }, largeBoard);
         const scattered = layoutBoardPlan(scatterPlan(12), { x: 0, y: 0 }, largeBoard, mulberry32(5));
 
@@ -805,7 +805,7 @@ describe("scatter layout", () => {
     });
 
     // 카드 순서와 화면 위치의 상관이 끊겨야 진짜 랜덤이다.
-    it("breaks the left-to-right relationship between order and position", () => {
+    it("순서와 좌우 위치 사이의 상관관계를 없앤다", () => {
         let monotonicRuns = 0;
         const seeds = 40;
 
@@ -823,7 +823,7 @@ describe("scatter layout", () => {
         expect(monotonicRuns).toBeLessThan(seeds / 4);
     });
 
-    it("spreads cards across the whole board, not just one band", () => {
+    it("일부 띠 영역이 아니라 보드 전체에 카드를 분산한다", () => {
         const planned = layoutBoardPlan(scatterPlan(16), { x: 0, y: 0 }, largeBoard, mulberry32(11));
         const xs = planned.memos.map((memo) => memo.x);
         const ys = planned.memos.map((memo) => memo.y);
@@ -833,7 +833,7 @@ describe("scatter layout", () => {
         expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(largeBoard.height / 4);
     });
 
-    it("still holds the invariants on a board that is nearly full", () => {
+    it("거의 가득 찬 보드에서도 배치 규칙을 유지한다", () => {
         const smallBoard = { width: 1920, height: 1080 };
         const planned = layoutBoardPlan(scatterPlan(24), { x: 0, y: 0 }, smallBoard, mulberry32(42));
 
@@ -849,8 +849,8 @@ describe("scatter layout", () => {
     });
 });
 
-describe("resolveMemoCornerLinks & getCardCornerAnchor", () => {
-    it("renders dashed links only for non-overlapping cards within 50px of memo corners, picking the highest z", () => {
+describe("메모 모서리 연결과 카드 모서리 기준점 계산", () => {
+    it("메모 모서리 50px 안의 겹치지 않는 카드 중 z가 가장 높은 카드에만 점선을 표시한다", () => {
         const memos = [
             { id: 1, sortOrder: 1, x: 100, y: 100, width: 200, height: 150 },
         ];
@@ -879,7 +879,7 @@ describe("resolveMemoCornerLinks & getCardCornerAnchor", () => {
         ]);
     });
 
-    it("computes the closest boundary anchor point on an outside card", () => {
+    it("외부 카드 경계에서 가장 가까운 연결 기준점을 계산한다", () => {
         const card = { x: 330, y: 120, width: 120, height: 100 };
         const anchor = getCardCornerAnchor(card, 300, 100);
 

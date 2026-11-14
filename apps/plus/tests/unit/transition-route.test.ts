@@ -18,7 +18,7 @@ const call = (boardId = "7") => POST(
     { params: Promise.resolve({ boardId }) },
 );
 
-describe("POST /api/boards/[boardId]/transition", () => {
+describe("보드 전환 API: POST /api/boards/[boardId]/transition", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.user.mockResolvedValue({ id: 1, role: "admin", isApproved: true });
@@ -29,21 +29,21 @@ describe("POST /api/boards/[boardId]/transition", () => {
         });
     });
 
-    it("moves the board and reports what it carried over", async () => {
+    it("보드를 전환하고 이전한 내용을 알린다", async () => {
         const response = await call();
 
         expect(await response.json()).toMatchObject({ ok: true, source: "snapshot", revision: 4, assets: 1 });
         expect(mocks.transition).toHaveBeenCalledWith({ boardId: 7, title: "Board", width: 100, height: 80 });
     });
 
-    it.each([["user"], [undefined]])("only an administrator can move a board (%s)", async (role) => {
+    it.each([["user"], [undefined]])("관리자만 보드를 전환할 수 있다: %s", async (role) => {
         mocks.user.mockResolvedValue(role ? { id: 1, role } : null);
 
         expect((await call()).status).toBe(403);
         expect(mocks.transition).not.toHaveBeenCalled();
     });
 
-    it("separates a bad board id from a missing board", async () => {
+    it("잘못된 보드 식별자와 존재하지 않는 보드를 구분한다", async () => {
         expect((await call("0")).status).toBe(400);
 
         mocks.limit.mockResolvedValue([]);
@@ -51,7 +51,7 @@ describe("POST /api/boards/[boardId]/transition", () => {
         expect(mocks.transition).not.toHaveBeenCalled();
     });
 
-    it("reports a failed check as a conflict and leaves the board blocked", async () => {
+    it("검증 실패를 충돌로 알리고 보드를 차단 상태로 유지한다", async () => {
         mocks.transition.mockRejectedValue(new TransitionError("Moved 0 memos but the source had 1."));
 
         const response = await call();

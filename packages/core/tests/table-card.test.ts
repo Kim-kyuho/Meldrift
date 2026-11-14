@@ -6,12 +6,12 @@ import {
     tableSourceToMarkdown,
 } from "../src/table-card";
 
-describe("tableSourceSchema", () => {
-    it("accepts a valid table source", () => {
+describe("tableSourceSchema 동작", () => {
+    it("유효한 표 소스를 허용한다", () => {
         expect(tableSourceSchema.safeParse(defaultTableSource).success).toBe(true);
     });
 
-    it("keeps saved row heights", () => {
+    it("저장된 행 높이를 유지한다", () => {
         const parsed = tableSourceSchema.parse({
             columns: [{ id: "name", name: "Name" }],
             rows: [{ id: "row-1", cells: { name: "Kyu" }, height: 64 }],
@@ -24,7 +24,7 @@ describe("tableSourceSchema", () => {
         }).success).toBe(false);
     });
 
-    it("rejects empty columns and invalid cell values", () => {
+    it("빈 열 목록과 잘못된 셀 값을 거부한다", () => {
         expect(tableSourceSchema.safeParse({ columns: [], rows: [] }).success).toBe(false);
         expect(tableSourceSchema.safeParse({
             columns: [{ id: "name", name: "Name" }],
@@ -37,16 +37,16 @@ describe("tableSourceSchema", () => {
     });
 });
 
-describe("createTableItemId", () => {
-    it("creates unique ids without crypto.randomUUID", () => {
+describe("createTableItemId 동작", () => {
+    it("crypto.randomUUID 없이 고유 식별자를 생성한다", () => {
         const ids = new Set(Array.from({ length: 50 }, () => createTableItemId()));
 
         expect(ids.size).toBe(50);
     });
 });
 
-describe("tableSourceToMarkdown", () => {
-    it("converts columns and rows to a GFM table", () => {
+describe("tableSourceToMarkdown 동작", () => {
+    it("열과 행을 GFM 표로 변환한다", () => {
         expect(tableSourceToMarkdown({
             columns: [
                 { id: "name", name: "Name" },
@@ -60,7 +60,7 @@ describe("tableSourceToMarkdown", () => {
         ].join("\n"));
     });
 
-    it("escapes pipes, converts line breaks, and fills missing cells", () => {
+    it("파이프 문자를 이스케이프하고 줄바꿈을 변환하며 누락된 셀을 채운다", () => {
         expect(tableSourceToMarkdown({
             columns: [
                 { id: "a", name: "A|B" },

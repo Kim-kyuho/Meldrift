@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBoardMemoFocus } from "@meldrift/ui/useBoardMemoFocus";
 
-describe("useBoardMemoFocus", () => {
+describe("useBoardMemoFocus 동작", () => {
     beforeEach(() => {
         vi.useFakeTimers();
         Object.defineProperty(Element.prototype, "scrollIntoView", {
@@ -13,7 +13,7 @@ describe("useBoardMemoFocus", () => {
 
     afterEach(() => vi.useRealTimers());
 
-    it("focuses the first memo in order initially and scrolls it into view", () => {
+    it("처음에 순서상 첫 메모에 초점을 맞추고 표시 영역으로 스크롤한다", () => {
         const target = document.createElement("div");
         target.className = "memo-rnd-2";
         document.body.appendChild(target);
@@ -30,7 +30,7 @@ describe("useBoardMemoFocus", () => {
         });
     });
 
-    it("moves between memos and reports both boundaries", () => {
+    it("메모 사이를 이동하고 양쪽 경계를 알린다", () => {
         const { result } = renderHook(() =>
             useBoardMemoFocus([{ id: 1, sortOrder: 1 }, { id: 3, sortOrder: 2 }]));
         act(() => vi.runAllTimers());
@@ -46,7 +46,7 @@ describe("useBoardMemoFocus", () => {
         expect(result.current.memoMessage).toBe("Prev memo does not exist.");
     });
 
-    it("reports empty memo navigation", () => {
+    it("메모가 없는 탐색 상태를 알린다", () => {
         const { result } = renderHook(() => useBoardMemoFocus([]));
 
         act(() => result.current.handleFocusPrevMemo());
@@ -55,7 +55,7 @@ describe("useBoardMemoFocus", () => {
         expect(result.current.memoMessage).toBe("No memo exist.");
     });
 
-    it("focuses a memo by its sorted number and reports an invalid number", () => {
+    it("정렬된 메모 번호로 초점을 이동하고 잘못된 번호를 알린다", () => {
         const { result } = renderHook(() =>
             useBoardMemoFocus([{ id: 8, sortOrder: 3 }, { id: 2, sortOrder: 1 }, { id: 5, sortOrder: 2 }]));
         act(() => vi.runAllTimers());
@@ -70,7 +70,7 @@ describe("useBoardMemoFocus", () => {
         expect(result.current.focusedMemoId).toBe(5);
     });
 
-    it("numbers memos by their order instead of their id", () => {
+    it("식별자가 아니라 메모 순서대로 연번을 부여한다", () => {
         const { result } = renderHook(() =>
             useBoardMemoFocus([{ id: 1, sortOrder: 3 }, { id: 2, sortOrder: 1 }, { id: 3, sortOrder: 2 }]));
         act(() => vi.runAllTimers());

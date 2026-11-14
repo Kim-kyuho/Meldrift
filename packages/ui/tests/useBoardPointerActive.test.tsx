@@ -15,8 +15,8 @@ function Harness() {
     </>;
 }
 
-describe("useBoardPointerActive", () => {
-    it("ends a drawing gesture even when its layer stops propagation", () => {
+describe("useBoardPointerActive 동작", () => {
+    it("레이어가 전파를 막아도 드로잉 제스처를 종료한다", () => {
         render(<Harness />);
         fireEvent.pointerDown(screen.getByTestId("drawing"), { pointerId: 1 });
         expect(screen.getByText("true")).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe("useBoardPointerActive", () => {
         expect(screen.getByText("false")).toBeInTheDocument();
     });
 
-    it("tracks multiple pointers until all have ended, including an outside release", () => {
+    it("영역 밖에서 놓은 경우를 포함해 모든 포인터가 끝날 때까지 추적한다", () => {
         render(<Harness />);
         fireEvent.pointerDown(screen.getByTestId("board"), { pointerId: 1 });
         fireEvent.pointerDown(screen.getByTestId("board"), { pointerId: 2 });
@@ -34,7 +34,7 @@ describe("useBoardPointerActive", () => {
         expect(screen.getByText("false")).toBeInTheDocument();
     });
 
-    it("handles Pencil hover without mistaking pressure for a lifted pen", () => {
+    it("Pencil의 공중 이동과 실제 접촉을 압력으로 구분한다", () => {
         render(<Harness />);
         fireEvent.pointerDown(screen.getByTestId("board"), { pointerId: 1, pointerType: "pen" });
         fireEvent.pointerMove(window, { pointerId: 1, pointerType: "pen", buttons: 0, pressure: 0.5 });
@@ -43,7 +43,7 @@ describe("useBoardPointerActive", () => {
         expect(screen.getByText("false")).toBeInTheDocument();
     });
 
-    it("ignores toolbar presses and clears active input on blur", () => {
+    it("툴바 누르기는 무시하고 초점을 잃으면 활성 입력을 지운다", () => {
         render(<Harness />);
         fireEvent.pointerDown(screen.getByTestId("outside"), { pointerId: 1 });
         expect(screen.getByText("false")).toBeInTheDocument();

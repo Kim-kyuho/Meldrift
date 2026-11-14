@@ -7,7 +7,7 @@ test.describe.configure({ timeout: 90000 });
 const saved = (page: Page) => page.getByRole("status").filter({ hasText: /^Saved$/ });
 
 async function openBoard(page: Page) {
-    expect(await openTestBoard(page), "A board metadata fixture is required for delta E2E").toBe(true);
+    expect(await openTestBoard(page), "변경분 동기화 E2E 테스트에는 보드 메타데이터 픽스처가 필요하다").toBe(true);
     await expect(saved(page)).toBeVisible({ timeout: 20000 });
 }
 
@@ -36,7 +36,7 @@ async function redImage(page: Page) {
     return { name: "delta-red.png", mimeType: "image/png", buffer: Buffer.from(base64, "base64") };
 }
 
-test("syncs Undo and Redo with increasing revisions without re-uploading image geometry", async ({ page, context }) => {
+test("이미지 바이너리를 재전송하지 않고 리비전을 증가시키며 실행 취소·다시 실행을 동기화한다", async ({ page, context }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -73,7 +73,7 @@ test("syncs Undo and Redo with increasing revisions without re-uploading image g
     expect(server.unexpected).toEqual([]);
 });
 
-test("syncs three identical images separately and restores them from the server in a fresh browser context", async ({ page, context, browser }) => {
+test("같은 이미지 세 장을 따로 동기화하고 새 브라우저 컨텍스트에서 서버 데이터로 복원한다", async ({ page, context, browser }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -105,7 +105,7 @@ test("syncs three identical images separately and restores them from the server 
     }
 });
 
-test("moving an image sends geometry only and captures its pixels in the preview", async ({ page, context }, testInfo) => {
+test("이미지 이동 시 위치·크기만 전송하고 미리보기에 이미지 픽셀을 포함한다", async ({ page, context }, testInfo) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -155,7 +155,7 @@ test("moving an image sends geometry only and captures its pixels in the preview
     expect(server.unexpected).toEqual([]);
 });
 
-test("keeps failed changes in IndexedDB across reload and retries the same mutation", async ({ page, context }) => {
+test("실패한 변경을 새로고침 후에도 IndexedDB에 유지하고 같은 변경 요청을 재시도한다", async ({ page, context }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -173,7 +173,7 @@ test("keeps failed changes in IndexedDB across reload and retries the same mutat
     expect(server.unexpected).toEqual([]);
 });
 
-test("recovers a committed mutation after its response is lost without creating a duplicate", async ({ page, context }) => {
+test("응답이 유실된 확정 요청을 중복 생성 없이 복구한다", async ({ page, context }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -187,7 +187,7 @@ test("recovers a committed mutation after its response is lost without creating 
     expect(server.unexpected).toEqual([]);
 });
 
-test("resumes a multi-chunk image after a failed chunk without resending completed chunks", async ({ page, context }) => {
+test("청크 전송 실패 후 완료된 청크를 재전송하지 않고 이미지 업로드를 재개한다", async ({ page, context }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -223,7 +223,7 @@ test("resumes a multi-chunk image after a failed chunk without resending complet
     expect(server.unexpected).toEqual([]);
 });
 
-test("sends one operation per edit and never resends an untouched card", async ({ page, context }) => {
+test("편집마다 작업 하나만 전송하고 변경하지 않은 카드는 재전송하지 않는다", async ({ page, context }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);
@@ -260,7 +260,7 @@ test("sends one operation per edit and never resends an untouched card", async (
     expect(server.unexpected).toEqual([]);
 });
 
-test("opens the same board in a second tab and commits from it", async ({ page, context }) => {
+test("두 번째 탭에서 같은 보드를 열고 변경을 확정한다", async ({ page, context }) => {
     const server = createDeltaServer();
     await server.install(context);
     await openBoard(page);

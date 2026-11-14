@@ -10,8 +10,8 @@ vi.mock("@/lib/browser-db/client", () => ({
     replaceBoardState: vi.fn(),
 }));
 
-describe("Free board initialization", () => {
-    it("does not mount an empty editor or save before the stored board loads", async () => {
+describe("프리 보드 초기화", () => {
+    it("저장된 보드를 불러오기 전에는 빈 에디터를 마운트하거나 저장하지 않는다", async () => {
         const snapshot = createEmptyBoardSnapshot();
         vi.mocked(loadBoardState).mockResolvedValueOnce(snapshot);
         const { result } = renderHook(() => useBoardLoad());
@@ -21,7 +21,7 @@ describe("Free board initialization", () => {
         expect(replaceBoardState).not.toHaveBeenCalled();
     });
 
-    it("keeps the editor closed when the database cannot load", async () => {
+    it("데이터베이스 로드에 실패하면 에디터를 닫힌 상태로 유지한다", async () => {
         vi.mocked(loadBoardState).mockRejectedValueOnce(new Error("Storage unavailable"));
         const { result } = renderHook(() => useBoardLoad());
 
@@ -30,14 +30,14 @@ describe("Free board initialization", () => {
     });
 });
 
-describe("Free board persistence", () => {
+describe("프리 보드 영속 저장", () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.mocked(replaceBoardState).mockResolvedValue(undefined);
     });
     afterEach(() => vi.useRealTimers());
 
-    it("coalesces consecutive changes into the latest snapshot", async () => {
+    it("연속 변경을 최신 스냅샷 하나로 합친다", async () => {
         const first = createEmptyBoardSnapshot();
         const latest = { ...first, board: { ...first.board, title: "Latest" } };
         const setMessage = vi.fn();
@@ -53,7 +53,7 @@ describe("Free board persistence", () => {
         expect(replaceBoardState).toHaveBeenCalledExactlyOnceWith(latest);
     });
 
-    it("cancels pending saves while editing and saves the latest snapshot after editing ends", async () => {
+    it("편집 중에는 예약된 저장을 취소하고 편집 종료 후 최신 스냅샷을 저장한다", async () => {
         const first = createEmptyBoardSnapshot();
         const latest = { ...first, board: { ...first.board, title: "Updated" } };
         const setMessage = vi.fn();
@@ -71,7 +71,7 @@ describe("Free board persistence", () => {
         expect(replaceBoardState).toHaveBeenCalledExactlyOnceWith(latest);
     });
 
-    it("reports a local save failure", async () => {
+    it("로컬 저장 실패를 알린다", async () => {
         const setMessage = vi.fn();
         vi.mocked(replaceBoardState).mockRejectedValueOnce(new Error("Quota exceeded"));
         renderHook(() => useBoardPersistance({
@@ -82,7 +82,7 @@ describe("Free board persistence", () => {
         expect(setMessage).toHaveBeenCalledWith("Quota exceeded");
     });
 
-    it("cancels a queued save on unmount", async () => {
+    it("언마운트 시 예약된 저장을 취소한다", async () => {
         const { unmount } = renderHook(() => useBoardPersistance({
             snapshot: createEmptyBoardSnapshot(), savePaused: false, setMessage: vi.fn(),
         }));

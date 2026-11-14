@@ -27,8 +27,8 @@ const props = {
     onDelete: vi.fn(), onBringToFront: vi.fn(), onSendToBack: vi.fn(),
 };
 
-describe("TableCard minimum height", () => {
-    it("accounts for toolbar, header, rows and borders", () => {
+describe("테이블 카드 최소 높이", () => {
+    it("툴바·머리글·행·테두리 높이를 모두 반영한다", () => {
         const rows = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `row-${index}`, cells: {} }));
 
         expect(getTableCardMinHeight(rows(0))).toBe(128);
@@ -37,14 +37,14 @@ describe("TableCard minimum height", () => {
         expect(getTableCardMinHeight(rows(10))).toBe(464);
     });
 
-    it("uses saved row heights but never less than the minimum row height", () => {
+    it("저장된 행 높이를 사용하되 최소 행 높이보다 줄이지 않는다", () => {
         expect(getTableCardMinHeight([
             { id: "tall", cells: {}, height: 100 },
             { id: "short", cells: {}, height: 10 },
         ])).toBe(49 + 40 + 5 + 100 + 37);
     });
 
-    it("grows the card when a saved row is taller", () => {
+    it("저장된 행 높이가 더 크면 카드를 확장한다", () => {
         const tallTable = {
             ...table,
             source: {
@@ -57,7 +57,7 @@ describe("TableCard minimum height", () => {
         expect(screen.getByTestId("table-card")).toHaveStyle({ minHeight: "251px", height: "251px" });
     });
 
-    it("updates the resize minimum and grows the card when a row is added", () => {
+    it("행을 추가하면 리사이즈 최소 높이를 갱신하고 카드를 확장한다", () => {
         render(<TableCard {...props} table={table} />);
         expect(screen.getByTestId("table-card")).toHaveStyle({ minHeight: "168px", height: "180px" });
 
@@ -69,7 +69,7 @@ describe("TableCard minimum height", () => {
         expect(screen.getByTestId("table-card")).toHaveStyle({ minHeight: "168px" });
     });
 
-    it("fits all rows when opening an undersized saved card", () => {
+    it("최소 크기보다 작은 저장 카드를 열면 모든 행에 맞춘다", () => {
         render(<TableCard {...props} table={{ ...table, height: 128 }} />);
         expect(screen.getByTestId("table-card")).toHaveStyle({ minHeight: "168px", height: "168px" });
     });

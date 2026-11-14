@@ -18,8 +18,8 @@ const importEvent = () => ({
     target: { files: [{ size: 16, arrayBuffer: async () => new ArrayBuffer(16) }], value: "board.sqlite" },
 }) as unknown as ChangeEvent<HTMLInputElement>;
 
-describe("Plus board file operations", () => {
-    it("imports cards into the current board while preserving Neon metadata", async () => {
+describe("플러스 보드 파일 작업", () => {
+    it("Neon 메타데이터를 보존하면서 현재 보드에 카드를 가져온다", async () => {
         const options = setupOptions();
         const imported = createEmptyBoardSnapshot();
         imported.memos.push({ id: 1, syncId: "memo-1", boardId: 1, content: "Imported", x: 0, y: 0, z: 1,
@@ -54,7 +54,7 @@ describe("Plus board file operations", () => {
         expect(replaced.images[0].assetId).not.toBe("");
     });
 
-    it("resets only content and requires confirmation", () => {
+    it("확인 후에만 보드 내용만 초기화한다", () => {
         const options = setupOptions();
         const { result } = renderHook(() => useBoardTransfer(options));
         act(() => result.current.handleResetClick());
@@ -64,7 +64,7 @@ describe("Plus board file operations", () => {
         expect(options.replaceSnapshot).toHaveBeenCalledWith({ ...createEmptyBoardSnapshot(), board: options.snapshot.board });
     });
 
-    it("blocks mutation handlers without edit permission", async () => {
+    it("편집 권한이 없으면 변경 핸들러를 차단한다", async () => {
         const options = { ...setupOptions(), canEdit: false, canExport: false };
         const { result } = renderHook(() => useBoardTransfer(options));
         await act(async () => {
@@ -77,7 +77,7 @@ describe("Plus board file operations", () => {
         expect(options.replaceSnapshot).not.toHaveBeenCalled();
     });
 
-    it("does not apply a file if permission is lost while reading it", async () => {
+    it("파일을 읽는 중 권한을 잃으면 파일을 적용하지 않는다", async () => {
         const options = setupOptions();
         let finish!: (value: ReturnType<typeof createEmptyBoardSnapshot>) => void;
         options.readSnapshotFile.mockImplementationOnce(() => new Promise((resolve) => {
@@ -96,7 +96,7 @@ describe("Plus board file operations", () => {
         expect(options.replaceSnapshot).not.toHaveBeenCalled();
     });
 
-    it("keeps current contents on invalid files or cancelled imports", async () => {
+    it("잘못된 파일이나 가져오기 취소 시 현재 내용을 유지한다", async () => {
         const options = setupOptions();
         options.readSnapshotFile.mockRejectedValueOnce(new Error("Invalid SQLite"));
         const { result } = renderHook(() => useBoardTransfer(options));

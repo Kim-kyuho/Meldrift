@@ -31,8 +31,8 @@ const callback = vi.fn();
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("card surface layout", () => {
-    it("does not force a white background on image cards and locks aspect ratio", () => {
+describe("카드 표면 배치", () => {
+    it("이미지 카드에 흰 배경을 강제하지 않고 종횡비를 고정한다", () => {
         const { container } = render(
             <ImageCard
                 image={{
@@ -63,7 +63,7 @@ describe("card surface layout", () => {
         expect(container.querySelector(".image-rnd-1")).toHaveAttribute("data-lock-aspect-ratio", "true");
     });
 
-    it("creates and revokes a Blob URL for a stored local image", async () => {
+    it("저장된 로컬 이미지의 Blob URL을 생성하고 해제한다", async () => {
         const createObjectURL = vi.fn().mockReturnValue("blob:stored-image");
         const revokeObjectURL = vi.fn();
         const NativeURL = URL;
@@ -105,7 +105,7 @@ describe("card surface layout", () => {
         expect(revokeObjectURL).toHaveBeenCalledWith("blob:stored-image");
     });
 
-    it("does not force a white background on Mermaid cards", () => {
+    it("Mermaid 카드에 흰 배경을 강제하지 않는다", () => {
         const { container } = render(
             <MermaidCard
                 mermaid={{
@@ -133,7 +133,7 @@ describe("card surface layout", () => {
         expect(container.querySelector(".mermaid-rnd-2 > div")).not.toHaveClass("bg-white");
     });
 
-    it("does not force a white background on table cards", () => {
+    it("테이블 카드에 흰 배경을 강제하지 않는다", () => {
         const { container } = render(
             <TableCard
                 table={{

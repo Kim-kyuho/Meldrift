@@ -47,8 +47,8 @@ const editColumnName = (name: string) => {
     return screen.getByLabelText<HTMLTextAreaElement>("Column name");
 };
 
-describe("TableGrid", () => {
-    it("renders the saved columns and cells with the table engine", () => {
+describe("TableGrid 동작", () => {
+    it("테이블 엔진으로 저장된 열과 셀을 렌더링한다", () => {
         const { container } = render(<TableHarness />);
 
         expect(container.firstElementChild).toHaveClass("h-full");
@@ -58,7 +58,7 @@ describe("TableGrid", () => {
         expect(screen.getByText("User")).toBeInTheDocument();
     });
 
-    it("reports column name changes while the editor stays open", () => {
+    it("에디터를 열린 상태로 유지하면서 열 이름 변경을 전달한다", () => {
         render(<TableHarness />);
         const editor = editColumnName("Name");
 
@@ -69,7 +69,7 @@ describe("TableGrid", () => {
         expect(screen.getByLabelText("Column name")).toBe(editor);
     });
 
-    it("adds a column and a row with initialized cells", () => {
+    it("셀을 초기화해 열과 행을 추가한다", () => {
         render(<TableHarness />);
 
         fireEvent.click(screen.getByRole("button", { name: /Column$/ }));
@@ -85,7 +85,7 @@ describe("TableGrid", () => {
         expect(addedRow?.cells).toEqual({ name: "", role: "", [addedColumn!.id]: "" });
     });
 
-    it("deletes selected rows while preserving at least one data row", () => {
+    it("최소 한 개의 데이터 행을 남기고 선택한 행을 삭제한다", () => {
         const { unmount } = render(<TableHarness />);
 
         fireEvent.click(screen.getAllByLabelText("Select row")[0]);
@@ -100,7 +100,7 @@ describe("TableGrid", () => {
         expect(screen.getByRole("button", { name: "Delete selected rows" })).toBeDisabled();
     });
 
-    it("deletes a column and its cells but never deletes the final column", () => {
+    it("열과 해당 셀을 삭제하되 마지막 열은 삭제하지 않는다", () => {
         render(<TableHarness />);
 
         fireEvent.click(screen.getByRole("button", { name: "Delete Name" }));
@@ -111,7 +111,7 @@ describe("TableGrid", () => {
         expect(screen.queryByRole("button", { name: "Delete Role" })).not.toBeInTheDocument();
     });
 
-    it("renders values without editing controls in read-only mode", () => {
+    it("읽기 전용 모드에서는 편집 컨트롤 없이 값을 표시한다", () => {
         render(<TableHarness isEditing={false} />);
 
         expect(screen.getByText("Kyu")).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe("TableGrid", () => {
         expect(screen.queryByLabelText("Column name")).not.toBeInTheDocument();
     });
 
-    it("switches between read-only and editing when the card mode changes", () => {
+    it("카드 모드 변경에 따라 읽기 전용과 편집 모드를 전환한다", () => {
         const { rerender } = render(<TableGrid source={initialSource} isEditing={false} onChange={() => {}} />);
         doubleClickColumn("Name");
         expect(screen.queryByLabelText("Column name")).not.toBeInTheDocument();
@@ -133,7 +133,7 @@ describe("TableGrid", () => {
         expect(screen.getByRole("button", { name: /Row$/ })).toBeEnabled();
     });
 
-    it("shows a source replaced from outside the table", () => {
+    it("외부에서 교체한 표 소스를 표시한다", () => {
         render(<TableHarness />);
 
         fireEvent.input(editColumnName("Name"), { target: { value: "Member" } });

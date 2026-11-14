@@ -9,8 +9,8 @@ import BoardMenu from "@/components/BoardMenu";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
 import BoardToolBar from "@meldrift/ui/BoardToolBar";
 
-describe("PressableButton", () => {
-    it("applies and clears touch feedback while forwarding callbacks", () => {
+describe("PressableButton 동작", () => {
+    it("콜백을 전달하면서 터치 피드백을 적용하고 해제한다", () => {
         const onTouchStart = vi.fn();
         const onTouchEnd = vi.fn();
         render(<PressableButton onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>Action</PressableButton>);
@@ -26,8 +26,8 @@ describe("PressableButton", () => {
     });
 });
 
-describe("ConfirmDialog", () => {
-    it("renders through a portal and dispatches confirm and cancel", () => {
+describe("ConfirmDialog 동작", () => {
+    it("포탈로 렌더링하고 확인·취소 동작을 전달한다", () => {
         const onConfirm = vi.fn();
         const onCancel = vi.fn();
         render(<ConfirmDialog message="Delete card?" onConfirm={onConfirm} onCancel={onCancel} />);
@@ -40,8 +40,8 @@ describe("ConfirmDialog", () => {
     });
 });
 
-describe("BoardMenu and AboutModal", () => {
-    it("renders the Compile and About icons", () => {
+describe("보드 메뉴와 앱 정보 모달", () => {
+    it("컴파일·앱 정보 아이콘을 렌더링한다", () => {
         render(
             <BoardMenu
                 menuOpen
@@ -62,7 +62,7 @@ describe("BoardMenu and AboutModal", () => {
         expect(screen.getByRole("button", { name: "About" }).querySelector(".lucide-info")).toBeInTheDocument();
     });
 
-    it("renders contact links and closes About with Escape", () => {
+    it("연락처 링크를 표시하고 Escape 키로 앱 정보 창을 닫는다", () => {
         const onClose = vi.fn();
         render(<AboutModal onClose={onClose} />);
 
@@ -76,8 +76,8 @@ describe("BoardMenu and AboutModal", () => {
     });
 });
 
-describe("BoardNavigator", () => {
-    it("moves with arrows and focuses the entered memo number immediately", () => {
+describe("BoardNavigator 동작", () => {
+    it("화살표로 이동하고 입력한 메모 번호에 즉시 초점을 맞춘다", () => {
         const onPrev = vi.fn();
         const onNext = vi.fn();
         const onMemoNumberChange = vi.fn();
@@ -105,8 +105,8 @@ describe("BoardNavigator", () => {
     });
 });
 
-describe("BoardToolBar panel feedback", () => {
-    it("marks the open search or navigator button with the drawing tool active color", () => {
+describe("보드 툴바 패널 피드백", () => {
+    it("열린 검색·탐색 패널 버튼을 드로잉 도구의 활성 색상으로 표시한다", () => {
         const { rerender } = render(
             <BoardToolBar
                 cardEditing={false}
@@ -157,10 +157,10 @@ describe("BoardToolBar panel feedback", () => {
     });
 });
 
-describe("board modals", () => {
+describe("보드 모달", () => {
     afterEach(() => vi.unstubAllGlobals());
 
-    it("creates a trimmed board with the selected dimensions", async () => {
+    it("공백을 정리한 제목과 선택한 크기로 보드를 생성한다", async () => {
         const onCreated = vi.fn();
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: true, board: { boardId: 12 } }),
@@ -178,7 +178,7 @@ describe("board modals", () => {
         }));
     });
 
-    it("shows create and rename API errors", async () => {
+    it("생성·이름 변경 API 오류를 표시한다", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: false, message: "Rejected" }),
         }));
@@ -193,7 +193,7 @@ describe("board modals", () => {
         expect(await screen.findByText("Rejected")).toBeInTheDocument();
     });
 
-    it("renames a board and returns the server result", async () => {
+    it("보드 이름을 변경하고 서버 결과를 반환한다", async () => {
         const onRenamed = vi.fn();
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: true, board: { boardId: 5, title: "New title" } }),

@@ -5,7 +5,7 @@ import { aiTestPassword, gotoHydratedPage } from "./helpers";
 // 여기서 검사하는 것은 "비밀번호 없이는 못 들어간다"와 "한 번 풀면 다시 묻지 않는다"다.
 // 실제 모델 호출은 하지 않는다. 더미 키로는 어차피 실패하고, 진짜 키를 CI에 두지 않는다.
 
-test.describe("AI assistant lock", () => {
+test.describe("AI 어시스턴트 잠금", () => {
     test.beforeEach(async ({ page }) => {
         await gotoHydratedPage(page, "/");
 
@@ -13,13 +13,13 @@ test.describe("AI assistant lock", () => {
         // 그때만 건너뛴다. CI는 playwright.config.ts가 값을 넣어 주므로 반드시 실행된다.
         const status = await page.request.get("/api/ai/status");
         const { configured } = await status.json();
-        test.skip(!configured && !process.env.CI, "The assistant is not configured on this server.");
+        test.skip(!configured && !process.env.CI, "이 서버에는 어시스턴트가 설정되어 있지 않습니다.");
     });
 
     const openAssistant = (page: import("@playwright/test").Page) =>
         page.getByRole("button", { name: "Open AI assistant" }).click();
 
-    test("asks for the password before showing the chat", async ({ page }) => {
+    test("채팅을 표시하기 전에 비밀번호를 요청한다", async ({ page }) => {
         await openAssistant(page);
 
         await expect(page.getByText("AI Assistant is locked")).toBeVisible();
@@ -27,7 +27,7 @@ test.describe("AI assistant lock", () => {
         await expect(page.getByLabel("AI assistant message")).toHaveCount(0);
     });
 
-    test("rejects a wrong password and keeps the chat closed", async ({ page }) => {
+    test("잘못된 비밀번호를 거부하고 채팅을 닫힌 상태로 유지한다", async ({ page }) => {
         await openAssistant(page);
         await page.getByLabel("Assistant password").fill("not-the-password");
         await page.getByRole("button", { name: "Unlock" }).click();
@@ -39,7 +39,7 @@ test.describe("AI assistant lock", () => {
         await expect(page.getByLabel("AI assistant message")).toHaveCount(0);
     });
 
-    test("opens the chat with the right password and stays unlocked after a reload", async ({ page }) => {
+    test("올바른 비밀번호로 채팅을 열고 새로고침 후에도 잠금 해제를 유지한다", async ({ page }) => {
         await openAssistant(page);
         await page.getByLabel("Assistant password").fill(aiTestPassword);
         await page.getByRole("button", { name: "Unlock" }).click();
@@ -56,7 +56,7 @@ test.describe("AI assistant lock", () => {
         await expect(page.getByLabel("AI assistant message")).toBeVisible();
     });
 
-    test("locks again when the user asks for it", async ({ page }) => {
+    test("사용자가 요청하면 다시 잠근다", async ({ page }) => {
         await openAssistant(page);
         await page.getByLabel("Assistant password").fill(aiTestPassword);
         await page.getByRole("button", { name: "Unlock" }).click();

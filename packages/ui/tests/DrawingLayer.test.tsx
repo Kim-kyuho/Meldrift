@@ -31,8 +31,8 @@ function renderLayer(drawingMode: boolean, drawingTool: DrawingTool) {
     return container.querySelector("svg")!;
 }
 
-describe("DrawingLayer pointer routing", () => {
-    it("renders a display only layer while drawing mode is off", () => {
+describe("드로잉 레이어 포인터 전달", () => {
+    it("드로잉 모드가 꺼져 있으면 표시 전용 레이어를 렌더링한다", () => {
         const layer = renderLayer(false, "draw");
 
         expect(layer.getAttribute("pointer-events")).toBe("none");
@@ -42,7 +42,7 @@ describe("DrawingLayer pointer routing", () => {
         expect(layer.querySelectorAll("path")).toHaveLength(1);
     });
 
-    it("captures input and blocks board panning while drawing", () => {
+    it("드로잉 중 입력을 캡처하고 보드 패닝을 막는다", () => {
         const layer = renderLayer(true, "draw");
         const captureLayer = layer.closest("[data-drawing-capture='true']") as HTMLElement;
 
@@ -52,7 +52,7 @@ describe("DrawingLayer pointer routing", () => {
         expect(layer.closest(canStartBoardPanSelector)).toBe(captureLayer);
     });
 
-    it("keeps drawing pointer events from reaching the board pan layer", () => {
+    it("드로잉 포인터 이벤트가 보드 패닝 레이어에 전달되지 않게 한다", () => {
         const handleBoardPointerDown = vi.fn();
         const { container } = render(
             <div onPointerDown={handleBoardPointerDown}>
@@ -81,7 +81,7 @@ describe("DrawingLayer pointer routing", () => {
         expect(handleBoardPointerDown).not.toHaveBeenCalled();
     });
 
-    it("blocks text selection so a pen stroke does not drag text on iPad", () => {
+    it("iPad의 펜 획 입력이 텍스트를 드래그하지 않도록 선택을 막는다", () => {
         (["draw", "erase"] as const).forEach((tool) => {
             const layer = renderLayer(true, tool);
             const captureLayer = layer.closest("[data-drawing-capture='true']") as HTMLElement;
@@ -95,7 +95,7 @@ describe("DrawingLayer pointer routing", () => {
         expect(displayLayer.style.userSelect).toBe("none");
     });
 
-    it("captures input and blocks board panning while erasing", () => {
+    it("지우개 사용 중 입력을 캡처하고 보드 패닝을 막는다", () => {
         const layer = renderLayer(true, "erase");
         const captureLayer = layer.closest("[data-drawing-capture='true']") as HTMLElement;
 
@@ -104,7 +104,7 @@ describe("DrawingLayer pointer routing", () => {
         expect(layer.closest(canStartBoardPanSelector)).toBe(captureLayer);
     });
 
-    it("attaches no pointer handler while drawing mode is off", () => {
+    it("드로잉 모드가 꺼져 있으면 포인터 핸들러를 연결하지 않는다", () => {
         const onStrokeEnd = vi.fn();
         const onErase = vi.fn();
         const { container } = render(
@@ -128,7 +128,7 @@ describe("DrawingLayer pointer routing", () => {
         expect(onErase).not.toHaveBeenCalled();
     });
 
-    it("renders saved strokes and shows the eraser circle only in erase mode", () => {
+    it("저장된 획을 렌더링하고 지우개 모드에서만 지우개 원을 표시한다", () => {
         const drawLayer = renderLayer(true, "draw");
         expect(drawLayer.querySelectorAll("path")).toHaveLength(1);
         expect(drawLayer.querySelector("path")).toHaveAttribute("stroke-opacity", "0.82");

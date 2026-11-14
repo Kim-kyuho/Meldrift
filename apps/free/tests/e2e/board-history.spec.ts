@@ -32,7 +32,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const [key, type] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
-    test(`undoes and redoes ${type} creation without recording restoration`, async ({ page }) => {
+    test(`복원 자체는 기록하지 않고 ${type} 카드 생성을 실행 취소하고 다시 실행한다`, async ({ page }) => {
         await page.keyboard.press(key);
         await expect(page.locator(`[class*="${type}-rnd-"][data-editing="true"]`)).toBeVisible();
         await finishEditing(page);
@@ -46,7 +46,7 @@ for (const [key, type] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
     });
 }
 
-test("records memo movement and resize separately and restores the rendered geometry", async ({ page }) => {
+test("메모 이동과 크기 변경을 따로 기록하고 화면의 위치와 크기를 복원한다", async ({ page }) => {
     await addMemo(page, "Geometry history");
     const card = page.locator('[class*="memo-rnd-"]');
     const geometry = () => card.evaluate((element: HTMLElement) => {
@@ -86,7 +86,7 @@ test("records memo movement and resize separately and restores the rendered geom
 });
 
 for (const [key, type] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
-    test(`restores ${type} content in the card renderer`, async ({ page }) => {
+    test(`카드 렌더러에서 ${type} 내용을 복원한다`, async ({ page }) => {
         await page.keyboard.press(key);
         const card = page.locator(`[class*="${type}-rnd-"]`);
         const fill = async (text: string) => {
@@ -114,7 +114,7 @@ for (const [key, type] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]]) {
     });
 }
 
-test("restores memo order as one operation", async ({ page }) => {
+test("메모 순서를 하나의 작업으로 복원한다", async ({ page }) => {
     await addMemo(page, "Alpha order");
     await addMemo(page, "Beta order");
     await getBoardMenuButton(page).click();
@@ -133,7 +133,7 @@ test("restores memo order as one operation", async ({ page }) => {
     await expect(rows).toHaveText([/Beta order/, /Alpha order/]);
 });
 
-test("restores a multi-card selection move as one operation", async ({ page }) => {
+test("여러 카드의 일괄 이동을 하나의 작업으로 복원한다", async ({ page }) => {
     await addMemo(page, "Alpha move");
     await addMemo(page, "Beta move");
     const cards = page.locator('[class*="memo-rnd-"]');
@@ -158,7 +158,7 @@ test("restores a multi-card selection move as one operation", async ({ page }) =
     expect((await cards.last().boundingBox())!.x).toBeGreaterThan(original.x);
 });
 
-test("restores a deleted image from its binary data", async ({ page }) => {
+test("삭제한 이미지를 바이너리 데이터로 복원한다", async ({ page }) => {
     await page.getByLabel("Upload image").setInputFiles({ name: "history.png", mimeType: "image/png",
         buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1kAAAAASUVORK5CYII=", "base64") });
     const image = page.getByRole("img", { name: "history.png" });
@@ -175,7 +175,7 @@ test("restores a deleted image from its binary data", async ({ page }) => {
     await expect(image).toHaveCount(0);
 });
 
-test("groups an eraser gesture and uses the common history from the drawing toolbar", async ({ page }) => {
+test("지우개 조작을 하나의 작업으로 묶고 드로잉 툴바에서 공통 이력을 사용한다", async ({ page }) => {
     await page.keyboard.press("2");
     const drawing = page.locator('[data-drawing-capture="true"]');
     const drawLine = async (y: number) => {
@@ -206,7 +206,7 @@ test("groups an eraser gesture and uses the common history from the drawing tool
     await expect(paths).toHaveCount(1);
 });
 
-test("undoes Reset and Import as complete board replacements", async ({ page }) => {
+test("전체 보드 교체 작업인 초기화와 가져오기를 실행 취소한다", async ({ page }) => {
     await addMemo(page, "Before import");
     await getBoardMenuButton(page).click();
     const downloaded = page.waitForEvent("download");
@@ -229,7 +229,7 @@ test("undoes Reset and Import as complete board replacements", async ({ page }) 
     await expect(page.locator('[class*="memo-rnd-"]')).toHaveCount(1);
 });
 
-test("drops future history after a new edit and stores the restored state locally", async ({ page }) => {
+test("새 편집 후 이후 이력을 제거하고 복원된 상태를 로컬에 저장한다", async ({ page }) => {
     await addMemo(page, "Alpha history");
     await addMemo(page, "Beta history");
     await undo(page).click();

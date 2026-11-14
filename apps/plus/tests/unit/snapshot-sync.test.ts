@@ -31,7 +31,7 @@ function setup() {
     };
 }
 
-describe("snapshot synchronization", () => {
+describe("스냅샷 동기화", () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ revision: 1 }) }));
@@ -41,7 +41,7 @@ describe("snapshot synchronization", () => {
         vi.unstubAllGlobals();
     });
 
-    it("keeps the 150ms local debounce separate from the 3s server debounce", async () => {
+    it("로컬 150ms 디바운스와 서버 3초 디바운스를 분리한다", async () => {
         const { manager, database } = setup();
         const onSave = (snapshot: ReturnType<typeof createEmptyBoardSnapshot>) => manager.save(snapshot);
         const onError = vi.fn();
@@ -69,7 +69,7 @@ describe("snapshot synchronization", () => {
         await manager.close();
     });
 
-    it("debounces from the last completed IndexedDB save", async () => {
+    it("마지막 IndexedDB 저장 완료를 기준으로 디바운스한다", async () => {
         const { manager, database } = setup();
         await manager.save(createEmptyBoardSnapshot());
         await vi.advanceTimersByTimeAsync(2000);
@@ -82,7 +82,7 @@ describe("snapshot synchronization", () => {
         await manager.close();
     });
 
-    it("never uploads before a pending local transaction completes", async () => {
+    it("대기 중인 로컬 트랜잭션이 완료되기 전에는 업로드하지 않는다", async () => {
         const { manager, database } = setup();
         let finish!: () => void;
         database.replace.mockImplementationOnce(() => new Promise<void>((resolve) => {
@@ -97,7 +97,7 @@ describe("snapshot synchronization", () => {
         await manager.close();
     });
 
-    it("serializes uploads and keeps edits made during an upload dirty", async () => {
+    it("업로드를 순차 실행하고 전송 중 편집을 미저장 상태로 유지한다", async () => {
         const { manager, database, record } = setup();
         let finish!: (response: Response) => void;
         vi.mocked(fetch).mockImplementationOnce(() => new Promise((resolve) => {
@@ -117,7 +117,7 @@ describe("snapshot synchronization", () => {
         await manager.close();
     });
 
-    it("preserves the mutation identifier when retrying a lost response", async () => {
+    it("응답 유실 재시도 시 변경 요청 식별자를 유지한다", async () => {
         const { manager, record } = setup();
         vi.mocked(fetch).mockRejectedValueOnce(new Error("offline"));
         await manager.save(createEmptyBoardSnapshot());
@@ -131,7 +131,7 @@ describe("snapshot synchronization", () => {
         await manager.close();
     });
 
-    it.each([401, 403, 404, 409])("stops uploads on HTTP %s without discarding local data", async (code) => {
+    it.each([401, 403, 404, 409])("HTTP %s 응답 시 로컬 데이터를 버리지 않고 업로드를 중단한다", async (code) => {
         const { manager, record, status } = setup();
         vi.mocked(fetch).mockResolvedValueOnce({ ok: false, status: code, json: async () => ({ message: "blocked" }) } as Response);
         await manager.save(createEmptyBoardSnapshot());
@@ -142,7 +142,7 @@ describe("snapshot synchronization", () => {
         await manager.close();
     });
 
-    it("keeps an oversized snapshot local", async () => {
+    it("크기를 초과한 스냅샷은 로컬에 유지한다", async () => {
         const { manager, record, setBytes, status } = setup();
         setBytes(new ArrayBuffer(4 * 1024 * 1024 + 1));
         await manager.save(createEmptyBoardSnapshot());

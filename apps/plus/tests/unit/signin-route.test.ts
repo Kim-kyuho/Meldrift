@@ -30,7 +30,7 @@ function createSignInRequest() {
     });
 }
 
-describe("POST /api/signin", () => {
+describe("로그인 API: POST /api/signin", () => {
     beforeEach(() => {
         mocks.selectLimit.mockResolvedValue([user]);
         mocks.updateWhere.mockResolvedValue(undefined);
@@ -46,7 +46,7 @@ describe("POST /api/signin", () => {
         });
     });
 
-    it("stores the token hash and matching expiration before setting the cookie", async () => {
+    it("쿠키 설정 전에 토큰 해시와 일치하는 만료 시각을 저장한다", async () => {
         const now = Date.now();
         const response = await POST(createSignInRequest());
         const cookie = response.cookies.get(sessionCookieName);
@@ -66,7 +66,7 @@ describe("POST /api/signin", () => {
         );
     });
 
-    it("replaces the stored hash with a different token on every login", async () => {
+    it("로그인할 때마다 다른 토큰으로 저장된 해시를 교체한다", async () => {
         const firstResponse = await POST(createSignInRequest());
         const secondResponse = await POST(createSignInRequest());
         const firstToken = firstResponse.cookies.get(sessionCookieName)!.value;
