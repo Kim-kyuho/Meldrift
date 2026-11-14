@@ -45,7 +45,8 @@
     "./MemoReorderPanel": "./src/features/memo/MemoReorderPanel.tsx",
     "./MemoToolBar": "./src/features/memo/MemoToolBar.tsx",
     "./MermaidCard": "./src/features/mermaid/MermaidCard.tsx",
-    "./MermaidCodeEditor": "./src/features/mermaid/MermaidCodeEditor.tsx",
+    "./MermaidDiagramView": "./src/features/mermaid/MermaidDiagramView.tsx",
+    "./MermaidEditorPanel": "./src/features/mermaid/MermaidEditorPanel.tsx",
     "./MermaidToolBar": "./src/features/mermaid/MermaidToolBar.tsx",
     "./PressableButton": "./src/shared/PressableButton.tsx",
     "./SelectionLayer": "./src/features/selection/SelectionLayer.tsx",
@@ -65,7 +66,7 @@
     "./useSelectionPointer": "./src/features/selection/useSelectionPointer.ts",
     "./useMemoToolBar": "./src/features/memo/useMemoToolBar.ts",
     "./useMermaidCard": "./src/features/mermaid/useMermaidCard.ts",
-    "./useMermaidRenderer": "./src/features/mermaid/useMermaidRenderer.ts",
+    "./useMermaidDiagram": "./src/features/mermaid/useMermaidDiagram.ts",
     "./useTableCard": "./src/features/table/useTableCard.ts"
   },
   "scripts": {
@@ -73,17 +74,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@codemirror/autocomplete": "^6.20.4",
-    "@codemirror/commands": "^6.11.1",
-    "@codemirror/state": "^6.7.6",
-    "@codemirror/view": "^6.43.15",
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
+    "@meldrift/diagram-engine": "^0.1.0",
     "@meldrift/markdown-engine": "^0.4.0",
     "@meldrift/table-engine": "^0.3.0",
-    "@mermaid-js/mermaid-zenuml": "^1.0.1",
     "lucide-react": "^1.70.0",
-    "mermaid": "^12.3.0",
     "react-markdown": "^10.1.0",
     "react-rnd": "^10.5.3",
     "rehype-raw": "^7.0.0",

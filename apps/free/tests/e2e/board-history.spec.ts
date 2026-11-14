@@ -8,6 +8,12 @@ const redo = (page: Page) => history(page).getByRole("button", { name: "Redo boa
 
 async function finishEditing(page: Page) {
     const card = page.locator('[data-editing="true"]');
+    const closeMermaidEditor = page.getByRole("button", { name: "Close mermaid editor" });
+    if (await closeMermaidEditor.isVisible()) {
+        await closeMermaidEditor.click();
+        await expect(card).toHaveCount(0);
+        return;
+    }
     const box = (await card.boundingBox())!;
     await page.mouse.click(box.x + box.width / 2, Math.max(5, box.y - 40));
     await expect(card).toHaveCount(0);

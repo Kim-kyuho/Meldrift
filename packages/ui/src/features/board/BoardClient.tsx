@@ -44,6 +44,7 @@ import { useBoardHistory, type BoardContent } from "./useBoardHistory";
 import { useBoardPointerActive } from "./useBoardPointerActive";
 import BoardHistoryToolbar from "./BoardHistoryToolbar";
 import BoardCornerLinksLayer from "./BoardCornerLinksLayer";
+import { useIsMobile } from "../../shared/useIsMobile";
 
 export type BoardControls = {
     snapshot: BoardSnapshot;
@@ -312,6 +313,10 @@ export default function BoardClient({
         editingImageId !== null ||
         editingMermaidId !== null ||
         editingTableId !== null;
+
+    const isMobile = useIsMobile();
+    // 데스크톱 다이어그램 편집 패널은 메모 순서 패널과 같은 자리를 쓰므로, 편집하는 동안 메모 순서 패널을 가린다.
+    const mermaidEditorPanelOpen = editingMermaidId !== null && !isMobile;
 
     const {
         boardPanning,
@@ -684,7 +689,7 @@ export default function BoardClient({
                     onMemoNumberChange={focusMemoByOrder}
                 />
             )}
-            {reorderOpen && (
+            {reorderOpen && !mermaidEditorPanelOpen && (
                 <MemoReorderPanel
                     memos={reorderMemoList}
                     listRef={reorderListRef}

@@ -50,7 +50,7 @@ Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다.
 - [Undo/Redo](./shared/board-history.md): 하단 중앙 버튼, 최근 50개 객체 작업, 드로잉·Import·Reset 복원. 새로고침 시 초기화.
 - [보드 단축키](./shared/board-shortcuts.md): 모드 토글 `1`·`2`, 카드 생성 `m`·`i`·`t`·`d`, 입력·편집·모달 보호.
 - [다중 선택](./shared/board-selection.md): 카드 그룹 이동·삭제와 한 번의 이력 기록.
-- [Mermaid 편집](./shared/mermaid-card.md): 종류 선택, CodeMirror 6 문맥 자동완성, 손그림 스타일.
+- [Mermaid 편집](./shared/mermaid-card.md): 34종 Meldrift Diagram Engine, 데스크톱 패널 최소화·도형 팔레트, 모바일 하단 편집기와 툴바 여백, 노드 조작·SVG 영역 자동 맞춤·Rnd 배율 조절.
 - [표 크기](./shared/table-card.md): 가용 영역 채우기와 전체 행 수에 따른 최소 높이.
 - [이미지](./shared/image-card.md): 드롭·투명도 보존·바이너리 복원.
 

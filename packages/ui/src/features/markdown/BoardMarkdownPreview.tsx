@@ -7,7 +7,7 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { createPortal } from "react-dom";
 import PressableButton from "../../shared/PressableButton";
-import { useMermaidRenderer } from "../mermaid/useMermaidRenderer";
+import MermaidDiagramView from "../mermaid/MermaidDiagramView";
 import { splitMermaidSections } from "./mermaid-sections";
 
 type BoardMarkdownPreviewProps = {
@@ -20,32 +20,6 @@ type BoardMarkdownPreviewProps = {
     onDownload: () => void;
     onClose: () => void;
 };
-
-function MarkdownMermaid({ source, diagramId }: { source: string; diagramId: number }) {
-    const { svg, renderError } = useMermaidRenderer({
-        source,
-        mermaidId: diagramId,
-    });
-
-    if (renderError) {
-        return (
-            <pre className="whitespace-pre-wrap rounded-md bg-rose-50 p-3 text-xs text-rose-700">
-                {renderError}
-            </pre>
-        );
-    }
-
-    if (!svg) {
-        return <p className="text-sm text-neutral-400">Rendering Mermaid diagram...</p>;
-    }
-
-    return (
-        <div
-            className="mermaid-rendered h-80 w-full"
-            dangerouslySetInnerHTML={{ __html: svg }}
-        />
-    );
-}
 
 export default function BoardMarkdownPreview({
     markdown,
@@ -103,10 +77,10 @@ export default function BoardMarkdownPreview({
                             <article className="board-markdown-content">
                                 {markdownSections.map((section, index) =>
                                     index % 2 === 1 ? (
-                                        <MarkdownMermaid
+                                        <MermaidDiagramView
                                             key={`mermaid-${index}`}
                                             source={section.trim()}
-                                            diagramId={index}
+                                            className="mermaid-diagram-view h-80 w-full"
                                         />
                                     ) : (
                                         <ReactMarkdown

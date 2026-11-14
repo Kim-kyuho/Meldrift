@@ -2,6 +2,7 @@
 /* 엔진의 문서 테마(.meldrift-markdown)는 쓰지 않고 코드 언어 입력칸과 변수만 쓴다. */
 @import "@meldrift/markdown-engine/style.css";
 @import "@meldrift/table-engine/style.css";
+@import "@meldrift/diagram-engine/style.css";
 /* 공유 패키지는 node_modules 심링크라 자동 탐지 대상이 아니기 때문에 명시적으로 스캔한다. */
 @source "../src";
 
@@ -201,11 +202,24 @@
   overflow-x: hidden;
 }
 
-.mermaid-rendered svg {
-  display: block;
-  height: 100% !important;
-  max-width: none !important;
-  width: 100% !important;
+/* 다이어그램 카드는 다른 카드처럼 보드 배경이 비쳐 보이게 둔다. */
+.mermaid-card-diagram .meldrift-diagram-renderer {
+  background: transparent;
+}
+
+.mermaid-card-diagram .meldrift-diagram-canvas,
+.mermaid-card-diagram .meldrift-diagram-svg svg {
+  overflow: visible;
+}
+
+/* 편집 패널 높이가 정해져 있지 않아 엔진의 비율 높이 제한이 듣지 않으므로 직접 제한한다. */
+.mermaid-editor-panel .meldrift-diagram-palette {
+  max-height: 12rem;
+}
+
+/* 자동완성 목록이 편집 패널(z-50000) 아래로 가려지지 않게 한다. */
+.meldrift-diagram-tooltips {
+  z-index: 50001;
 }
 
 .card-editing {
@@ -345,7 +359,7 @@
   border-color: #d4d4d4;
 }
 
-.board-markdown-content .mermaid-rendered {
+.board-markdown-content .mermaid-diagram-view {
   min-height: 20rem;
   margin: 1rem 0;
 }

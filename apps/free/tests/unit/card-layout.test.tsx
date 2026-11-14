@@ -11,8 +11,20 @@ vi.mock("react-rnd", () => ({
     ),
 }));
 
-vi.mock("@meldrift/ui/useMermaidRenderer", () => ({
-    useMermaidRenderer: () => ({ svg: "", renderError: null }),
+vi.mock("@meldrift/diagram-engine", () => ({
+    createDiagramRenderer: (container: HTMLElement) => {
+        const element = document.createElement("div");
+        container.append(element);
+
+        return {
+            element,
+            setSource: vi.fn(),
+            getSource: () => "",
+            setCursor: vi.fn(),
+            destroy: () => element.remove(),
+        };
+    },
+    createDiagramEditor: vi.fn(),
 }));
 
 const callback = vi.fn();

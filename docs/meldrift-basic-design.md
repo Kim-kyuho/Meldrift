@@ -1,8 +1,8 @@
 # Meldrift 기본설계서
 
-버전: v1.3 Beta
+버전: v1.5 Beta
 
-작성 기준: 2026-10-14 현재 워크스페이스 구현
+작성 기준: 2026-11-14 현재 워크스페이스 구현
 
 ## 1. 목적과 범위
 
@@ -28,7 +28,7 @@ Meldrift는 캔버스 기반 Markdown 컴파일러를 만드는 개인 프로젝
 | `apps/plus`, `/plus` | 여러 보드, 로그인·승인·관리자 기능, 서버 동기화·미리보기 |
 | `packages/ui` | 공통 보드 화면, React 컴포넌트·훅, 폰트·전역 CSS |
 | `packages/board-data` | 보드 상태·검증, SQLite·IndexedDB, 이미지 변환, 변경분 모델, Markdown 컴파일 |
-| `packages/core` | 프레임워크 독립 카드·획·표·메모 순서·Mermaid 문법·AI 계획 규칙 |
+| `packages/core` | 프레임워크 독립 카드·획·표·메모 순서·AI 계획 규칙 |
 | `packages/ai` | 서버 어시스턴트, 도구·프롬프트, AI 비밀번호 잠금 |
 
 공통 편집 흐름은 `ui → board-data → core`다. 앱에는 초기 데이터 로드, 인증, 메뉴의 추가 항목과 저장 계층 연결을 남긴다. Free의 호스트가 Plus를 프록시하는 멀티존 구성으로 한 도메인의 `/plus`를 제공한다.
@@ -38,8 +38,8 @@ Meldrift는 캔버스 기반 Markdown 컴파일러를 만드는 개인 프로젝
 | 영역 | 기술 |
 | --- | --- |
 | 화면 | Next.js App Router, React, TypeScript, Tailwind CSS |
-| 카드·편집 | react-rnd, Meldrift Markdown Engine, Meldrift Table Engine, CodeMirror 6 |
-| 다이어그램 | Mermaid, ZenUML 플러그인 |
+| 카드·편집 | react-rnd, Meldrift Markdown Engine, Meldrift Table Engine, Meldrift Diagram Engine |
+| 다이어그램 | `@meldrift/diagram-engine`의 Mermaid 12·ZenUML 렌더러와 CodeMirror 6 편집기 |
 | 로컬 저장 | Web Worker의 SQLite WASM, IndexedDB의 SQLite 파일 |
 | 서버 저장 | Neon PostgreSQL, Drizzle의 Neon HTTP 드라이버 |
 | 이미지 | 브라우저 Canvas 압축, 바이너리·Blob URL |
@@ -119,7 +119,17 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 
 ### Mermaid
 
-카드 상단 select로 다이어그램 종류를 고르고 CodeMirror 6에서 편집한다. 문맥에 따라 도형·연결선·기존 객체 등을 추천하며 실시간 SVG 미리보기와 손그림 스타일을 제공한다. 지원 목록과 템플릿은 `mermaid-language.ts`를 기준으로 한다. 렌더 ticket으로 오래된 결과를 버린다.
+Free·Plus가 같은 `MermaidCard`와 Meldrift Diagram Engine을 사용한다. 앱은 `createDiagramRenderer`와 `createDiagramEditor`를 따로 생성해 카드에는 그림만, 화면 고정 패널에는 편집기를 표시한다. Mermaid·CodeMirror와 문법 자동완성은 엔진이 소유하고 `packages/core`나 앱에 이전 구현을 중복 보관하지 않는다.
+
+- 엔진은 34종 다이어그램 템플릿, 종류 감지·선택, 문맥 자동완성, 손그림 스타일과 도형 팔레트를 제공한다. 종류를 선택하면 해당 템플릿으로 소스를 교체한다.
+- 데스크톱·태블릿(너비 768px 이상)은 로고 아래 왼쪽 패널에 에디터·팔레트를 표시한다. X 옆 최소화 버튼은 제목 표시줄만 남기며, 다시 펼쳐도 편집 내용·커서와 엔진 인스턴스를 유지한다. X는 저장 후 편집을 끝낸다.
+- 모바일(768px 미만)은 화면 하단 body 포탈의 고정 패널을 사용하고 팔레트는 숨긴다. 최대 높이는 화면의 45%이며 오른쪽 80px, 하단 최소 80px와 safe area를 확보해 보드 툴바를 가리지 않는다. 카드·보드의 줌이나 이동에 패널이 따라가지 않는다.
+- 노드 드래그는 Flowchart·Swimlanes·State·Class·ER·Requirement에서 제공한다. Flowchart·Swimlanes는 그림에서 연결·이름·화살표 주석·종류 변경·삭제도 가능하다. 모든 다이어그램이 그림 편집을 지원하는 것은 아니다.
+- 노드 위치는 소스의 `%% meldrift-layout: {...}` 주석에 보존한다. 그림에서 발생한 변경은 에디터·카드 초안에 반영하되 같은 소스로 렌더러를 다시 호출하지 않는다.
+- 소스 렌더 완료·노드 이동 종료 시 앱이 SVG 영역을 측정해 카드를 확대·축소한다. 드래그 중에는 맞춤을 보류하고, Rnd 직접 리사이즈는 그림 배율만 바꾼다. 최소 180 × 180과 종횡비를 유지한다. 기존 카드의 첫 로드는 저장된 크기를 유지한다.
+- Markdown 미리보기는 같은 엔진을 읽기 전용으로 사용하고 저장된 노드 위치까지 포함해 그림 영역을 맞춘다. 편집·드래그·팔레트는 끈다.
+
+엔진의 편집·문법과 앱의 패널·카드 크기·저장 책임, 연결 흐름과 검증 항목은 [mermaid-card.md](./shared/mermaid-card.md)에 정리한다.
 
 ### 표
 

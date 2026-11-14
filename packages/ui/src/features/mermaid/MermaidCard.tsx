@@ -1,24 +1,15 @@
 "use client";
 
-import { lazy, Suspense } from "react";
-import { PenTool } from "lucide-react";
 import { Rnd } from "react-rnd";
 import { noop } from "../../internal/noop";
 import ConfirmDialog from "../../shared/ConfirmDialog";
+import { useIsMobile } from "../../shared/useIsMobile";
 import { MermaidCardData, useMermaidCard } from "./useMermaidCard";
-import { useMermaidRenderer } from "./useMermaidRenderer";
+import { useMermaidDiagram } from "./useMermaidDiagram";
 import { ACTIVE_CARD_Z, type SelectionOffset, type SelectionRect } from "@meldrift/core/cards";
-import {
-    detectMermaidDiagramType,
-    getMermaidTemplate,
-    hasMermaidHandDrawnLook,
-    mermaidDiagramDefinitions,
-    toggleMermaidHandDrawnLook,
-    type MermaidDiagramType,
-} from "@meldrift/core/mermaid-language";
+import MermaidEditorPanel from "./MermaidEditorPanel";
 import MermaidToolBar from "./MermaidToolBar";
-
-const MermaidCodeEditor = lazy(() => import("./MermaidCodeEditor"));
+import { mermaidMinSize } from "./mermaid-layout";
 
 type MermaidCardProps = {
     mermaid: MermaidCardData;
@@ -79,10 +70,12 @@ export default function MermaidCard({
         dragHandlePressed,
         setDragHandlePressed,
         editMermaid,
+        finishEditing,
         handleDoubleTap,
         handleMermaidPress,
         handleDragStop,
         handleResizeStop,
+        fitCard,
         openDeleteDialog,
         closeDeleteDialog,
         confirmDelete,
@@ -98,11 +91,16 @@ export default function MermaidCard({
         onDelete,
         onGeometryChange,
     });
-    const { svg, renderError } = useMermaidRenderer({
+    const isMobile = useIsMobile();
+    const { setRendererHost, setEditorHost, setPaletteHost } = useMermaidDiagram({
         source,
-        mermaidId: mermaid.id,
+        isEditing,
+        onSourceChange: setSource,
+        cardSize: cardState,
+        autoFit: isEditing && canEdit,
+        fitInitial: mermaid.id < 0,
+        onFit: fitCard,
     });
-    const handDrawn = hasMermaidHandDrawnLook(source);
 
     return (
         <>
@@ -129,14 +127,12 @@ export default function MermaidCard({
                 }}
                 bounds="parent"
                 scale={zoom}
-                minWidth={180}
-                minHeight={180}
+                minWidth={mermaidMinSize}
+                minHeight={mermaidMinSize}
                 dragHandleClassName="mermaid-drag-handle"
                 disableDragging={!isEditing || !canEdit}
                 enableResizing={isEditing}
-                onDrag={handleDragStop}
                 onDragStop={handleDragStop}
-                onResize={handleResizeStop}
                 onResizeStop={handleResizeStop}
             >
                 <div
@@ -145,41 +141,9 @@ export default function MermaidCard({
                     onDoubleClick={editMermaid}
                     onPointerDown={handleDoubleTap}
                 >
-                    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl">
-                        {isEditing && (
-                            <div className="flex h-2/5 min-h-24 flex-col border-b border-neutral-200 bg-neutral-50">
-                                <select
-                                    aria-label="Mermaid diagram type"
-                                    value={detectMermaidDiagramType(source)}
-                                    onChange={(event) => setSource(getMermaidTemplate(event.target.value as MermaidDiagramType))}
-                                    className="h-8 w-full shrink-0 border-0 border-b border-neutral-200 bg-white px-2 text-sm font-semibold text-neutral-700 outline-none"
-                                >
-                                    {mermaidDiagramDefinitions.map((diagram) => (
-                                        <option key={diagram.id} value={diagram.id}>
-                                            {diagram.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <Suspense fallback={<div className="min-h-0 min-w-0 flex-1 bg-neutral-50" />}>
-                                    <MermaidCodeEditor value={source} onChange={setSource} />
-                                </Suspense>
-                            </div>
-                        )}
-
-                        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-3">
-                            {renderError ? (
-                                <pre className="w-full whitespace-pre-wrap rounded-md bg-rose-50 p-3 text-xs text-rose-700">
-                                    {renderError}
-                                </pre>
-                            ) : svg ? (
-                                <div
-                                    className="mermaid-rendered h-full w-full"
-                                    dangerouslySetInnerHTML={{ __html: svg }}
-                                />
-                            ) : (
-                                <div className="text-sm text-neutral-400">Mermaid source is empty.</div>
-                            )}
-                        </div>
+                    <div className="relative flex h-full w-full flex-col rounded-xl">
+                        {/* 편집 중이 아니면 그림을 건드리지 않고 카드 선택·편집 시작만 받는다. */}
+                        <div ref={setRendererHost} inert={!isEditing} className="mermaid-card-diagram min-h-0 flex-1" />
 
                         {isEditing && (
                             <div
@@ -192,25 +156,18 @@ export default function MermaidCard({
                                 <div className={`h-1.5 w-24 rounded-full transition duration-150 ${dragHandlePressed ? "bg-black/70" : "bg-black/25"}`} />
                             </div>
                         )}
-
-                        {isEditing && (
-                            <button
-                                type="button"
-                                aria-label="Hand drawn look"
-                                aria-pressed={handDrawn}
-                                title="Hand drawn look"
-                                onClick={() => setSource(toggleMermaidHandDrawnLook(source))}
-                                className={`absolute bottom-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full transition duration-150 ${
-                                    handDrawn ? "bg-neutral-900 text-white" : "bg-black/10 text-neutral-500 hover:bg-black/20"
-                                }`}
-                            >
-                                <PenTool className="h-3.5 w-3.5" />
-                            </button>
-                        )}
-
                     </div>
                 </div>
             </Rnd>
+
+            {isEditing && (
+                <MermaidEditorPanel
+                    mobile={isMobile}
+                    editorRef={setEditorHost}
+                    paletteRef={isMobile ? undefined : setPaletteHost}
+                    onClose={finishEditing}
+                />
+            )}
 
             {isEditing && (
                 <MermaidToolBar
