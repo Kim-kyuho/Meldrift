@@ -7,7 +7,6 @@ const engine = vi.hoisted(() => {
         onShapeSelect?: (item: { label: string; snippet: string }) => void;
         onLayoutChange?: (source: string) => void;
         onSourceChange?: (source: string) => void;
-        onExpand?: (grow: { left: number; top: number; right: number; bottom: number }) => void;
     };
     type EditorOptions = {
         value?: string;
@@ -255,6 +254,62 @@ describe("MermaidCard with the diagram engine", () => {
 
         expect(editor.setValue).toHaveBeenCalledWith(movedSource);
         expect(renderer.setSource).not.toHaveBeenCalled();
+    });
+
+    it("synchronizes visual source edits without requesting a second render", () => {
+        const onUpdate = vi.fn();
+        render(createCard({ onUpdate }));
+        const [renderer] = engine.state.renderers;
+        const [editor] = engine.state.editors;
+        const nextSource = 'flowchart LR\nA["Renamed"] --> B["End"]';
+
+        act(() => {
+            void renderer.setSource(nextSource);
+            renderer.setSource.mockClear();
+            renderer.options.onSourceChange?.(nextSource);
+        });
+
+        expect(editor.setValue).toHaveBeenCalledWith(nextSource);
+        expect(renderer.setSource).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Close mermaid editor" }));
+        expect(onUpdate).toHaveBeenCalledWith(1, 1, nextSource, 0, 0, 480, 360);
+    });
+
+    it("keeps the current draft and engine instances when switching between desktop and mobile", () => {
+        const onUpdate = vi.fn();
+        const { rerender } = render(createCard({ onUpdate }));
+        const [renderer] = engine.state.renderers;
+        const [editor] = engine.state.editors;
+        const nextSource = `${initialSource}\nB --> C`;
+        act(() => editor.options.onChange?.(nextSource));
+
+        setMobile(true);
+        rerender(createCard({ onUpdate }));
+        expect(screen.getByRole("region", { name: "Mermaid editor" })).toHaveClass("right-20");
+        expect(renderer.palette.isConnected).toBe(false);
+
+        setMobile(false);
+        rerender(createCard({ onUpdate }));
+        expect(screen.getByRole("region", { name: "Mermaid editor" }).contains(renderer.palette)).toBe(true);
+        expect(engine.state.renderers).toHaveLength(1);
+        expect(engine.state.editors).toHaveLength(1);
+        expect(renderer.destroy).not.toHaveBeenCalled();
+        expect(editor.destroy).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Close mermaid editor" }));
+        expect(onUpdate).toHaveBeenCalledWith(1, 1, nextSource, 0, 0, 480, 360);
+    });
+
+    it("destroys the renderer and editor and removes the portal when unmounted", () => {
+        const { unmount } = render(createCard());
+        const [renderer] = engine.state.renderers;
+        const [editor] = engine.state.editors;
+
+        unmount();
+
+        expect(renderer.destroy).toHaveBeenCalledOnce();
+        expect(editor.destroy).toHaveBeenCalledOnce();
+        expect(renderer.palette.isConnected).toBe(false);
+        expect(screen.queryByRole("region", { name: "Mermaid editor" })).not.toBeInTheDocument();
     });
 
     it("saves and stops editing from the panel close button", () => {

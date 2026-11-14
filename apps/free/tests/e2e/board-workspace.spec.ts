@@ -105,10 +105,10 @@ test.describe("보드 작업 화면", () => {
                 }
             };
             await checkTools();
-            await page.screenshot({ path: `/private/tmp/meldrift-diagram-${testInfo.project.name}.png` });
+            await page.screenshot({ path: testInfo.outputPath("mermaid-editor-mobile.png") });
             await page.setViewportSize({ width: 320, height: 568 });
             await checkTools();
-            await page.screenshot({ path: "/private/tmp/meldrift-diagram-narrow-mobile.png" });
+            await page.screenshot({ path: testInfo.outputPath("mermaid-editor-narrow-mobile.png") });
             return;
         }
 
@@ -130,13 +130,13 @@ test.describe("보드 작업 화면", () => {
         const minimized = (await panel.boundingBox())!;
         const titleBar = (await panel.locator("header").boundingBox())!;
         expect(Math.abs(minimized.height - titleBar.height)).toBeLessThan(1);
-        await page.screenshot({ path: `/private/tmp/meldrift-diagram-minimized-${testInfo.project.name}.png` });
+        await page.screenshot({ path: testInfo.outputPath("mermaid-editor-minimized.png") });
         await panel.getByRole("button", { name: "Expand mermaid editor" }).click();
         await expect(panel.getByLabel("Mermaid source")).toBeVisible();
         await expect(panel.locator(".meldrift-diagram-palette")).toBeVisible();
         await expect(panel.getByLabel("Mermaid source")).toHaveText(sourceBefore);
         await expect(shapes).toHaveCount(shapeCount + 1);
-        await page.screenshot({ path: `/private/tmp/meldrift-diagram-${testInfo.project.name}.png` });
+        await page.screenshot({ path: testInfo.outputPath("mermaid-editor-expanded.png") });
     });
 
     test("Mermaid 노드를 놓으면 카드가 그림에 맞춰 커지고 줄어든다", async ({ page }) => {
@@ -196,11 +196,24 @@ test.describe("보드 작업 화면", () => {
         await editor.fill('flowchart LR\nA[Start] --> B[End]');
         await expect(card.locator("g.node")).toHaveCount(2);
         await expect.poll(async () => (await card.boundingBox())!.height).toBeLessThan(initial.height + 10);
+        await editor.press("Escape");
+        await editor.blur();
 
+        if ((page.viewportSize()?.width ?? 0) < 768) {
+            const panel = (await page.getByRole("region", { name: "Mermaid editor" }).boundingBox())!;
+            const bounds = (await card.boundingBox())!;
+            const scrollBy = Math.max(0, bounds.y + bounds.height + 60 - panel.y);
+            await page.locator(".board-scroll-layer").evaluate((element, distance) => {
+                element.scrollTop += distance;
+            }, scrollBy);
+        }
+
+        const resizeHandle = card.locator('div[style*="cursor: se-resize"]').last();
+        await resizeHandle.hover();
         const before = (await card.boundingBox())!;
         const node = card.locator("g.node").first();
         const nodeBefore = (await node.boundingBox())!;
-        const resize = (await card.locator('div[style*="cursor: se-resize"]').last().boundingBox())!;
+        const resize = (await resizeHandle.boundingBox())!;
         await page.mouse.move(resize.x + resize.width / 2, resize.y + resize.height / 2);
         await page.mouse.down();
         await page.mouse.move(resize.x + resize.width / 2 + 40, resize.y + resize.height / 2 + 40, { steps: 10 });
