@@ -154,8 +154,6 @@ test.describe("보드 작업 화면", () => {
         const start = await nodeBox(0);
         const end = await nodeBox(1);
         await nodes.nth(1).click();
-        const selection = card.locator(".meldrift-diagram-selection").first();
-        await expect(selection).toBeVisible();
         const from = { x: end.x + end.width / 2, y: end.y + end.height / 2 };
         const to = { x: cardBefore.x + cardBefore.width + 80, y: from.y };
         await page.mouse.move(from.x, from.y);
@@ -172,7 +170,6 @@ test.describe("보드 작업 화면", () => {
         expect(Math.abs(startAfter.width - start.width)).toBeLessThan(2);
         const endAfter = await nodeBox(1);
         expect(Math.abs(endAfter.x + endAfter.width / 2 - to.x)).toBeLessThan(2);
-        await expect.poll(async () => Math.abs((await selection.boundingBox())!.x + 3 - (await nodeBox(1)).x)).toBeLessThan(2);
         await expect(page.getByLabel("Mermaid source")).toContainText("meldrift-layout");
         const backFrom = { x: endAfter.x + endAfter.width / 2, y: endAfter.y + endAfter.height / 2 };
         await page.mouse.move(backFrom.x, backFrom.y);

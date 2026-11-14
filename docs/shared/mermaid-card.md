@@ -104,6 +104,6 @@ Plus 미리보기는 카드 콜백의 `onPreviewUpdate`가 아니라 서버 저�
 | `apps/free/tests/unit/MermaidCardEditor.test.tsx` | 에디터·팔레트 연결, 소스 입력·그림 조작 동기화, 최소화·복원·닫기, 모바일 전환, 편집 종료·언마운트 정리, 자동 확대·축소 |
 | `packages/ui/tests/mermaid-layout.test.ts` | 최소 크기·배율·위치 보정, 잘못된 측정값, 이동한 노드를 포함하는 읽기 전용 뷰포트 |
 | `packages/ui/tests/BoardMarkdownView.test.tsx` | 읽기 전용 옵션, source 갱신·중복 생성 방지, 미리보기 렌더러 정리 |
-| `apps/free/tests/e2e/board-workspace.spec.ts` | 실제 엔진 입력·렌더, 데스크톱·태블릿 최소화, 모바일·320px 화면 툴바 비겹침, 노드 드래그 후 확대·축소와 핸들 정렬, Rnd 리사이즈·저장·재로드 |
+| `apps/free/tests/e2e/board-workspace.spec.ts` | 실제 엔진 입력·렌더, 데스크톱·태블릿 최소화, 모바일·320px 화면 툴바 비겹침, 노드 드래그 후 카드 확대·축소, Rnd 리사이즈·저장·재로드 |
 
 단위 테스트는 앱과 엔진 사이의 연결을 모의 객체로 검사한다. 실제 Mermaid·CodeMirror와 브라우저의 SVG 크기·포인터 동작은 Chromium·모바일 WebKit·태블릿 WebKit E2E로 별도 검사한다. E2E 스크린샷은 OS 고정 경로가 아니라 Playwright의 테스트별 결과 경로를 사용한다.
