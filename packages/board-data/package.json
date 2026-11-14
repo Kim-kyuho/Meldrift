@@ -15,12 +15,12 @@
   "dependencies": {
     "@meldrift/core": "*",
     "@sqlite.org/sqlite-wasm": "3.50.4-build1",
-    "turndown": "^7.2.4",
+    "turndown": "^7.2.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/turndown": "^5.0.6",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "scripts": {
     "test": "vitest run",

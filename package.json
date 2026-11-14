@@ -25,11 +25,11 @@
     "test:e2e:plus": "npm run test:e2e --workspace=meldrift-plus"
   },
   "devDependencies": {
-    "concurrently": "^9.2.4"
+    "concurrently": "^10.0.7"
   },
   "optionalDependencies": {
-    "@tailwindcss/oxide-linux-arm64-musl": "4.3.3",
-    "@tailwindcss/oxide-linux-x64-gnu": "4.3.3",
+    "@tailwindcss/oxide-linux-arm64-musl": "4.3.4",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.3.4",
     "lightningcss-linux-arm64-musl": "1.33.0",
     "lightningcss-linux-x64-gnu": "1.33.0"
   }
