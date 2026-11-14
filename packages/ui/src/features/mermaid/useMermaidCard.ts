@@ -1,5 +1,6 @@
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
+import type { DiagramFit } from "./mermaid-layout";
 import type { MermaidCardData, SelectionRect } from "@meldrift/core/cards";
 import { noop } from "../../internal/noop";
 
@@ -115,6 +116,11 @@ export function useMermaidCard({
         updateMermaid();
     }, [insertMermaid, mermaid.id, updateMermaid]);
 
+    const finishEditing = useCallback(() => {
+        saveMermaidDraft();
+        onEditingClear();
+    }, [onEditingClear, saveMermaidDraft]);
+
     const editMermaid = () => {
         if (!canEdit) {
             onPermissionDenied();
@@ -171,8 +177,7 @@ export function useMermaidCard({
             outsidePressStartedRef.current = false;
 
             if (isEditing && startedInsideEmptyBoard && isPressInsideEmptyBoard) {
-                saveMermaidDraft();
-                onEditingClear();
+                finishEditing();
             }
         };
 
@@ -183,7 +188,7 @@ export function useMermaidCard({
             document.removeEventListener("pointerdown", handlePressStart);
             document.removeEventListener("pointerup", handlePressOutside);
         };
-    }, [isEditing, saveMermaidDraft, mermaid.id, onEditingClear]);
+    }, [isEditing, finishEditing, mermaid.id]);
 
     const handleMermaidPress = (event: ReactMouseEvent<HTMLDivElement>) => {
         event.stopPropagation();
@@ -209,6 +214,22 @@ export function useMermaidCard({
         onGeometryChange?.(nextCardState);
     };
 
+    const fitCard = useCallback((fit: DiagramFit) => {
+        const current = cardStateRef.current;
+        const nextCardState = {
+            x: Math.max(0, Math.round(current.x + fit.dx)),
+            y: Math.max(0, Math.round(current.y + fit.dy)),
+            width: fit.width,
+            height: fit.height,
+        };
+        if (Object.entries(nextCardState).every(([key, value]) => current[key as keyof typeof current] === value)) {
+            return;
+        }
+        cardStateRef.current = nextCardState;
+        setCardState(nextCardState);
+        onGeometryChange?.(nextCardState);
+    }, [onGeometryChange]);
+
     const openDeleteDialog = () => {
         setDeleteDialogOpen(true);
     };
@@ -232,10 +253,12 @@ export function useMermaidCard({
         dragHandlePressed,
         setDragHandlePressed,
         editMermaid,
+        finishEditing,
         handleDoubleTap,
         handleMermaidPress,
         handleDragStop,
         handleResizeStop,
+        fitCard,
         openDeleteDialog,
         closeDeleteDialog,
         confirmDelete,

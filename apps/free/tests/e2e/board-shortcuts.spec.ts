@@ -35,7 +35,12 @@ for (const [key, cardType] of [["m", "memo"], ["t", "table"], ["d", "mermaid"]])
         const count = await cards.count();
         await page.keyboard.press(key);
         await expect(cards).toHaveCount(count + 1);
-        await expect(cards.filter({ has: page.locator('[contenteditable="true"], textarea, input') })).not.toHaveCount(0);
+        if (cardType === "mermaid") {
+            // 데스크톱은 에디터가 카드 밖 편집 패널에, 모바일은 카드 안에 뜬다.
+            await expect(page.getByLabel("Mermaid source")).toBeVisible();
+        } else {
+            await expect(cards.filter({ has: page.locator('[contenteditable="true"], textarea, input') })).not.toHaveCount(0);
+        }
         await expect(page.locator(`[class*="${cardType}-rnd-"][data-editing="true"]`)).toHaveCount(1);
     });
 }

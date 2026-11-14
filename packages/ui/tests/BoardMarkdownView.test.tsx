@@ -2,11 +2,19 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import BoardMarkdownView from "../src/features/markdown/BoardMarkdownPreview";
 
-vi.mock("../src/features/mermaid/useMermaidRenderer", () => ({
-    useMermaidRenderer: ({ source }: { source: string }) => ({
-        svg: `<svg><text>${source}</text></svg>`,
-        renderError: "",
-    }),
+vi.mock("@meldrift/diagram-engine", () => ({
+    createDiagramRenderer: (container: HTMLElement, { source = "" }: { source?: string }) => {
+        const element = document.createElement("div");
+        element.innerHTML = `<svg><text>${source}</text></svg>`;
+        container.append(element);
+
+        return {
+            element,
+            setSource: vi.fn(),
+            getSource: () => source,
+            destroy: () => element.remove(),
+        };
+    },
 }));
 
 describe("BoardMarkdownView", () => {

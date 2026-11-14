@@ -38,7 +38,7 @@ Meldrift는 캔버스 기반 Markdown 컴파일러를 만드는 개인 프로젝
 | 영역 | 기술 |
 | --- | --- |
 | 화면 | Next.js App Router, React, TypeScript, Tailwind CSS |
-| 카드·편집 | react-rnd, Meldrift Markdown Engine, Meldrift Table Engine, CodeMirror 6 |
+| 카드·편집 | react-rnd, Meldrift Markdown Engine, Meldrift Table Engine, Meldrift Diagram Engine |
 | 다이어그램 | Mermaid, ZenUML 플러그인 |
 | 로컬 저장 | Web Worker의 SQLite WASM, IndexedDB의 SQLite 파일 |
 | 서버 저장 | Neon PostgreSQL, Drizzle의 Neon HTTP 드라이버 |
@@ -119,7 +119,7 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 
 ### Mermaid
 
-카드 상단 select로 다이어그램 종류를 고르고 CodeMirror 6에서 편집한다. 문맥에 따라 도형·연결선·기존 객체 등을 추천하며 실시간 SVG 미리보기와 손그림 스타일을 제공한다. 지원 목록과 템플릿은 `mermaid-language.ts`를 기준으로 한다. 렌더 ticket으로 오래된 결과를 버린다.
+Meldrift Diagram Engine으로 편집·렌더한다. 데스크톱은 로고 아래 편집 패널에 에디터와 도형 팔레트를 띄우고, 모바일은 화면 하단 고정 편집기를 사용하며 팔레트는 숨긴다. 카드는 그림만 표시한다. 소스 변경·노드 이동 완료 시 실제 SVG 영역에 맞춰 카드 크기를 조정하고, Rnd를 직접 리사이즈할 때는 그림 배율만 바꾼다. 종류 선택·문맥 자동완성·손그림 스타일·노드 드래그는 엔진이 제공한다.
 
 ### 표
 
