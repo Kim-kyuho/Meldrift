@@ -145,6 +145,7 @@ test.describe("보드 작업 화면", () => {
         const card = page.locator('[class*="mermaid-rnd-"][data-editing="true"]');
         const nodes = card.locator(".mermaid-card-diagram g.node");
         await expect(nodes).toHaveCount(2);
+        await expect.poll(async () => (await card.boundingBox())!.height).toBeLessThan(220);
         const nodeBox = (index: number) => nodes.nth(index).evaluate((node) => {
             const rect = node.getBoundingClientRect();
             return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
@@ -218,6 +219,7 @@ test.describe("보드 작업 화면", () => {
         const card = page.locator('[class*="mermaid-rnd-"][data-editing="true"]');
         const editor = page.getByLabel("Mermaid source");
         await expect(card.locator("g.node")).toHaveCount(2);
+        await expect.poll(async () => (await card.boundingBox())!.height).toBeLessThan(220);
         const initial = (await card.boundingBox())!;
         await editor.fill('flowchart TD\nA[Start] --> B[Second]\nB --> C[Third]\nC --> D[Fourth]');
         await expect(card.locator("g.node")).toHaveCount(4);
