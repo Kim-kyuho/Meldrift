@@ -1,18 +1,48 @@
 # Welcome to Meldrift!
 
-Capture your drifting ideas in Markdown-based memo cards, connect them, and compile them into a single document.
+Meldrift is a **spatial Markdown workspace** where you arrange drifting ideas on a freeform canvas, connect visual cards, and compile everything into a single clean Markdown document.
 
-![Meldrift help 1](/help/help_1.png)
+## How Meldrift Works
 
-Images, tables, and Mermaid diagrams attached to any of a memo’s four corners are automatically included, preserving their relationships in the final document.
+```mermaid
+flowchart LR
+    A["Write Memo Cards"] --> B["Add Image, Table & Mermaid"]
+    B --> C["Link within 50px of Corners"]
+    C --> D["Reorder & Compile Markdown"]
+```
 
-![Meldrift help 2](/help/help_2.png)
+## Card Types Overview
 
-![Meldrift help 3](/help/help_3.png)
+| Card | Purpose | How to Create | Compiled Markdown Output |
+| --- | --- | --- | --- |
+| **Memo** | Rich Markdown notes & document sections | Memo button or `m` | Ordered headings & body sections |
+| **Image** | Visual screenshots & diagrams | Camera button, `i`, or drag & drop | Embedded asset (`./images/...` in ZIP) |
+| **Table** | Structured grids & comparisons | Table button or `t` | GitHub-Flavored Markdown table |
+| **Mermaid** | Flowcharts, sequences & architecture | Mermaid button or `d` | Fenced `mermaid` code block |
 
-With Meldrift Free Edition, your board is stored locally in your browser and is not synced across devices. Export a backup before clearing your browser data.
+![Meldrift help 1](/help/help1.png)
 
-## Syntax references
+## 50px Spatial Linking & Compilation
+
+Any **Image**, **Table**, or **Mermaid** card placed within **50px** of one of a Memo's four corners automatically attaches to that Memo:
+
+| Spatial State | Visual Line | Included in Compile? |
+| --- | --- | --- |
+| Within `50px` (non-overlapping) | Black dashed connector | Yes |
+| Within `50px` (overlapping Memo) | Hidden to reduce clutter | Yes |
+| Beyond `50px` from all corners | None | Not attached to a Memo |
+
+![Meldrift help 2](/help/help2.png)
+
+Open the top-right **`...`** menu to use **Reorder Memos** (change section order `#1`, `#2`, ...) and **Compile to Markdown** (preview and download `.md` or `.zip` with images).
+
+> **Interactive Tutorial:** Closing this Help window opens **`Tutorial`**, **`Help`**, and **`Close (Esc)`** at the top of the canvas. Try **Tutorial** anytime to walk through every feature in an isolated sandbox without affecting your board.
+
+## Free Edition Storage
+
+With Meldrift Free Edition, your board is stored locally in your browser (`IndexedDB`) and is not synced across devices. Use **Export** in the **`...`** menu to save a `.sqlite` backup before clearing browser data.
+
+## Syntax References
 
 - [Markdown syntax](https://commonmark.org/help/)
 - [Mermaid diagram syntax](https://mermaid.js.org/intro/syntax-reference.html)

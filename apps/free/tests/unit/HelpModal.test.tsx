@@ -1,8 +1,26 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@meldrift/diagram-engine", () => ({
+    createDiagramRenderer: (container: HTMLElement) => {
+        const root = document.createElement("div");
+        root.className = "meldrift-diagram-renderer";
+        const canvas = document.createElement("div");
+        canvas.className = "meldrift-diagram-canvas";
+        root.append(canvas);
+        container.append(root);
+        return {
+            element: root,
+            getSource: () => "",
+            setSource: vi.fn(async () => {}),
+            setCursor: vi.fn(),
+            destroy: vi.fn(() => root.remove()),
+        };
+    },
+}));
+
 import HelpModal from "@/components/HelpModal";
-import { getHelpShortcut, helpMarkdownUrl } from "@/lib/help";
+import { getHelpShortcut, helpMarkdownUrl, helpShortcutsUrl } from "@/lib/help";
 
 describe("HelpModal 동작", () => {
     afterEach(() => vi.unstubAllGlobals());
@@ -50,5 +68,60 @@ describe("HelpModal 동작", () => {
             label: "Ctrl ⇧ P",
             ariaLabel: "Help shortcut: Control Shift P",
         });
+    });
+
+    it("Introduce(Mermaid·표)와 Short-cut 탭을 전환해 각각의 마크다운을 렌더링한다", async () => {
+        const fetchMock = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+            const url = String(input);
+            if (url === helpShortcutsUrl) {
+                return {
+                    ok: true,
+                    text: async () => [
+                        "# Keyboard Shortcuts",
+                        "",
+                        "| Key | Action |",
+                        "| --- | --- |",
+                        "| `m` | Create a Memo card |",
+                    ].join("\n"),
+                };
+            }
+            return {
+                ok: true,
+                text: async () => [
+                    "# Welcome to Meldrift!",
+                    "",
+                    "```mermaid",
+                    "flowchart LR",
+                    "    A[Memo] --> B[Markdown]",
+                    "```",
+                    "",
+                    "| Card | Key |",
+                    "| --- | --- |",
+                    "| Memo | `m` |",
+                ].join("\n"),
+            };
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        render(<HelpModal onClose={vi.fn()} />);
+
+        const introduceTab = screen.getByRole("tab", { name: "Introduce" });
+        const shortcutTab = screen.getByRole("tab", { name: "Short-cut" });
+        expect(introduceTab).toHaveAttribute("aria-selected", "true");
+        expect(shortcutTab).toHaveAttribute("aria-selected", "false");
+
+        expect(await screen.findByRole("heading", { name: "Welcome to Meldrift!" })).toBeVisible();
+        expect(document.querySelector(".mermaid-diagram-view .meldrift-diagram-renderer")).not.toBeNull();
+        expect(screen.getByRole("table")).toBeInTheDocument();
+
+        fireEvent.click(shortcutTab);
+        expect(shortcutTab).toHaveAttribute("aria-selected", "true");
+        expect(await screen.findByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
+        expect(screen.getByText("Create a Memo card")).toBeVisible();
+        expect(fetchMock).toHaveBeenCalledWith(helpShortcutsUrl, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+
+        fireEvent.click(introduceTab);
+        expect(await screen.findByRole("heading", { name: "Welcome to Meldrift!" })).toBeVisible();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 });
