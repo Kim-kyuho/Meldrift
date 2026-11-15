@@ -6,8 +6,8 @@ Meldrift is a personal project for organizing ideas on a visual board and compil
 
 Ideas do not always begin in a clear order. Meldrift allows memos, images, tables, diagrams, and drawings to be placed freely before their contents are organized into a Markdown document.
 
-![Meldrift screenshot1](screenshot/IMG_1161.jpeg)
-![Meldrift screenshot2](screenshot/IMG_1162.jpeg)
+![Meldrift screenshot1](apps/free/public/help/help1.png)
+![Meldrift screenshot2](apps/free/public/help/help2.png)
 
 ## Features
 
