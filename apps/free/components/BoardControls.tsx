@@ -1,20 +1,25 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import type { BoardSnapshot } from "@meldrift/board-data/board-state";
 import type { BoardControls as BoardControlsProps } from "@meldrift/ui/BoardClient";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import { useBoardTransfer } from "@/hooks/useBoardTransfer";
 import { useBoardPersistance } from "@/hooks/useBoardPersistance";
 import { useBoardShortcuts } from "@/hooks/useBoardShortcuts";
 import BoardMenu from "./BoardMenu";
+import HelpCanvasMenu from "./HelpCanvasMenu";
 import HelpModal from "./HelpModal";
 
 export default function BoardControls({
     snapshot,
     savePaused,
+    isEditing,
+    markdownViewOpen,
     setMessage,
     closeOverlays,
     initialHelpOpen,
+    onStartTutorial,
     menuOpen,
     setMenuOpen,
     reorderOpen,
@@ -22,10 +27,15 @@ export default function BoardControls({
     onCompileMarkdown,
     onAbout,
     replaceSnapshot,
-}: BoardControlsProps & { initialHelpOpen: boolean }) {
+}: BoardControlsProps & {
+    initialHelpOpen: boolean;
+    onStartTutorial?: (currentSnapshot: BoardSnapshot) => void;
+}) {
     const [helpOpen, setHelpOpen] = useState(initialHelpOpen);
+    const [postHelpMenuOpen, setPostHelpMenuOpen] = useState(false);
     const openHelp = useCallback(() => {
         closeOverlays();
+        setPostHelpMenuOpen(false);
         setHelpOpen(true);
     }, [closeOverlays]);
     useBoardShortcuts({ onOpenHelp: openHelp });
@@ -73,7 +83,25 @@ export default function BoardControls({
                 onImport={handleImportClick}
                 onReset={handleResetClick}
             />
-            {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
+            {helpOpen && (
+                <HelpModal
+                    onClose={() => {
+                        setHelpOpen(false);
+                        setPostHelpMenuOpen(true);
+                    }}
+                />
+            )}
+            {postHelpMenuOpen && !helpOpen && !menuOpen && !reorderOpen && !isEditing && !markdownViewOpen && (
+                <HelpCanvasMenu
+                    onStartTutorial={() => {
+                        setPostHelpMenuOpen(false);
+                        closeOverlays();
+                        onStartTutorial?.(snapshot);
+                    }}
+                    onOpenHelp={openHelp}
+                    onClose={() => setPostHelpMenuOpen(false)}
+                />
+            )}
             {resetDialogOpen && (
                 <ConfirmDialog
                     title="Reset Meldrift Free Edition?"

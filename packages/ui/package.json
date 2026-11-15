@@ -19,6 +19,7 @@
     "./useMemoReorder": "./src/features/memo/useMemoReorder.ts",
     "./useImageCard": "./src/features/image/useImageCard.ts",
     "./useBoardMarkdown": "./src/features/markdown/useBoardMarkdown.ts",
+    "./mermaid-sections": "./src/features/markdown/mermaid-sections.ts",
     "./ImageCardView": "./src/features/image/ImageCardView.tsx",
     "./BoardMarkdownPreview": "./src/features/markdown/BoardMarkdownPreview.tsx",
     "./AboutModal": "./src/features/board/AboutModal.tsx",

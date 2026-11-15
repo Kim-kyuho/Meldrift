@@ -15,6 +15,7 @@ type BoardClientProps = {
     permissionMessage?: string;
     viewportRef?: RefObject<HTMLDivElement | null>;
     renderControls: (controls: BoardControls) => ReactNode;
+    renderBoardOverlay?: (info: { snapshot: BoardSnapshot; zoom: number; cornerLinks: MemoCornerLink[] }) => ReactNode;
 };
 ```
 
@@ -23,8 +24,9 @@ type BoardClientProps = {
 | `initialSnapshot` | 필수 | 화면을 채울 초기 보드. 이미 읽혀 있는 값이어야 한다 |
 | `canEdit` | `true` | 카드 편집 허용 여부. Free는 넘기지 않고, Plus는 계정 권한과 보드가 열린 상태인지를 곱해 넘긴다 |
 | `permissionMessage` | `Please sign in before editing cards.` | `canEdit`이 false일 때 띄울 문구 |
-| `viewportRef` | 내부 ref | 보드 스크롤 레이어. Plus가 미리보기 캡처에 쓰려고 밖에서 받아 간다 |
+| `viewportRef` | 내부 ref | 보드 스크롤 레이어. Plus가 미리보기 캡처에, Free 튜토리얼이 쇼케이스 기준 좌표 계산에 사용한다 |
 | `renderControls` | 필수 | 메뉴와 저장 계층을 Edition이 그린다 |
+| `renderBoardOverlay` | 선택 | 캔버스 내부(`BoardCornerLinksLayer` 뒤)에 추가 오버레이 SVG 등을 그린다. Free 튜토리얼의 50px 반경 시각화 등에 사용한다 |
 
 `initialSnapshot`을 Promise나 `null`로 받지 않는다. **불러오기는 껍데기의 일이고**, 이 컴포넌트는 값이 있는 상태로만 마운트된다.
 
@@ -36,6 +38,10 @@ Edition이 그려 넣는 자리다. 넘겨받는 값은 이렇다.
 | --- | --- |
 | `snapshot` | 현재 화면 전체를 담은 값 |
 | `savePaused` | 지금 저장하면 안 되는 상태인가 |
+| `isEditing` | 카드 네 종류 중 하나라도 편집 중인지 여부 |
+| `markdownViewOpen` | Markdown 미리보기 모달 열림 여부 |
+| `boardZoom` | 현재 보드 확대/축소 배율 |
+| `cornerLinks` | 계산된 50px 메모 코너 연결 목록 |
 | `setMessage` | 보드 메시지 띄우기 |
 | `menuOpen`, `setMenuOpen` | 보드 메뉴 열림 상태 |
 | `reorderOpen`, `onReorder` | 순서 패널 상태와 토글 |

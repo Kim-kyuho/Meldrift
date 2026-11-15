@@ -59,6 +59,7 @@ export default function BoardMenu({
             </div>
             <PressableButton
                 aria-label="Open board menu"
+                data-tutorial="board-menu-trigger"
                 className="fixed right-5 top-5 z-50000 bg-white/75 px-3 py-3 shadow-md"
                 onClick={() => setMenuOpen((prev) => !prev)}
             >
@@ -71,6 +72,7 @@ export default function BoardMenu({
                     <div className="px-3 py-2 font-bold text-neutral-900">{title}</div>
                     <PressableButton
                         variant="menu"
+                        data-tutorial="reorder-memos"
                         title="Change the order memos are numbered in"
                         className="flex items-center gap-2 font-bold text-emerald-600"
                         aria-pressed={reorderOpen}
@@ -100,6 +102,7 @@ export default function BoardMenu({
                     </PressableButton>
                     <PressableButton
                         variant="menu"
+                        data-tutorial="compile-markdown"
                         className="flex items-center gap-2 font-bold text-pink-500"
                         onClick={() => runAndClose(onCompileMarkdown)}
                     >

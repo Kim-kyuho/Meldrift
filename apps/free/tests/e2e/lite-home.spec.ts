@@ -165,11 +165,14 @@ test.describe("Meldrift 프리 보드 도움말", () => {
                 ? "Help shortcut: Command Shift P"
                 : "Help shortcut: Control Shift P"
         )).toBeVisible();
+        await expect(helpDialog.getByRole("tab", { name: "Introduce" })).toHaveAttribute("aria-selected", "true");
         await expect(helpDialog.getByRole("heading", { name: "Welcome to Meldrift!" })).toBeVisible();
         await expect(helpDialog.getByRole("img", { name: "Meldrift help 1" })).toBeVisible();
         await expect(helpDialog.getByRole("img", { name: "Meldrift help 2" })).toBeVisible();
-        await expect(helpDialog.getByRole("img", { name: "Meldrift help 3" })).toBeVisible();
         await expect(helpDialog.getByRole("button", { name: /download/i })).toHaveCount(0);
+
+        await helpDialog.getByRole("tab", { name: "Short-cut" }).click();
+        await expect(helpDialog.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
 
         await helpDialog.getByRole("button", { name: "Close Help" }).click();
         await expect(helpDialog).toHaveCount(0);

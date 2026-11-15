@@ -28,7 +28,7 @@ import { useBoardSelection } from "@meldrift/ui/useBoardSelection";
 import { useBoardImages } from "@meldrift/ui/useBoardImages";
 import { imageInputAccept } from "@meldrift/board-data/image-file";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
-import { resolveMemoCornerLinks, type CardType, type SelectionRect } from "@meldrift/core/cards";
+import { resolveMemoCornerLinks, type CardType, type MemoCornerLink, type SelectionRect } from "@meldrift/core/cards";
 import { useBoardMermaids } from "@meldrift/ui/useBoardMermaids";
 import { useBoardTables } from "@meldrift/ui/useBoardTables";
 import { useBoardMemoFocus } from "@meldrift/ui/useBoardMemoFocus";
@@ -49,6 +49,10 @@ import { useIsMobile } from "../../shared/useIsMobile";
 export type BoardControls = {
     snapshot: BoardSnapshot;
     savePaused: boolean;
+    isEditing?: boolean;
+    markdownViewOpen?: boolean;
+    boardZoom?: number;
+    cornerLinks?: MemoCornerLink[];
     setMessage: (message: string) => void;
     menuOpen: boolean;
     setMenuOpen: Dispatch<SetStateAction<boolean>>;
@@ -66,6 +70,7 @@ type BoardClientProps = {
     permissionMessage?: string;
     viewportRef?: RefObject<HTMLDivElement | null>;
     renderControls: (controls: BoardControls) => ReactNode;
+    renderBoardOverlay?: (info: { snapshot: BoardSnapshot; zoom: number; cornerLinks: MemoCornerLink[] }) => ReactNode;
 };
 
 export default function BoardClient({
@@ -74,6 +79,7 @@ export default function BoardClient({
     permissionMessage = "Please sign in before editing cards.",
     viewportRef,
     renderControls,
+    renderBoardOverlay,
 }: BoardClientProps) {
     const {
         board: currentBoard,
@@ -609,6 +615,10 @@ export default function BoardClient({
             {renderControls({
                 snapshot,
                 savePaused,
+                isEditing,
+                markdownViewOpen,
+                boardZoom,
+                cornerLinks,
                 setMessage: setBoardMessage,
                 menuOpen,
                 setMenuOpen,
@@ -913,6 +923,7 @@ export default function BoardClient({
                                 />
                             ))}
                             <BoardCornerLinksLayer links={cornerLinks} />
+                            {renderBoardOverlay?.({ snapshot, zoom: boardZoom, cornerLinks })}
                             <DrawingLayer
                                 key={`${contentVersion}:${drawingMode ? "drawing-active" : "drawing-inactive"}`}
                                 strokes={strokes}

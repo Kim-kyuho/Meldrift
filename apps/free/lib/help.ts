@@ -1,6 +1,7 @@
 import type { BoardSnapshot } from "@/lib/board-state";
 
 export const helpMarkdownUrl = "/help/Help_Meldrift.md";
+export const helpShortcutsUrl = "/help/Help_Shortcuts.md";
 
 export const getHelpShortcut = (userAgent: string) => {
     const isApplePlatform = /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(userAgent);
