@@ -1,6 +1,6 @@
 # Help 상세설계
 
-소스: `components/HelpModal.tsx`, `lib/help.ts`, `components/BoardClient.tsx`, `hooks/useBoardShortcuts.ts`
+소스: `components/HelpModal.tsx`, `components/HelpCanvasMenu.tsx`, `lib/help.ts`, `components/BoardClient.tsx`, `hooks/useBoardShortcuts.ts`
 
 ## 목적
 
@@ -47,3 +47,7 @@ Free Edition은 로그인도 안내 화면도 없이 바로 보드로 들어간�
 - `role="dialog"`, `aria-modal="true"`, `aria-labelledby="help-title"`.
 - 크기는 `min(64rem, 100vw-2rem)` × `min(52rem, 100dvh-2rem)`이고 본문만 스크롤한다.
 - 헤더에 제목과 단축키 `<kbd>`, 닫기 버튼이 있다.
+
+## 종료 후 캔버스 메뉴
+
+모달을 닫으면(`onClose`) `BoardControls`가 캔버스 상단에 영어 퀵 메뉴(`HelpCanvasMenu`)를 띄운다. `Tutorial`로 샌드박스 튜토리얼을 시작하거나, `Help`로 모달을 다시 열거나, `Close (Esc)`·`Escape` 키로 닫을 수 있다. 세부 구조는 [인터랙티브 튜토리얼](./interactive-tutorial.md)을 참조한다.

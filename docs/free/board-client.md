@@ -9,8 +9,8 @@
 | 파일 | 역할 |
 | --- | --- |
 | `hooks/useBoardLoad.ts` | 마운트 후 워커에서 스냅샷을 한 번 읽는다 |
-| `components/BoardClient.tsx` | 읽기 전/실패 화면을 그리고, 읽히면 공유 BoardClient에 넘긴다 |
-| `components/BoardControls.tsx` | 보드 메뉴·Help·반출입·자동 저장을 `renderControls` 자리에 그린다 |
+| `components/BoardClient.tsx` | 읽기 전/실패 화면을 그리고, 읽히면 공유 BoardClient 또는 튜토리얼 샌드박스에 넘긴다 |
+| `components/BoardControls.tsx` | 보드 메뉴·Help·Help 종료 후 튜토리얼 런처·반출입·자동 저장을 `renderControls` 자리에 그린다 |
 
 `app/page.tsx`는 `BoardClient`를 그리는 것 외에 하는 일이 없다.
 
@@ -35,7 +35,7 @@ initialSnapshot 없음 → 제품 소개 + Loading...
 
 **빈 보드를 먼저 띄우고 나중에 채우지 않는다.** 그렇게 하면 읽기 전의 빈 스냅샷이 자동 저장에 실려 실제 데이터를 덮을 수 있다. 값이 있을 때만 편집기를 마운트하는 것이 그 방지책이다.
 
-Help 모달은 읽힌 스냅샷이 비어 있을 때(`isBoardContentEmpty`) 처음부터 열린 상태로 시작한다.
+Help 모달은 읽힌 스냅샷이 비어 있을 때(`isBoardContentEmpty`) 처음부터 열린 상태로 시작한다. 모달을 닫고 `HelpCanvasMenu`에서 `Tutorial`을 선택하면 `resumeSnapshot`에 현재 보드를 보관하고 `TutorialBoardClient` 샌드박스로 전환하며, 종료 후 복귀 시 `suppressAutoHelp`로 Help 자동 오픈을 막는다. 세부 동작은 [인터랙티브 튜토리얼](./interactive-tutorial.md)을 참조한다.
 
 ## 자동 저장
 
