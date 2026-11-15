@@ -107,6 +107,8 @@ export default function BoardToolBar({
                 <div>
                     <PressableButton 
                         variant="menu"
+                        aria-label="Create memo"
+                        data-tutorial="create-memo"
                         className={toolbarButtonClassName}
                         onClick={() => { 
                             onMemoCreateClick();
@@ -119,6 +121,8 @@ export default function BoardToolBar({
                 <div>
                     <PressableButton 
                         variant="menu"
+                        aria-label="Upload image"
+                        data-tutorial="upload-image"
                         className={toolbarButtonClassName}
                         onClick={() => {
                             onImageUploadClick();
@@ -131,6 +135,8 @@ export default function BoardToolBar({
                 <div>
                     <PressableButton
                         variant="menu"
+                        aria-label="Create table"
+                        data-tutorial="create-table"
                         className={toolbarButtonClassName}
                         onClick={() => {
                             onTableCreateClick();
@@ -143,6 +149,8 @@ export default function BoardToolBar({
                 <div>
                     <PressableButton
                         variant="menu"
+                        aria-label="Create mermaid diagram"
+                        data-tutorial="create-mermaid"
                         className={toolbarButtonClassName}
                         onClick={() => {
                             onMermaidCreateClick();
