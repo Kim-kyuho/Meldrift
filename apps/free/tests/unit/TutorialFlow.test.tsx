@@ -291,4 +291,30 @@ describe("Meldrift Interactive Tutorial", () => {
         });
         expect(onExit).toHaveBeenCalledTimes(1);
     });
+
+    it("keeps the Upload image file input label unique and hides HelpCanvasMenu when board panels open", () => {
+        hoisted.setLoadedSnapshot(createEmptyBoardSnapshot());
+
+        render(<BoardClient />);
+
+        expect(screen.getAllByLabelText("Upload image")).toHaveLength(1);
+        expect(screen.getByLabelText("Upload image").tagName).toBe("INPUT");
+        expect(screen.getByRole("button", { name: "Add image" })).toHaveAttribute(
+            "data-tutorial",
+            "upload-image",
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Close Help" }));
+        const quickActions = screen.getByRole("navigation", { name: "Help quick actions" });
+        expect(quickActions).toHaveClass("z-49999", "left-4", "top-17");
+
+        fireEvent.click(screen.getByRole("button", { name: "Open board menu" }));
+        expect(screen.queryByRole("navigation", { name: "Help quick actions" })).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Reorder Memos" }));
+        expect(screen.queryByRole("navigation", { name: "Help quick actions" })).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Close memo order" }));
+        expect(screen.getByRole("navigation", { name: "Help quick actions" })).toBeInTheDocument();
+    });
 });

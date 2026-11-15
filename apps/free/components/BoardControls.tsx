@@ -14,6 +14,8 @@ import HelpModal from "./HelpModal";
 export default function BoardControls({
     snapshot,
     savePaused,
+    isEditing,
+    markdownViewOpen,
     setMessage,
     closeOverlays,
     initialHelpOpen,
@@ -89,7 +91,7 @@ export default function BoardControls({
                     }}
                 />
             )}
-            {postHelpMenuOpen && !helpOpen && (
+            {postHelpMenuOpen && !helpOpen && !menuOpen && !reorderOpen && !isEditing && !markdownViewOpen && (
                 <HelpCanvasMenu
                     onStartTutorial={() => {
                         setPostHelpMenuOpen(false);

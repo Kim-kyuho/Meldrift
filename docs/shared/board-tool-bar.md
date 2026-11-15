@@ -34,7 +34,7 @@
 | 1 | `Compass` | `setBoardNavigatorOpen(prev => !prev)` | 검색 패널과 보드 메뉴 닫기 |
 | 2 | `Search` | `setSearchBarOpen(prev => !prev)` | 메모 네비게이터와 보드 메뉴 닫기 |
 | 3 | `SquarePen` | `onMemoCreateClick` | `setMenuOpen(false)` (`aria-label="Create memo"`, `data-tutorial="create-memo"`) |
-| 4 | `Camera` | `onImageUploadClick` | `setMenuOpen(false)` (`aria-label="Upload image"`, `data-tutorial="upload-image"`) |
+| 4 | `Camera` | `onImageUploadClick` | `setMenuOpen(false)` (`aria-label="Add image"`, `data-tutorial="upload-image"`) |
 | 5 | `Table2` | `onTableCreateClick` | `setMenuOpen(false)` (`aria-label="Create table"`, `data-tutorial="create-table"`) |
 | 6 | `Workflow` | `onMermaidCreateClick` | `setMenuOpen(false)` (`aria-label="Create mermaid diagram"`, `data-tutorial="create-mermaid"`) |
 | 별도 | `Pencil` / `Check` | `onDrawingToggleClick` | 검색 패널·메모 네비게이터·보드 메뉴를 닫고 드로잉 모드 전환 |

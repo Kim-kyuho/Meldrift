@@ -121,7 +121,7 @@ export default function BoardToolBar({
                 <div>
                     <PressableButton 
                         variant="menu"
-                        aria-label="Upload image"
+                        aria-label="Add image"
                         data-tutorial="upload-image"
                         className={toolbarButtonClassName}
                         onClick={() => {

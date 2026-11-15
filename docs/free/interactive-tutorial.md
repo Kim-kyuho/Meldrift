@@ -9,7 +9,7 @@
 ## 진입 조건과 캔버스 런처
 
 - 기존 유저 보호: [Help 상세설계](./help-modal.md)의 `isBoardContentEmpty(initialSnapshot)` 조건을 유지해, 보드에 이미 콘텐츠가 있으면 Help 모달과 튜토리얼 모두 자동으로 띄우지 않는다.
-- `HelpModal`이 닫히면(`onClose`) `BoardControls`가 `postHelpMenuOpen`을 열어 캔버스 상단에 영어 메뉴 바(`HelpCanvasMenu`)를 띄운다.
+- `HelpModal`이 닫히면(`onClose`) `BoardControls`가 `postHelpMenuOpen`을 열어 캔버스 상단에 영어 메뉴 바(`HelpCanvasMenu`)를 띄운다. 보드 메뉴(`menuOpen`), 메모 순서 패널(`reorderOpen`), 카드 편집(`isEditing`), Markdown 미리보기(`markdownViewOpen`)가 열려 있을 때는 자동으로 숨기고, 스택 순서도 `z-49999`로 두어 다른 보드 UI나 모바일 우상단 AI 어시스턴트 버튼을 가리지 않도록 모바일에서는 좌측(`left-4 top-17`)에 콤팩트하게 배치한다.
 
 | 버튼 | 동작 |
 | --- | --- |
