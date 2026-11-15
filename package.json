@@ -34,6 +34,7 @@
     "lightningcss-linux-x64-gnu": "1.33.0"
   },
   "dependencies": {
-    "@meldrift/diagram-engine": "^0.2.0"
+    "@meldrift/diagram-engine": "^0.2.1",
+    "@meldrift/markdown-engine": "^0.4.1"
   }
 }
