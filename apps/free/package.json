@@ -21,7 +21,7 @@
     "test:e2e:install": "playwright install"
   },
   "dependencies": {
-    "@google/genai": "^2.32.0",
+    "@google/genai": "^3.3.0",
     "@meldrift/ai": "*",
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
