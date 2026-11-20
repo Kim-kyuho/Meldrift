@@ -70,6 +70,7 @@ const engine = vi.hoisted(() => {
             container,
             options,
             element: root,
+            view: { dispatch: vi.fn() },
             setValue: vi.fn<(value: string) => void>(),
             insertPaletteItem: vi.fn<(item: { label: string; snippet: string }) => void>(),
             destroy: vi.fn(() => root.remove()),
@@ -163,7 +164,8 @@ describe("다이어그램 엔진을 사용하는 Mermaid 카드", () => {
         expect(editor.options.value).toBe(initialSource);
     });
 
-    it("에디터를 제거하거나 카드 편집을 종료하지 않고 데스크톱 패널을 최소화한다", () => {
+    it.each([false, true])("카드 편집을 유지한 채 패널을 최소화하고 다시 펼친다 (모바일: %s)", (mobile) => {
+        setMobile(mobile);
         const onEditingClear = vi.fn();
         const onUpdate = vi.fn();
         render(createCard({ onEditingClear, onUpdate }));
@@ -179,7 +181,7 @@ describe("다이어그램 엔진을 사용하는 Mermaid 카드", () => {
         expect(screen.getByRole("heading", { name: "Mermaid Editor" })).toBeVisible();
         expect(body).not.toBeVisible();
         expect(body.contains(editor.container)).toBe(true);
-        expect(body.contains(renderer.palette)).toBe(true);
+        expect(body.contains(renderer.palette)).toBe(!mobile);
         expect(screen.getByRole("button", { name: "Expand mermaid editor" })).toHaveAttribute("aria-expanded", "false");
         expect(editor.destroy).not.toHaveBeenCalled();
         expect(onUpdate).not.toHaveBeenCalled();
@@ -220,7 +222,6 @@ describe("다이어그램 엔진을 사용하는 Mermaid 카드", () => {
         expect(panel.contains(editor.container)).toBe(true);
         expect(renderer.container.contains(editor.container)).toBe(false);
         expect(renderer.palette.isConnected).toBe(false);
-        expect(screen.queryByRole("button", { name: "Minimize mermaid editor" })).not.toBeInTheDocument();
     });
 
     it("입력 내용을 렌더링하고 선택한 도형을 에디터에 삽입한다", () => {
@@ -377,7 +378,7 @@ describe("다이어그램 엔진을 사용하는 Mermaid 카드", () => {
         render(createCard());
         const [editor] = engine.state.editors;
 
-        expect(editor.container).toHaveClass("h-60");
+        expect(editor.container).toHaveClass("h-[10.5rem]");
         expect(editor.container.style.height).toBe("");
     });
 

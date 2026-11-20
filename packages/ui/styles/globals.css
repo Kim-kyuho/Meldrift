@@ -222,6 +222,12 @@
   z-index: 50001;
 }
 
+/* 공간이 좁아 자동완성 창이 줄어들면 목록도 줄어들어 끝까지 스크롤할 수 있다. */
+.meldrift-diagram-tooltips .cm-tooltip-autocomplete {
+  display: flex;
+  flex-direction: column;
+}
+
 .card-editing {
   border: 2px dashed #ec4899;
   border-radius: 0.75rem;
