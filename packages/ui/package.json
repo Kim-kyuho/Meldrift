@@ -82,7 +82,7 @@
     "@meldrift/diagram-engine": "^0.2.1",
     "@meldrift/markdown-engine": "^0.4.1",
     "@meldrift/table-engine": "^0.3.0",
-    "lucide-react": "^1.70.0",
+    "lucide-react": "^1.72.0",
     "react-markdown": "^10.1.0",
     "react-rnd": "^10.5.3",
     "rehype-raw": "^7.0.0",
