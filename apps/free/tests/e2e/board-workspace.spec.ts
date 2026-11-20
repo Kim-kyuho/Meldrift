@@ -85,7 +85,6 @@ test.describe("보드 작업 화면", () => {
         await expect(card).toHaveCSS("height", "180px");
 
         if (isMobile) {
-            await expect(panel.getByRole("button", { name: "Minimize mermaid editor" })).toHaveCount(0);
             await expect(panel.getByLabel("Mermaid source")).toBeVisible();
             const panelBox = (await panel.boundingBox())!;
             const viewport = page.viewportSize()!;
@@ -106,6 +105,19 @@ test.describe("보드 작업 화면", () => {
             };
             await checkTools();
             await page.screenshot({ path: testInfo.outputPath("mermaid-editor-mobile.png") });
+            const source = panel.getByLabel("Mermaid source");
+            const sourceBefore = await source.innerText();
+            await panel.getByRole("button", { name: "Minimize mermaid editor" }).click();
+            await expect(panel.getByRole("heading", { name: "Mermaid Editor" })).toBeVisible();
+            await expect(source).toBeHidden();
+            await expect(card).toHaveAttribute("data-editing", "true");
+            const minimized = (await panel.boundingBox())!;
+            expect(minimized.y).toBeGreaterThan(panelBox.y);
+            expect(minimized.y + minimized.height).toBeCloseTo(panelBox.y + panelBox.height, 0);
+            await checkTools();
+            await panel.getByRole("button", { name: "Expand mermaid editor" }).click();
+            await expect(source).toBeVisible();
+            await expect(source).toHaveText(sourceBefore);
             await page.setViewportSize({ width: 320, height: 568 });
             await checkTools();
             await page.screenshot({ path: testInfo.outputPath("mermaid-editor-narrow-mobile.png") });
