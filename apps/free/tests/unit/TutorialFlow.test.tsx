@@ -32,6 +32,7 @@ const hoisted = vi.hoisted(() => {
             container.append(root);
             return {
                 element: root,
+                view: { dispatch: vi.fn() },
                 setValue: vi.fn(),
                 insertPaletteItem: vi.fn(),
                 destroy: vi.fn(() => root.remove()),

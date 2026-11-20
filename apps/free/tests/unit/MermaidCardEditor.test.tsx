@@ -70,6 +70,7 @@ const engine = vi.hoisted(() => {
             container,
             options,
             element: root,
+            view: { dispatch: vi.fn() },
             setValue: vi.fn<(value: string) => void>(),
             insertPaletteItem: vi.fn<(item: { label: string; snippet: string }) => void>(),
             destroy: vi.fn(() => root.remove()),

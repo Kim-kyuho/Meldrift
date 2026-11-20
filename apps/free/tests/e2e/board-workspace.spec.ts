@@ -121,6 +121,16 @@ test.describe("보드 작업 화면", () => {
             await page.setViewportSize({ width: 320, height: 568 });
             await checkTools();
             await page.screenshot({ path: testInfo.outputPath("mermaid-editor-narrow-mobile.png") });
+
+            await source.fill("flowchart TD\n%% First note\n%% Second note\nA[Start] --> B[End]");
+            await source.press("Control+Space");
+            const suggestions = page.locator(".meldrift-diagram-tooltips").getByRole("listbox");
+            await expect(suggestions).toBeInViewport();
+            const header = (await panel.locator("header").boundingBox())!;
+            await expect.poll(async () => (await suggestions.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
+            await panel.getByRole("button", { name: "Minimize mermaid editor" }).click({ trial: true });
+            await panel.getByRole("button", { name: "Close mermaid editor" }).click();
+            await expect(panel).toBeHidden();
             return;
         }
 

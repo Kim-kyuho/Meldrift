@@ -1,3 +1,5 @@
+import { StateEffect } from "@codemirror/state";
+import { tooltips } from "@codemirror/view";
 import { useEffect, useRef, useState } from "react";
 import {
     createDiagramEditor,
@@ -205,6 +207,16 @@ export function useMermaidDiagram(options: UseMermaidDiagramOptions) {
                 optionsRef.current.onSourceChange(next);
             },
             onCursorChange: (offset) => rendererRef.current?.setCursor(offset),
+        });
+        editor.view.dispatch({
+            effects: StateEffect.appendConfig.of(tooltips({
+                tooltipSpace: ({ dom }) => {
+                    const { clientWidth, clientHeight } = dom.ownerDocument.documentElement;
+                    // Keep autocomplete below the panel header so its buttons stay reachable.
+                    const top = Math.max(0, editorHost.getBoundingClientRect().top);
+                    return { top, left: 0, right: clientWidth, bottom: clientHeight };
+                },
+            })),
         });
         editorRef.current = editor;
         return () => {
