@@ -4,11 +4,20 @@ Meldrift is a **spatial Markdown workspace** where you arrange drifting ideas on
 
 ## How Meldrift Works
 
+Start with a **Memo** for each section of your document. Add an Image, Table, or Mermaid card wherever a section needs more context.
+
 ```mermaid
+%%{init: {"look": "handDrawn"}}%%
 flowchart LR
     A["Write Memo Cards"] --> B["Add Image, Table & Mermaid"]
-    B --> C["Link within 50px of Corners"]
-    C --> D["Reorder & Compile Markdown"]
+```
+
+For example, drag a comparison table within **50px** of a Memo corner. Meldrift attaches the table to that Memo so it appears in the same section when you compile the document.
+
+```mermaid
+%%{init: {"look": "handDrawn"}}%%
+flowchart LR
+    C["Link Cards to Memos"] --> D["Reorder & Compile Markdown"]
 ```
 
 ## Card Types Overview
