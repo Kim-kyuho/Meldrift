@@ -38,7 +38,7 @@
 | `BoardClient` (BoardClient.tsx 376, 381줄) | `permission`, `memo` | `setPermissionMessage("")`, `setMemoMessage("")` |
 | `BoardList` (BoardList.tsx 108줄) | `permission` | `setBoardListMessage("")` |
 | `CreateBoardModal` (CreateBoardModal.tsx 116줄) | `error` | `setErrorMessage("")` |
-| `RenameBoardModal` (RenameBoardModal.tsx 83줄) | `error` | `setErrorMessage("")` |
+| `EditBoardModal` (EditBoardModal.tsx 83줄) | `error` | `setErrorMessage("")` |
 
 ## 알려진 특이사항
 

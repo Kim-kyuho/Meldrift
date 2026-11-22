@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
-import { maxChangeBytes, maxStagedOperations } from "@meldrift/board-data/board-delta";
+import { maxChangeBytes, maxStagedOperations, touchedKeysOf } from "@meldrift/board-data/board-delta";
 import { getDb } from "@/lib/db";
 import { db_assets, db_syncMutations } from "@/lib/db/schema";
 import { discardAsset, readAssetBytes, stagedChangeMimeType } from "@/lib/assets";
 import { boardAccess } from "@/lib/board-access";
 import { editorFromRequest } from "@/lib/editor-guard";
 import {
-    ChangeRequestError, changeRequestDigest, maxOperationsPerRequest, parseChangeRequest,
+    ChangeRequestError, changeRequestDigest, legacyChangeRequestDigest, maxOperationsPerRequest, parseChangeRequest,
 } from "@/lib/sync-operations";
 import { buildCommitStatements, referencedAssetIds } from "@/lib/sync-commit";
+import { announceCommit, foreignLockFor, liveClientIdFrom, readChangeLog } from "@/lib/live/commit-events";
+import { holderOf } from "@/lib/live/protocol";
+import { getLiveStore } from "@/lib/live/store";
 
 type Context = { params: Promise<{ boardId: string }> };
 export const maxDuration = 60;
@@ -17,9 +20,39 @@ export const maxDuration = 60;
 const tooLarge = () =>
     NextResponse.json({ message: "Change requests must be 1 MiB or smaller." }, { status: 413 });
 
+const noStore = { "Cache-Control": "no-store" };
+
+async function changesAfter(request: NextRequest, boardId: number, afterParameter: string) {
+    const after = Number(afterParameter);
+    const limitParameter = Number(new URL(request.url).searchParams.get("limit") ?? 200);
+    if (!Number.isSafeInteger(after) || after < 0) {
+        return NextResponse.json({ message: "Invalid change lookup." }, { status: 400 });
+    }
+    const gate = await boardAccess(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
+    }
+    const user = gate.user;
+    const seesEmails = Boolean(user && (user.role === "admin" || user.email === gate.board.ownerId || gate.memberRole));
+    const limit = Number.isSafeInteger(limitParameter) ? Math.min(Math.max(limitParameter, 1), 500) : 200;
+    const log = await readChangeLog(boardId, after, limit, seesEmails);
+    if (log.status === "gone") {
+        return NextResponse.json(
+            { ok: false, code: "resync", head: log.head, message: "Older changes are no longer kept. Reload the board." },
+            { status: 410, headers: noStore },
+        );
+    }
+    return NextResponse.json({ ok: true, ...log }, { headers: noStore });
+}
+
 export async function GET(request: NextRequest, { params }: Context) {
     const boardId = Number((await params).boardId);
-    const mutationId = new URL(request.url).searchParams.get("mutationId") ?? "";
+    const searchParams = new URL(request.url).searchParams;
+    const after = searchParams.get("after");
+    if (after !== null && Number.isSafeInteger(boardId) && boardId > 0) {
+        return changesAfter(request, boardId, after);
+    }
+    const mutationId = searchParams.get("mutationId") ?? "";
     if (!Number.isSafeInteger(boardId) || boardId <= 0 || !/^[a-zA-Z0-9:-]{1,160}$/.test(mutationId)) {
         return NextResponse.json({ message: "Invalid change lookup." }, { status: 400 });
     }
@@ -83,6 +116,8 @@ export async function POST(request: NextRequest, { params }: Context) {
         }
     }
 
+    const clientId = liveClientIdFrom(request);
+    const store = clientId ? getLiveStore() : null;
     let digest: string;
     let statements;
     let changeRequest;
@@ -90,7 +125,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         changeRequest = parseChangeRequest(payload, staged ? maxStagedOperations : maxOperationsPerRequest);
         digest = changeRequestDigest(changeRequest);
         statements = buildCommitStatements(changeRequest, {
-            boardId, ...gate.identity,
+            boardId, ...gate.identity, clientId,
             baseRevision: changeRequest.baseRevision, mutationId: changeRequest.mutationId, digest,
         });
     } catch (error) {
@@ -108,6 +143,17 @@ export async function POST(request: NextRequest, { params }: Context) {
         }
     }
 
+    const touched = touchedKeysOf(changeRequest.operations);
+    if (clientId) {
+        const foreign = await foreignLockFor(store, boardId, holderOf(gate.identity.userId, clientId), touched);
+        if (foreign) {
+            return NextResponse.json({
+                code: "locked", key: foreign.key, email: foreign.email,
+                message: `${foreign.email ?? "Another member"} is editing this card.`,
+            }, { status: 409 });
+        }
+    }
+
     const [lock, ...rest] = statements.map((statement) => db.execute(statement));
     const results = await db.batch([lock, ...rest]);
     const committed = results[results.length - 1];
@@ -115,7 +161,14 @@ export async function POST(request: NextRequest, { params }: Context) {
         if (staged) {
             await discardAsset(db, boardId, stagedId);
         }
-        return NextResponse.json({ ok: true, revision: Number(committed.rows[0].revision) });
+        const revision = Number(committed.rows[0].revision);
+        await announceCommit(store, boardId, touched, {
+            revision,
+            mutationId: changeRequest.mutationId,
+            by: { userId: gate.identity.userId, email: gate.user.email, clientId },
+            operations: changeRequest.operations,
+        });
+        return NextResponse.json({ ok: true, revision });
     }
 
     const [applied] = await db.select().from(db_syncMutations)
@@ -125,7 +178,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         if (staged) {
             await discardAsset(db, boardId, stagedId);
         }
-        if (applied.digest !== digest) {
+        if (applied.digest !== digest && applied.digest !== legacyChangeRequestDigest(changeRequest)) {
             return NextResponse.json({ message: "This request id already committed different changes." }, { status: 409 });
         }
         return NextResponse.json({ ok: true, revision: applied.revision });

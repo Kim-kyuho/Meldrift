@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { useState } from "react";
 import BoardMessage from "@meldrift/ui/BoardMessage";
 import BoardVisibilitySelect from "./BoardVisibilitySelect";
+import BoardCollabSelect from "./BoardCollabSelect";
 
 type CreateBoardModalProps = {
     onClose: () => void;
@@ -25,7 +26,7 @@ const boardSizeOptions = [
 export default function CreateBoardModal({ onClose, onCreated }: CreateBoardModalProps) {
     const [errorMessage, setErrorMessage] = useState("");
 
-    const handleCreateBoard = async(title: string, sizeValue: string, privateFlg: number) => {
+    const handleCreateBoard = async(title: string, sizeValue: string, privateFlg: number, collabFlg: number) => {
         const selectedSize = boardSizeOptions.find((option) => option.label === sizeValue);
         if (!title.trim()) {
             setErrorMessage("Please enter a board title.");
@@ -46,6 +47,7 @@ export default function CreateBoardModal({ onClose, onCreated }: CreateBoardModa
                 width: selectedSize.width,
                 height: selectedSize.height,
                 privateFlg,
+                collabFlg,
             }),
         });
         const data = await response.json();
@@ -87,7 +89,7 @@ export default function CreateBoardModal({ onClose, onCreated }: CreateBoardModa
                         const title = String(formData.get("title"));
                         const size = String(formData.get("size"));
 
-                        handleCreateBoard(title, size, Number(formData.get("privateFlg")));
+                        handleCreateBoard(title, size, Number(formData.get("privateFlg")), Number(formData.get("collabFlg")));
                     }}
                 >
                     <label className="block text-sm font-semibold">
@@ -114,6 +116,7 @@ export default function CreateBoardModal({ onClose, onCreated }: CreateBoardModa
                         </select>
                     </label>
                     <BoardVisibilitySelect />
+                    <BoardCollabSelect />
                     <BoardMessage
                         variant="inline"
                         message={errorMessage}

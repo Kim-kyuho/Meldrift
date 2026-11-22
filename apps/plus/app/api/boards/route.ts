@@ -11,6 +11,7 @@ const createBoard = z.object({
     width: z.number().int().positive().max(2147483647),
     height: z.number().int().positive().max(2147483647),
     privateFlg: z.union([z.literal(0), z.literal(1)]).default(1),
+    collabFlg: z.union([z.literal(0), z.literal(1)]).default(0),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,14 +26,14 @@ export async function POST(request: NextRequest) {
 
         const parsed = createBoard.safeParse(await request.json().catch(() => null));
         if (!parsed.success) {
-            return NextResponse.json({ ok: false, message: "Invalid board title, size, or visibility." }, { status: 400 });
+            return NextResponse.json({ ok: false, message: "Invalid board title, size, visibility, or collaboration." }, { status: 400 });
         }
-        const { title, width, height, privateFlg } = parsed.data;
+        const { title, width, height, privateFlg, collabFlg } = parsed.data;
         const db = getDb();
         const [, result] = await db.batch([db.execute(membershipLock), db.execute(sql`
             WITH created AS (
-                INSERT INTO boards (title, width, height, owner_id, private_flg)
-                SELECT ${title}, ${width}, ${height}, email, ${privateFlg} FROM users
+                INSERT INTO boards (title, width, height, owner_id, private_flg, collab_flg)
+                SELECT ${title}, ${width}, ${height}, email, ${privateFlg}, ${collabFlg} FROM users
                 WHERE ${activeMember(user.id, requestSessionHash(request))}
                     AND (permission_flg OR role = 'admin')
                 RETURNING board_id

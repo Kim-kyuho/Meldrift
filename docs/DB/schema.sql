@@ -25,10 +25,23 @@ CREATE TABLE public.boards (
     updated_at timestamp without time zone DEFAULT now(),
     preview_version bigint,
     private_flg smallint NOT NULL DEFAULT 1,
-    CONSTRAINT boards_private_flg_check CHECK (private_flg IN (0, 1))
+    collab_flg smallint NOT NULL DEFAULT 0,
+    CONSTRAINT boards_private_flg_check CHECK (private_flg IN (0, 1)),
+    CONSTRAINT boards_collab_flg_check CHECK (collab_flg IN (0, 1))
 );
 
 CREATE INDEX boards_owner_id_idx ON public.boards (owner_id);
+
+CREATE TABLE public.board_members (
+    board_id integer NOT NULL REFERENCES public.boards(board_id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    role varchar(16) NOT NULL,
+    added_by integer REFERENCES public.users(id) ON DELETE SET NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT now(),
+    PRIMARY KEY (board_id, user_id),
+    CONSTRAINT board_members_role_check CHECK (role IN ('editor', 'viewer'))
+);
+CREATE INDEX board_members_user_idx ON public.board_members USING btree (user_id);
 
 CREATE TABLE public.board_previews (
     board_id integer PRIMARY KEY REFERENCES public.boards(board_id) ON DELETE CASCADE,
@@ -135,10 +148,15 @@ CREATE TABLE public.sync_mutations (
     mutation_id text NOT NULL,
     digest text NOT NULL,
     revision integer NOT NULL,
+    touched text[] NOT NULL DEFAULT '{}'::text[],
+    operations jsonb,
+    author_id integer,
+    author_client text,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     PRIMARY KEY (board_id, mutation_id)
 );
 CREATE INDEX sync_mutations_created_at_idx ON public.sync_mutations USING btree (created_at);
+CREATE INDEX sync_mutations_board_revision_idx ON public.sync_mutations USING btree (board_id, revision);
 
 CREATE TABLE public.assets (
     board_id integer NOT NULL,

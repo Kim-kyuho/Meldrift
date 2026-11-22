@@ -10,7 +10,8 @@ import BoardMessage from "@meldrift/ui/BoardMessage";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import CreateBoardModal from "./CreateBoardModal";
-import RenameBoardModal from "./RenameBoardModal";
+import EditBoardModal from "./EditBoardModal";
+import ShareBoardModal from "./ShareBoardModal";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import BoardActionMenu from "./BoardActionMenu";
 import AboutModal from "./AboutModal";
@@ -24,6 +25,7 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
     const [menuOpen, setMenuOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
     const [membersOpen, setMembersOpen] = useState(false);
+    const [shareBoardId, setShareBoardId] = useState<number | null>(null);
     const [sortBy, setSortBy] = useState<"createdAt" | "title">("createdAt");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
     const [failedPreviewIds, setFailedPreviewIds] = useState<Set<number>>(new Set());
@@ -47,8 +49,8 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
         boardList,
         createBoardOpen,
         setCreateBoardOpen,
-        renameBoardOpen,
-        setRenameBoardOpen,
+        editBoardOpen,
+        setEditBoardOpen,
         boardListMessage,
         setBoardListMessage,
         actionMenuOpen,
@@ -59,7 +61,7 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
         menuRef,
         handleCreateBoardClick,
         handleBoardCreated,
-        handleBoardRenamed,
+        handleBoardEdited,
         handleBoardClick,
         openBoardActionMenu,
         openDeleteDialog,
@@ -117,13 +119,18 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                 />
             )}
 
-            {renameBoardOpen && currentUser && selectedBoard?.canEdit && selectedBoardTitle !== null && (
-                <RenameBoardModal
+            {shareBoardId !== null && currentUser && (
+                <ShareBoardModal boardId={shareBoardId} onClose={() => setShareBoardId(null)} />
+            )}
+
+            {editBoardOpen && currentUser && selectedBoard?.canEdit && selectedBoardTitle !== null && (
+                <EditBoardModal
                     boardId={selectedBoard.boardId}
                     title={selectedBoardTitle}
                     privateFlg={selectedBoard.privateFlg}
-                    onClose={() => setRenameBoardOpen(false)}
-                    onRenamed={handleBoardRenamed}
+                    collabFlg={selectedBoard.collabFlg}
+                    onClose={() => setEditBoardOpen(false)}
+                    onSaved={handleBoardEdited}
                 />
             )}
 
@@ -209,7 +216,11 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                                             <p className="truncate text-sm font-semibold text-neutral-900">
                                                 {board.title}
                                             </p>
-                                            {board.privateFlg === 1 && <p className="text-xs text-neutral-600">Private</p>}
+                                            {(board.privateFlg === 1 || board.collabFlg === 1) && (
+                                                <p className="text-xs text-neutral-600">
+                                                    {[board.privateFlg === 1 && "Private", board.collabFlg === 1 && "Live"].filter(Boolean).join(" · ")}
+                                                </p>
+                                            )}
                                             {currentUser?.role === "admin" && board.ownerEmail && (
                                                 <p className="truncate text-xs text-neutral-600" title={board.ownerEmail}>{board.ownerEmail}</p>
                                             )}
@@ -235,11 +246,12 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                                 {currentUser && board.canEdit && actionMenuOpen && selectedBoardId === board.boardId && (
                                     <BoardActionMenu
                                         ref={menuRef}
-                                        onRename={() => {
-                                            setRenameBoardOpen(true);
+                                        onEdit={() => {
+                                            setEditBoardOpen(true);
                                             setSelectedBoardTitle(board.title);
 
                                         }}
+                                        onShare={() => setShareBoardId(board.boardId)}
                                         onDelete={openDeleteDialog}
                                     />
                                 )}

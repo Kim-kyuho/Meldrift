@@ -6,20 +6,22 @@ import { createPortal } from "react-dom";
 import { useState } from "react";
 import BoardMessage from "@meldrift/ui/BoardMessage";
 import BoardVisibilitySelect from "./BoardVisibilitySelect";
+import BoardCollabSelect from "./BoardCollabSelect";
 
-type RenameBoardModalProps = {
+type EditBoardModalProps = {
     boardId: number;
     title: string;
     privateFlg: 0 | 1;
+    collabFlg: 0 | 1;
     onClose: () => void;
-    onRenamed: (boardId: number, title: string) => void;
+    onSaved: (boardId: number, title: string) => void;
 };
 
 
-export default function RenameBoardModal({ boardId, title, privateFlg, onClose, onRenamed }: RenameBoardModalProps) {
+export default function EditBoardModal({ boardId, title, privateFlg, collabFlg, onClose, onSaved }: EditBoardModalProps) {
     const [errorMessage, setErrorMessage] = useState("");
 
-    const handleRenameBoard = async(title: string, visibility: number) => {
+    const handleSaveBoard = async(title: string, visibility: number, collaboration: number) => {
         const response = await fetch(`/api/boards/${boardId}`, {
             method: "PATCH",
             headers: {
@@ -28,16 +30,17 @@ export default function RenameBoardModal({ boardId, title, privateFlg, onClose, 
             body: JSON.stringify({
                 title: title.trim(),
                 privateFlg: visibility,
+                collabFlg: collaboration,
             }),
         });
         const data = await response.json();
 
         if (!data.ok) {
-            setErrorMessage(data.message ?? "Board could not be renamed.");
+            setErrorMessage(data.message ?? "Board could not be updated.");
             return;
         }
 
-        onRenamed(data.board.boardId, data.board.title);
+        onSaved(data.board.boardId, data.board.title);
     };
 
     return createPortal(
@@ -56,7 +59,7 @@ export default function RenameBoardModal({ boardId, title, privateFlg, onClose, 
                     <PressableButton
                         className="p-1"
                         onClick={onClose}
-                        aria-label="Close rename board modal"
+                        aria-label="Close edit board modal"
                     >
                         <X className="h-4 w-4" />
                     </PressableButton>
@@ -68,7 +71,7 @@ export default function RenameBoardModal({ boardId, title, privateFlg, onClose, 
                         const formData = new FormData(event.currentTarget);
                         const title = String(formData.get("title"));
 
-                        handleRenameBoard(title, Number(formData.get("privateFlg")));
+                        handleSaveBoard(title, Number(formData.get("privateFlg")), Number(formData.get("collabFlg")));
                     }}
                 >
                     <label className="block text-sm font-semibold">
@@ -82,6 +85,7 @@ export default function RenameBoardModal({ boardId, title, privateFlg, onClose, 
                         />
                     </label>
                     <BoardVisibilitySelect value={privateFlg} />
+                    <BoardCollabSelect value={collabFlg} />
 
                     <BoardMessage
                         variant="inline"

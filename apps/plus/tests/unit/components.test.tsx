@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import CreateBoardModal from "@/components/CreateBoardModal";
 import PressableButton from "@meldrift/ui/PressableButton";
-import RenameBoardModal from "@/components/RenameBoardModal";
+import EditBoardModal from "@/components/EditBoardModal";
 import AboutModal from "@/components/AboutModal";
 import BoardMenu from "@/components/BoardMenu";
 import BoardNavigator from "@meldrift/ui/BoardNavigator";
@@ -174,7 +174,7 @@ describe("보드 모달", () => {
         await waitFor(() => expect(onCreated).toHaveBeenCalledWith(12));
         expect(fetch).toHaveBeenCalledWith("/api/boards", expect.objectContaining({
             method: "POST",
-            body: JSON.stringify({ title: "Project", width: 1920, height: 1080, privateFlg: 1 }),
+            body: JSON.stringify({ title: "Project", width: 1920, height: 1080, privateFlg: 1, collabFlg: 0 }),
         }));
     });
 
@@ -188,25 +188,25 @@ describe("보드 모달", () => {
         expect(await screen.findByText("Rejected")).toBeInTheDocument();
         create.unmount();
 
-        render(<RenameBoardModal boardId={5} title="Old" privateFlg={0} onClose={vi.fn()} onRenamed={vi.fn()} />);
+        render(<EditBoardModal boardId={5} title="Old" privateFlg={0} collabFlg={0} onClose={vi.fn()} onSaved={vi.fn()} />);
         fireEvent.click(screen.getByRole("button", { name: "Save" }));
         expect(await screen.findByText("Rejected")).toBeInTheDocument();
     });
 
     it("보드 이름을 변경하고 서버 결과를 반환한다", async () => {
-        const onRenamed = vi.fn();
+        const onSaved = vi.fn();
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: true, board: { boardId: 5, title: "New title" } }),
         }));
-        render(<RenameBoardModal boardId={5} title="Old" privateFlg={0} onClose={vi.fn()} onRenamed={onRenamed} />);
+        render(<EditBoardModal boardId={5} title="Old" privateFlg={0} collabFlg={1} onClose={vi.fn()} onSaved={onSaved} />);
 
         fireEvent.change(screen.getByLabelText("Title"), { target: { value: "  New title  " } });
         fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-        await waitFor(() => expect(onRenamed).toHaveBeenCalledWith(5, "New title"));
+        await waitFor(() => expect(onSaved).toHaveBeenCalledWith(5, "New title"));
         expect(fetch).toHaveBeenCalledWith("/api/boards/5", expect.objectContaining({
             method: "PATCH",
-            body: JSON.stringify({ title: "New title", privateFlg: 0 }),
+            body: JSON.stringify({ title: "New title", privateFlg: 0, collabFlg: 1 }),
         }));
     });
 });

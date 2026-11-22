@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
+import { applyRemotePatch, type RemotePatch } from "@meldrift/board-data/remote-patch";
 
 export type BoardContent = Pick<BoardSnapshot, "memos" | "images" | "mermaids" | "tables" | "strokes">;
 
@@ -82,10 +83,30 @@ export function useBoardHistory({ snapshot, paused, onRestore }: {
         update({ past: [], present: contentOf(snapshot), future: [] });
     }, [update]);
 
+    // 다른 사람의 확정 변경을 보관 중인 모든 상태에 똑같이 적용한다. 이웃한 상태의 차이에는 내 변경만 남으므로
+    // Undo가 남의 변경을 되돌리지 않는다. 화면에 같은 패치를 적용한 뒤에도 새 기록이 생기지 않는다.
+    const projectRemote = useCallback((patch: RemotePatch) => {
+        const previous = current.current;
+        const project = (content: BoardContent) => applyRemotePatch(content, patch);
+        update({
+            past: previous.past.map(project),
+            present: project(previous.present),
+            future: previous.future.map(project),
+        });
+    }, [update]);
+
+    const peek = (direction: "undo" | "redo") => {
+        const previous = current.current;
+        const target = direction === "undo" ? previous.past[previous.past.length - 1] : previous.future[0];
+        return target ? { from: previous.present, to: target } : null;
+    };
+
     return {
         undo,
         redo,
         reset,
+        projectRemote,
+        peek,
         canUndo: !paused && history.past.length > 0,
         canRedo: !paused && history.future.length > 0,
     };

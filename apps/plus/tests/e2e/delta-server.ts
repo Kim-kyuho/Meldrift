@@ -65,6 +65,10 @@ export function createDeltaServer() {
             if (match) {
                 const boardId = Number(match[1]);
                 const endpoint = match[2];
+                if (endpoint === "live/token" && method === "POST") {
+                    // Live 협업이 꺼진 배포와 같다. 클라이언트는 바로 기존 단일 편집자 방식으로 돌아간다.
+                    return route.fulfill({ status: 404, json: { ok: false, message: "Live collaboration is turned off." } });
+                }
                 if (endpoint === "snapshot" && method === "GET") {
                     return route.fulfill({ headers: { "X-Storage-Mode": "delta" }, json: { revision } });
                 }

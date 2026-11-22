@@ -32,7 +32,7 @@
 | --- | --- |
 | `boardList` | 이름 변경과 삭제가 반영되는 화면 목록 |
 | `createBoardOpen` | 생성 모달 표시 여부 |
-| `renameBoardOpen` | 이름 변경 모달 표시 여부 |
+| `editBoardOpen` | 보드 편집 창 표시 여부 |
 | `boardListMessage` | 관리자 권한 및 API 오류 메시지, `BoardMessage`의 `onDismiss`가 3500ms 후 빈 문자열로 되돌린다 |
 | `actionMenuOpen` | 개별 `BoardActionMenu` 표시 여부 |
 | `selectedBoardId` | 액션·삭제 대상 보드 ID |
@@ -56,7 +56,7 @@
 
 ### 이름 변경
 
-`BoardActionMenu`에서 선택 ID와 현재 제목을 설정하고 `RenameBoardModal`을 연다. 제목과 공개 여부를 수정할 수 있다. 성공하면 목록을 새로 받아 바뀐 설정을 표시한다.
+`BoardActionMenu`의 "Edit"에서 선택 ID와 현재 제목을 설정하고 `EditBoardModal`을 연다. 제목·공개 여부·협업 보드 여부를 수정할 수 있다. 성공하면 목록을 새로 받아 바뀐 설정을 표시한다.
 
 ### 삭제
 
@@ -68,7 +68,7 @@
 BoardMenu
 ├ AboutModal
 ├ SignInModal / SignUpModal
-├ CreateBoardModal / RenameBoardModal
+├ CreateBoardModal / EditBoardModal
 ├ BoardMessage
 └ main
    └ board grid

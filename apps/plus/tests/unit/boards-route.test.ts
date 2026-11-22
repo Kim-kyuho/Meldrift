@@ -26,7 +26,7 @@ describe("보드 생성 API: POST /api/boards", () => {
         expect(query.sql).toContain("email");
         expect(query.sql).toContain("INSERT INTO board_sync");
         expect(query.sql).toContain("'delta'");
-        expect(query.params.slice(0, 4)).toEqual(["New", 7680, 4320, 1]);
+        expect(query.params.slice(0, 5)).toEqual(["New", 7680, 4320, 1, 0]);
         expect(query.params).not.toContain("spoofed@example.com");
     });
 
@@ -35,6 +35,14 @@ describe("보드 생성 API: POST /api/boards", () => {
         expect((await create({ ...titleAndSize, privateFlg: 0 })).status).toBe(200);
         const query = new PgDialect().sqlToQuery(mocks.execute.mock.calls[1][0]);
         expect(query.params[3]).toBe(0);
+    });
+
+    it("creates a live collaboration board only when requested", async () => {
+        expect((await create({ ...titleAndSize, collabFlg: 1 })).status).toBe(200);
+        const query = new PgDialect().sqlToQuery(mocks.execute.mock.calls[1][0]);
+        expect(query.sql).toContain("collab_flg");
+        expect(query.params[4]).toBe(1);
+        expect((await create({ ...titleAndSize, collabFlg: 2 })).status).toBe(400);
     });
 
     it("rejects signed-in members without write permission", async () => {

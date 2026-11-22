@@ -6,7 +6,7 @@ import {
     db_assetChunks, db_assets, db_boards, db_boardSnapshots, db_boardSync, db_drawings, db_drawingStrokes,
     db_images, db_memos, db_mermaids, db_syncMutations, db_tables, db_uploadSessions,
 } from "@/lib/db/schema";
-import { editorFromRequest, editorSessionGuard } from "@/lib/editor-guard";
+import { managerFromRequest, managerSessionGuard } from "@/lib/editor-guard";
 import { membershipLock } from "@/lib/membership-guard";
 import { v2 as cloudinary } from "cloudinary";
 import { and, eq, sql } from "drizzle-orm";
@@ -18,19 +18,20 @@ export const maxDuration = 60;
 const boardUpdates = z.object({
     title: z.string().trim().min(1).max(200).optional(),
     privateFlg: z.union([z.literal(0), z.literal(1)]).optional(),
-}).strict().refine((data) => data.title !== undefined || data.privateFlg !== undefined);
+    collabFlg: z.union([z.literal(0), z.literal(1)]).optional(),
+}).strict().refine((data) => data.title !== undefined || data.privateFlg !== undefined || data.collabFlg !== undefined);
 
 export async function PATCH(request: NextRequest, { params }: Context) {
     try {
         const boardId = Number((await params).boardId);
-        const gate = await editorFromRequest(request, boardId);
+        const gate = await managerFromRequest(request, boardId);
         if (gate.failure) {
             return gate.failure;
         }
 
         const parsed = boardUpdates.safeParse(await request.json().catch(() => null));
         if (!parsed.success) {
-            return NextResponse.json({ ok: false, message: "Invalid board title or visibility." }, { status: 400 });
+            return NextResponse.json({ ok: false, message: "Invalid board title, visibility, or collaboration." }, { status: 400 });
         }
 
         const updates: Partial<typeof db_boards.$inferInsert> = { ...parsed.data, updatedAt: new Date() };
@@ -44,8 +45,11 @@ export async function PATCH(request: NextRequest, { params }: Context) {
             db.execute(membershipLock),
             db.update(db_boards).set(updates).where(and(
                 eq(db_boards.boardId, boardId),
-                editorSessionGuard(gate.identity, boardId),
-            )).returning({ boardId: db_boards.boardId, title: db_boards.title, privateFlg: db_boards.privateFlg }),
+                managerSessionGuard(gate.identity, boardId),
+            )).returning({
+                boardId: db_boards.boardId, title: db_boards.title,
+                privateFlg: db_boards.privateFlg, collabFlg: db_boards.collabFlg,
+            }),
         ]);
         if (!board) {
             return NextResponse.json({ ok: false, message: "Your permissions changed." }, { status: 403 });
@@ -66,13 +70,13 @@ export async function PATCH(request: NextRequest, { params }: Context) {
 export async function DELETE(request: NextRequest, { params }: Context) {
     try {
         const boardId = Number((await params).boardId);
-        const gate = await editorFromRequest(request, boardId);
+        const gate = await managerFromRequest(request, boardId);
         if (gate.failure) {
             return gate.failure;
         }
 
         const db = getDb();
-        const guard = editorSessionGuard(gate.identity, boardId);
+        const guard = managerSessionGuard(gate.identity, boardId);
         const images = await db.select({ publicId: db_images.publicId }).from(db_images).where(eq(db_images.boardId, boardId));
         const legacyIds = images.flatMap(({ publicId }) => publicId ? [publicId] : []);
         if (gate.board.previewVersion !== null) {

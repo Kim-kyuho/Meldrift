@@ -20,6 +20,20 @@ await db.exec(`
            (1, 'memo-2', 'Second memo', 410, 120, 250, 190, '#fff8a8', 2);
 `);
 
+// Live 협업 e2e: 공동 편집자 한 명과 변경분 동기화(delta) 보드를 추가한다. 기본 e2e는 건드리지 않는다.
+if (process.env.FIXTURE_LIVE === "1") {
+    await db.query(
+        "INSERT INTO users (email, password_hash, permission_flg) VALUES ($1, $2, true)",
+        ["member@example.test", await hashPassword("Fixture-password-2026")],
+    );
+    await db.exec(`
+        INSERT INTO board_members (board_id, user_id, role)
+        SELECT 1, id, 'editor' FROM users WHERE email = 'member@example.test';
+        INSERT INTO board_sync (board_id, revision, mode) VALUES (1, 0, 'delta');
+        UPDATE boards SET collab_flg = 1 WHERE board_id = 1;
+    `);
+}
+
 // The fixture serves the same query and transaction envelope as Neon HTTP.
 function postgresText(value, field) {
     if (value === null) {
