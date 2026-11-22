@@ -1,10 +1,11 @@
 import { getCurrentUserFromRequest } from "@/lib/auth/current-user";
-import { BoardPrivacyError, prepareBoardPrivacy } from "@/lib/board-privacy";
+import { BoardPrivacyError } from "@/lib/board-privacy";
 import { getDb } from "@/lib/db";
-import { db_boards, db_users } from "@/lib/db/schema";
+import { db_users } from "@/lib/db/schema";
+import { deleteMemberAccounts } from "@/lib/member-deletion";
 import { memberCredentials, memberPermissions, registerMember } from "@/lib/member-registration";
 import { activeAdministrator, membershipLock, requestSessionHash } from "@/lib/membership-guard";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -106,42 +107,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        const db = getDb();
-        const requested = await db.select({ email: db_users.email }).from(db_users)
-            .where(and(inArray(db_users.id, ids), gate.authorized));
-        if (requested.length !== ids.length) {
+        const retainedBoards = await deleteMemberAccounts(ids, gate.authorized);
+        if (retainedBoards === null) {
             return unavailableMember();
         }
-
-        const retainedBoards = await db.select({ boardId: db_boards.boardId, previewVersion: db_boards.previewVersion })
-            .from(db_boards).where(inArray(db_boards.ownerId, requested.map(({ email }) => email)));
-        for (let offset = 0; offset < retainedBoards.length; offset += 4) {
-            await Promise.all(retainedBoards.slice(offset, offset + 4).map(({ boardId, previewVersion }) =>
-                prepareBoardPrivacy(boardId, previewVersion !== null)));
-        }
-
-        const idParams = sql.join(ids.map((id) => sql`${id}`), sql`, `);
-        const [, result] = await db.batch([db.execute(membershipLock), db.execute(sql`
-            WITH targets AS (
-                SELECT id, email FROM users WHERE id IN (${idParams}) AND id <> ${gate.user.id}
-            ), allowed AS (
-                SELECT 1 WHERE ${gate.authorized} AND (SELECT count(*) FROM targets) = ${ids.length}
-            ), retained AS (
-                UPDATE boards SET private_flg = 1, preview_version = NULL, updated_at = now()
-                WHERE owner_id IN (SELECT email FROM targets) AND EXISTS (SELECT 1 FROM allowed)
-                RETURNING board_id
-            ), deleted AS (
-                DELETE FROM users WHERE id IN (SELECT id FROM targets) AND EXISTS (SELECT 1 FROM allowed)
-                RETURNING id
-            )
-            SELECT (SELECT count(*) FROM deleted)::int AS deleted, (SELECT count(*) FROM retained)::int AS retained
-        `)]);
-        const row = result.rows[0];
-        if (row?.deleted !== ids.length) {
-            return unavailableMember();
-        }
-        console.info("member.deleted", { actor: gate.user.id, members: ids, retainedBoards: row.retained });
-        return json({ ok: true, retainedBoards: row.retained });
+        console.info("member.deleted", { actor: gate.user.id, members: ids, retainedBoards });
+        return json({ ok: true, retainedBoards });
     } catch (error) {
         if (error instanceof BoardPrivacyError) {
             return fail(503, error.message);

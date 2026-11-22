@@ -1,12 +1,13 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SharedBoardMenu, { type BoardMenuProps as SharedBoardMenuProps } from "@meldrift/ui/BoardMenu";
 import PressableButton from "@meldrift/ui/PressableButton";
 import type { CurrentUser } from "@/hooks/useBoardAuth";
 import { canCreateBoard } from "@/lib/board-permissions";
+import MyPageModal from "./MyPageModal";
 
 type BoardMenuProps = {
     menuOpen: boolean;
@@ -33,11 +34,16 @@ export default function BoardMenu({
     onCompileMarkdown = noAction, onReorder = noAction, reorderOpen = false,
     transfer, ...menu
 }: BoardMenuProps) {
-    return (
+    const [myPageOpen, setMyPageOpen] = useState(false);
+    const homeLink = useRef<HTMLAnchorElement>(null);
+
+    return <>
         <SharedBoardMenu
             {...menu}
-            title={currentBoard?.title}
+            title={currentBoard?.title ?? "Board List"}
+            titleDivider={Boolean(currentBoard)}
             boardActions={Boolean(currentBoard)}
+            compact={!currentBoard}
             reorderOpen={reorderOpen}
             onReorder={onReorder}
             onCompileMarkdown={onCompileMarkdown}
@@ -51,7 +57,7 @@ export default function BoardMenu({
             onImport={transfer?.onImport ?? noAction}
             onReset={transfer?.onReset ?? noAction}
             brand={
-                <Link href="/" aria-label="Meldrift home"
+                <Link ref={homeLink} href="/" aria-label="Meldrift home"
                     className="flex items-center gap-1.5 transition duration-300 hover:opacity-75 active:scale-[0.98]"
                     style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}>
                     <Image src="/plus/meldrift-mascot.png" alt="" width={256} height={256} priority className="size-7 shrink-0" />
@@ -65,6 +71,9 @@ export default function BoardMenu({
                         <p className="px-3 py-2 text-sm font-semibold text-neutral-800 break-all">
                             [{currentUser.role}]<br />{currentUser.email}
                         </p>
+                        <PressableButton variant="menu" onClick={() => { menu.setMenuOpen(false); setMyPageOpen(true); }}>
+                            My Page
+                        </PressableButton>
                         {currentUser.role === "admin" && onManageMembers && (
                             <PressableButton variant="menu" onClick={() => { menu.setMenuOpen(false); onManageMembers(); }}>
                                 Manage Members
@@ -87,5 +96,12 @@ export default function BoardMenu({
                 </div>
             }
         />
-    );
+        {currentUser && myPageOpen && (
+            <MyPageModal
+                user={currentUser}
+                onClose={() => setMyPageOpen(false)}
+                onWithdrawn={() => window.location.replace(homeLink.current?.href ?? "/")}
+            />
+        )}
+    </>;
 }

@@ -41,7 +41,7 @@ describe("ConfirmDialog 동작", () => {
 });
 
 describe("보드 메뉴와 앱 정보 모달", () => {
-    it("컴파일·앱 정보 아이콘을 렌더링한다", () => {
+    it("보드 제목과 구분선, 컴파일·앱 정보 아이콘을 렌더링한다", () => {
         render(
             <BoardMenu
                 menuOpen
@@ -52,12 +52,15 @@ describe("보드 메뉴와 앱 정보 모달", () => {
                 currentUser={null}
                 onSignOut={vi.fn()}
                 onCompileMarkdown={vi.fn()}
-            reorderOpen={false}
-            onReorder={vi.fn()}
+                reorderOpen={false}
+                onReorder={vi.fn()}
                 onAbout={vi.fn()}
             />
         );
 
+        expect(screen.getByText("Meldrift", { exact: true })).toBeVisible();
+        expect(screen.getByRole("separator")).toBeVisible();
+        expect(screen.queryByText("Board List", { exact: true })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Compile to Markdown" }).querySelector(".lucide-file-text")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "About" }).querySelector(".lucide-info")).toBeInTheDocument();
     });

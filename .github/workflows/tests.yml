@@ -48,9 +48,14 @@ jobs:
       - name: Run Plus E2E tests
         run: npm run test:e2e:plus
 
+      - name: Run Live collaboration E2E tests
+        run: npm run test:e2e:live --workspace=meldrift-plus
+
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: apps/*/playwright-report/
+          path: |
+            apps/*/playwright-report/
+            apps/plus/test-results/live/
           retention-days: 30

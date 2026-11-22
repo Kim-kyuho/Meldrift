@@ -31,7 +31,7 @@ describe("Manage members dialog", () => {
         expect(await screen.findByRole("checkbox", { name: `Select ${admin.email}` })).toBeDisabled();
 
         fireEvent.click(screen.getByRole("checkbox", { name: `Select ${member.email}` }));
-        fireEvent.click(screen.getByRole("button", { name: "Delete selected" }));
+        fireEvent.click(screen.getByRole("button", { name: "Delete selected (1)" }));
         expect(screen.getByText("Delete 1 selected account(s)?")).toBeVisible();
         expect(fetch).toHaveBeenCalledTimes(1);
         fireEvent.click(screen.getByRole("button", { name: "Continue" }));
@@ -54,5 +54,24 @@ describe("Manage members dialog", () => {
         expect(registered.closest("th")).toHaveAttribute("aria-sort", "descending");
         fireEvent.click(registered);
         expect(registered.closest("th")).toHaveAttribute("aria-sort", "ascending");
+    });
+
+    it("filters by partial email regardless of case and keeps the search after closing an edit", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+            ok: true, json: async () => ({ ok: true, members: [admin, member] }),
+        }));
+        render(<MemberManagementModal currentEmail={admin.email} onClose={vi.fn()} />);
+        await screen.findByRole("button", { name: `Edit ${admin.email}` });
+        const search = screen.getByRole("searchbox", { name: "Search by email" });
+        fireEvent.change(search, { target: { value: "  OwNeR@  " } });
+        expect(screen.queryByRole("button", { name: `Edit ${admin.email}` })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: `Edit ${member.email}` }));
+        expect(screen.getByRole("heading", { name: "Edit member" })).toBeVisible();
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+        const restoredSearch = screen.getByRole("searchbox", { name: "Search by email" });
+        expect(restoredSearch).toHaveValue("  OwNeR@  ");
+        fireEvent.change(restoredSearch, { target: { value: "missing" } });
+        expect(screen.getByText("No members match this email.")).toBeVisible();
     });
 });

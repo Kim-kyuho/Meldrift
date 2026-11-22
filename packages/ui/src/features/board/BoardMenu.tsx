@@ -7,7 +7,9 @@ import { Download, EllipsisIcon, FileText, FolderOpen, Info, ListOrdered, Shredd
 export type BoardMenuProps = {
     brand: ReactNode;
     title?: string;
+    titleDivider?: boolean;
     boardActions?: boolean;
+    compact?: boolean;
     authControls?: ReactNode;
     transferDisabled?: boolean;
     mutationDisabled?: boolean;
@@ -28,8 +30,10 @@ export type BoardMenuProps = {
 
 export default function BoardMenu({
     brand,
-    title = "Free Board",
+    title,
+    titleDivider = false,
     boardActions = true,
+    compact = false,
     authControls,
     transferDisabled = false,
     mutationDisabled = false,
@@ -47,6 +51,7 @@ export default function BoardMenu({
     onReset,
     onAbout,
 }: BoardMenuProps) {
+    const menuTitle = title ?? (boardActions ? "Free Board" : null);
     const runAndClose = (action: () => void) => {
         setMenuOpen(false);
         action();
@@ -60,16 +65,21 @@ export default function BoardMenu({
             <PressableButton
                 aria-label="Open board menu"
                 data-tutorial="board-menu-trigger"
-                className="fixed right-5 top-5 z-50000 bg-white/75 px-3 py-3 shadow-md"
+                className={`fixed right-5 top-5 z-50000 bg-white/75 shadow-md ${compact ? "grid size-9 place-items-center rounded-lg" : "px-3 py-3"}`}
                 onClick={() => setMenuOpen((prev) => !prev)}
             >
-                <EllipsisIcon className="h-5 w-5 text-neutral-900" />
+                <EllipsisIcon className={compact ? "size-4 text-neutral-900" : "h-5 w-5 text-neutral-900"} />
             </PressableButton>
             {menuOpen && (
                 // AI 어시스턴트 버튼이 위로 올라오는 것을 방지하기 위해 z를 한 단계 올림
-                <div className="fixed right-5 top-17 z-50001 w-56 rounded-xl bg-white/75 px-2 py-3 shadow-md">
+                <div className={`fixed right-5 z-50001 rounded-xl bg-white/75 shadow-md ${compact
+                    ? "top-16 w-48 px-1.5 py-2 text-sm [&_.ui-button-menu]:min-h-8 [&_.ui-button-menu]:px-2.5 [&_.ui-button-menu]:py-1"
+                    : "top-17 w-56 px-2 py-3"}`}>
+                    {menuTitle && <>
+                        <div className="px-3 py-2 font-bold text-neutral-900">{menuTitle}</div>
+                        {titleDivider && <hr className="mx-2 mb-1 border-neutral-200" />}
+                    </>}
                     {boardActions && <>
-                    <div className="px-3 py-2 font-bold text-neutral-900">{title}</div>
                     <PressableButton
                         variant="menu"
                         data-tutorial="reorder-memos"

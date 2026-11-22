@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { GET, PATCH, DELETE } from "@/app/api/members/route";
+import { DELETE as withdraw } from "@/app/api/me/route";
 import { BoardPrivacyError } from "@/lib/board-privacy";
 
 const mocks = vi.hoisted(() => ({ user: vi.fn(), select: vi.fn(), batch: vi.fn(), execute: vi.fn(), privacy: vi.fn() }));
@@ -63,6 +64,38 @@ describe("Plus member management", () => {
 
         const response = await DELETE(request("DELETE", { ids: [5] }));
         expect(response.status).toBe(503);
+        expect(mocks.batch).not.toHaveBeenCalled();
+    });
+
+    it("selects only the signed-in account for withdrawal and clears its session cookie", async () => {
+        mocks.user.mockResolvedValue({ ...admin, id: 15, role: "user" });
+        mocks.select
+            .mockReturnValueOnce({ from: () => ({ where: async () => [{ email: "member@example.com" }] }) })
+            .mockReturnValueOnce({ from: () => ({ where: async () => [{ boardId: 9, previewVersion: null }] }) });
+        mocks.batch.mockResolvedValue([{}, { rows: [{ deleted: 1, retained: 1 }] }]);
+
+        const response = await withdraw(request("DELETE", { ids: [18] }));
+
+        expect(response.status).toBe(200);
+        expect(response.cookies.get("meldrift_session")?.value).toBe("");
+        expect(mocks.privacy).toHaveBeenCalledWith(9, false);
+        const mutation = new PgDialect().sqlToQuery(mocks.execute.mock.calls[1][0]);
+        expect(mutation.params[0]).toBe(15);
+        expect(mutation.params).not.toContain(18);
+        expect(mutation.sql).toContain("UPDATE boards SET private_flg = 1");
+        expect(mutation.sql).not.toContain("DELETE FROM boards");
+    });
+
+    it("keeps the last administrator's account and boards intact", async () => {
+        const where = vi.fn().mockResolvedValue([]);
+        mocks.select.mockReturnValueOnce({ from: () => ({ where }) });
+
+        const response = await withdraw(request("DELETE"));
+
+        expect(response.status).toBe(409);
+        const authorization = new PgDialect().sqlToQuery(where.mock.calls[0][0]).sql;
+        expect(authorization).toContain("other_admin.role = 'admin'");
+        expect(mocks.privacy).not.toHaveBeenCalled();
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 });

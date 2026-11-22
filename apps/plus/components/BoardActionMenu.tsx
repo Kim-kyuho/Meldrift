@@ -20,23 +20,23 @@ export default function BoardActionMenu({
     return (
         <div
             ref={ref}
-            className="absolute right-2 top-11 z-50000 rounded-md bg-white px-3.5 py-px shadow-md"
+            className="absolute right-2 top-11 z-50000 w-32 rounded-md bg-white p-1 text-xs shadow-md"
         >
-            <PressableButton variant="menu" onClick={onEdit}>
+            <PressableButton variant="menu" className="min-h-8 px-2 py-1" onClick={onEdit}>
                 <span className="flex w-full items-center gap-2">
-                    <Pencil className="h-4 w-4" />
+                    <Pencil size={14} />
                     <span>Edit</span>
                 </span>
             </PressableButton>
-            <PressableButton variant="menu" onClick={onShare}>
+            <PressableButton variant="menu" className="min-h-8 px-2 py-1" onClick={onShare}>
                 <span className="flex w-full items-center gap-2">
-                    <Users className="h-4 w-4" />
+                    <Users size={14} />
                     <span>Share</span>
                 </span>
             </PressableButton>
-            <PressableButton variant="menu" onClick={onDelete}>
+            <PressableButton variant="menu" className="min-h-8 px-2 py-1" onClick={onDelete}>
                 <span className="flex w-full items-center gap-2 text-rose-600">
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 size={14} />
                     <span>Delete</span>
                 </span>
             </PressableButton>
