@@ -4,7 +4,7 @@
 
 ## 역할
 
-보드 목록과 정적 미리보기를 표시하고, 인증 UI와 관리자 전용 생성·이름 변경·삭제 흐름을 조립한다. 실제 목록 상태와 보드 액션은 `useBoardList`, 인증 상태는 `useBoardAuth`가 소유한다.
+인가된 보드 목록과 정적 미리보기를 표시하고, 인증 UI와 보드 생성·수정·삭제 및 관리자 회원 관리 흐름을 조립한다. 실제 목록 상태와 보드 액션은 `useBoardList`, 인증 상태는 `useBoardAuth`가 소유한다.
 
 ## BoardList Props
 
@@ -12,11 +12,9 @@
 | --- | --- | --- |
 | `boards` | `BoardListBoard[]` | `useBoardList`의 초기 목록 |
 
-`BoardListBoard`는 `boardId`, `title`, `width`, `height`, `previewUrl`을 가진다. `app/page.tsx`는 DB에서 보드 목록을 조회한 뒤 Cloudinary cloud name이 있으면 `boardPreviewUrl()`로 다음 URL을 조립한다. `{version}`은 `boards.preview_version`이고, 값이 없으면 `v{version}/` 구간을 뺀다.
+`app/page.tsx`는 로그인 상태에 맞는 보드만 조회한 뒤 작성일과 제목 정렬에 필요한 데이터 및 수정 권한을 전달한다. 비로그인 사용자는 공개 보드, 일반 회원은 공개 보드와 자신의 비공개 보드, 관리자는 전체 보드를 본다. 소유자 이메일은 관리자에게만 반환한다.
 
-```text
-https://res.cloudinary.com/{cloudName}/image/upload/v{version}/meldrift/boards/{boardId}/PreviewIMG.webp
-```
+미리보기는 `/api/boards/{boardId}/preview`를 거친다. 서버는 보드 조회 권한을 확인한 뒤 보관된 미리보기를 응답하며, 예전에 저장된 Cloudinary 미리보기는 공개 보드일 때만 연결한다.
 
 ## 로컬 State
 
@@ -46,7 +44,7 @@ https://res.cloudinary.com/{cloudName}/image/upload/v{version}/meldrift/boards/{
 
 ### 보드 생성
 
-1. `handleCreateBoardClick()`이 관리자 여부를 검사한다.
+1. `handleCreateBoardClick()`이 작성 권한이나 관리자 역할을 검사한다.
 2. 생성 성공 시 `handleBoardCreated(boardId)`가 모달을 닫는다.
 3. `sessionStorage[boardPreviewSessionKey]`에 새 보드 ID를 기록한다.
 4. `/boards/{boardId}`로 이동한다.
@@ -58,11 +56,11 @@ https://res.cloudinary.com/{cloudName}/image/upload/v{version}/meldrift/boards/{
 
 ### 이름 변경
 
-`BoardActionMenu`에서 선택 ID와 현재 제목을 설정하고 `RenameBoardModal`을 연다. 성공 시 `handleBoardRenamed(boardId, title)`이 해당 목록 항목의 제목만 불변 업데이트한다.
+`BoardActionMenu`에서 선택 ID와 현재 제목을 설정하고 `RenameBoardModal`을 연다. 제목과 공개 여부를 수정할 수 있다. 성공하면 목록을 새로 받아 바뀐 설정을 표시한다.
 
 ### 삭제
 
-관리자만 확인 다이얼로그를 열 수 있다. 서버는 보드 존재와 Cloudinary 설정을 확인하고, 구버전 이미지 원본과 `meldrift/boards/{boardId}/PreviewIMG`를 Cloudinary에서 삭제한 뒤 `boards`·`board_snapshots`와 카드 테이블 삭제를 `db.batch` 한 번으로 보낸다. 성공 시 클라이언트는 목록에서 해당 보드를 제거하고 선택 상태를 초기화한 뒤 `router.refresh()`로 서버 데이터를 재검증한다.
+작성 권한이 있는 소유자와 관리자는 보드를 삭제할 수 있다. 서버는 세션과 보드 수정 권한을 재확인하고 보드와 관련 데이터를 배치로 삭제한다. 보드에 이전 Cloudinary 파일이 있다면 삭제를 요청한다. 성공하면 클라이언트는 선택 상태를 초기화하고 목록을 새로 받는다.
 
 ## 렌더 구조
 
@@ -93,8 +91,8 @@ ConfirmDialog
 
 ## 알려진 특이사항
 
-- 미리보기 URL은 DB 컬럼이 아니라 보드 ID와 Cloudinary 경로 규칙으로 계산한다.
+- 미리보기 URL은 보드 ID를 바탕으로 서버 API를 가리킨다.
 - `previewUrl`은 실제 파일 존재 여부를 보장하지 않으므로 클라이언트의 이미지 오류 상태가 필요하다.
 - 새 보드와 미리보기 실패 보드의 최초 캡처 요청은 sessionStorage 단일 키를 통해 다음 보드 화면으로 전달된다.
 - 삭제 실패 시 선택 ID는 유지되고 다이얼로그만 닫힌다.
-- 외래키 cascade 대신 보드 삭제 API가 관계 행과 Cloudinary 자산을 명시적으로 정리한다. 스냅샷 행도 같은 배치에서 지운다.
+- `board_previews`는 보드와 함께 삭제된다. 카드와 스냅샷은 보드 삭제 API가 같은 배치에서 지운다.

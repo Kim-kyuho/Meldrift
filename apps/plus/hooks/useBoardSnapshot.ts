@@ -6,6 +6,7 @@ import { SnapshotSync, type SyncStatus } from "@/lib/snapshot-sync";
 import { ChangeSync, lookupChange } from "@/lib/change-sync";
 import { downloadAsset } from "@/lib/asset-download";
 import type { StoredBoard } from "@meldrift/board-data/browser-db/protocol";
+import { canCreateBoard } from "@/lib/board-permissions";
 
 type BoardSync = SnapshotSync | ChangeSync;
 
@@ -66,7 +67,7 @@ type State = {
 // the same browser database.
 let editorCleanup = Promise.resolve();
 
-export function useBoardSnapshot(board: BoardInfo) {
+export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
     const [serverSaveVersion, setServerSaveVersion] = useState(0);
     const [state, setState] = useState<State>({ snapshot: null, status: "saved", message: "", canEdit: false });
     const managerRef = useRef<BoardSync | null>(null);
@@ -103,13 +104,10 @@ export function useBoardSnapshot(board: BoardInfo) {
                 throw new Error("Authentication could not be checked.");
             }
             const { user } = await authResponse.json();
-            const canEdit = user?.isApproved === true;
+            const canEdit = canCreateBoard(user ?? null) && editingAllowed;
             if (!active) {
                 return;
             }
-            database = createBoardDatabase(`meldrift-plus:${encodeURIComponent(user?.email ?? "guest")}:${board.boardId}`, board);
-            databaseRef.current = database;
-            const local = await database.record();
             const boardEndpoint = `/api/boards/${board.boardId}`;
             const response = await fetch(`${boardEndpoint}/snapshot`, { signal: controller.signal, cache: "no-store" });
             if (!active) {
@@ -118,6 +116,9 @@ export function useBoardSnapshot(board: BoardInfo) {
             if (!response.ok) {
                 throw new Error("The board snapshot could not be loaded.");
             }
+            database = createBoardDatabase(`meldrift-plus:${encodeURIComponent(user?.email ?? "guest")}:${board.boardId}`, board);
+            databaseRef.current = database;
+            const local = await database.record();
             const storageMode = response.headers.get("X-Storage-Mode") ?? "snapshot";
             if (storageMode === "migrating") {
                 throw new Error("This board is being moved to change sync. Open it again in a moment.");
@@ -206,7 +207,7 @@ export function useBoardSnapshot(board: BoardInfo) {
                 }
             })().catch(() => {});
         };
-    }, [board, attempt]);
+    }, [board, attempt, editingAllowed]);
 
     const save = useCallback((snapshot: BoardSnapshot) => {
         return managerRef.current?.save(snapshot);

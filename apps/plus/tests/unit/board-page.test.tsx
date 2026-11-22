@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     selectLimit: vi.fn(),
 }));
 
+vi.mock("@/lib/auth/current-user", () => ({ getCurrentUser: async () => null }));
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("@/components/BoardClient", () => ({ default: vi.fn() }));

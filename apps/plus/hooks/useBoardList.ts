@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CurrentUser } from "@/hooks/useBoardAuth";
 import { boardPreviewSessionKey } from "@/lib/board-preview";
+import { canCreateBoard } from "@/lib/board-permissions";
 
 export type BoardListBoard = {
     boardId: number;
@@ -9,6 +10,10 @@ export type BoardListBoard = {
     width: number;
     height: number;
     previewUrl: string | null;
+    privateFlg: 0 | 1;
+    createdAt: string | null;
+    ownerEmail: string | null;
+    canEdit: boolean;
 };
 
 type UseBoardListOptions = {
@@ -18,7 +23,7 @@ type UseBoardListOptions = {
 
 export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
     const router = useRouter();
-    const [boardList, setBoardList] = useState(boards);
+    const boardList = currentUser ? boards : boards.filter((board) => board.privateFlg === 0);
     const [createBoardOpen, setCreateBoardOpen] = useState(false);
     const [renameBoardOpen, setRenameBoardOpen] = useState(false);
     const [boardListMessage, setBoardListMessage] = useState("");
@@ -42,8 +47,8 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
     }, []);
 
     const handleCreateBoardClick = () => {
-        if (currentUser?.role !== "admin") {
-            setBoardListMessage("Only administrators can create boards.");
+        if (!canCreateBoard(currentUser)) {
+            setBoardListMessage("You cannot create boards.");
             return;
         }
 
@@ -51,14 +56,10 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
         setCreateBoardOpen(true);
     };
 
-    const handleBoardRenamed = (boardId: number, title: string) => {
+    const handleBoardRenamed = () => {
         setRenameBoardOpen(false);
-        setBoardList((prev) =>
-        prev.map((board) =>
-            board.boardId === boardId
-                ? { ...board, title }
-                : board
-        ));
+        setActionMenuOpen(false);
+        router.refresh();
     }
 
     const handleBoardCreated = (boardId: number) => {
@@ -67,8 +68,8 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
         router.push(`/boards/${boardId}`);
     };
     const openBoardActionMenu = (boardId: number) => {
-        if (currentUser?.role !== "admin") {
-            setBoardListMessage("Only administrators can delete boards.");
+        if (!currentUser || !boardList.find((board) => board.boardId === boardId)?.canEdit) {
+            setBoardListMessage("You cannot edit this board.");
             return;
         }
 
@@ -80,7 +81,7 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
     const handleBoardClick = (boardId: number, previewMissing: boolean) => {
         setActionMenuOpen(false);
 
-        if (previewMissing) {
+        if (previewMissing && currentUser && boardList.find((board) => board.boardId === boardId)?.canEdit) {
             window.sessionStorage.setItem(boardPreviewSessionKey, String(boardId));
         }
     };
@@ -106,7 +107,6 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
             return;
         }
 
-        setBoardList((prev) => prev.filter((board) => board.boardId !== selectedBoardId));
         setDeleteDialogOpen(false);
         setSelectedBoardId(null);
         router.refresh();

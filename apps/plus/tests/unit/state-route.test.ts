@@ -15,7 +15,7 @@ vi.mock("@/lib/saved-board-snapshot", () => ({ loadSavedBoardSnapshot: mocks.loa
 vi.mock("@/lib/board-state-store", () => ({ loadBoardState: mocks.loadBoardState }));
 
 const params = (boardId: string) => Promise.resolve({ boardId });
-const board = { boardId: 7, title: "Board", width: 100, height: 80 };
+const board = { boardId: 7, title: "Board", width: 100, height: 80, privateFlg: 0, ownerId: "owner@example.com" };
 const image = {
     imageId: 1, syncId: "image-1", assetId: "", boardId: 1, label: "a",
     x: 0, y: 0, z: 1, width: 10, height: 10,

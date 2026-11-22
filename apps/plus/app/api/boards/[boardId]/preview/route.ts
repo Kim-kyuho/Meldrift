@@ -1,165 +1,70 @@
-import { getCardPermissionMessage, getCurrentUserFromRequest } from "@/lib/auth/current-user";
-import { boardPreviewFolder } from "@/lib/board-preview";
+import { boardAccess } from "@/lib/board-access";
+import { boardPreviewUrl } from "@/lib/board-preview";
 import { getDb } from "@/lib/db";
-import { db_boards } from "@/lib/db/schema";
-import { v2 as cloudinary } from "cloudinary";
-import type { UploadApiResponse } from "cloudinary";
-import { eq } from "drizzle-orm";
+import { db_boardPreviews } from "@/lib/db/schema";
+import { editorFromRequest, editorSessionGuard } from "@/lib/editor-guard";
+import { eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+type Context = { params: Promise<{ boardId: string }> };
 const maxPreviewSize = 4 * 1024 * 1024;
-const previewImageTypes = new Set(["image/png", "image/webp"]);
+const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ boardId: string }> }) {
+export async function GET(request: NextRequest, { params }: Context) {
+    const boardId = Number((await params).boardId);
+    const gate = await boardAccess(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
+    }
+
+    const [preview] = await getDb().select().from(db_boardPreviews)
+        .where(eq(db_boardPreviews.boardId, boardId)).limit(1);
+    if (preview) {
+        return new NextResponse(new Uint8Array(preview.bytes), {
+            headers: { ...headers, "Content-Type": preview.mimeType },
+        });
+    }
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    if (gate.board.privateFlg === 0 && gate.board.previewVersion && cloudName) {
+        return NextResponse.redirect(boardPreviewUrl(cloudName, boardId, gate.board.previewVersion), { headers });
+    }
+    return new NextResponse(null, { status: 404, headers });
+}
+
+export async function PUT(request: NextRequest, { params }: Context) {
     try {
-        const currentUser = await getCurrentUserFromRequest(request);
-        const permissionMessage = getCardPermissionMessage(currentUser);
-
-        if (permissionMessage) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: permissionMessage,
-                },
-                { status: 403 },
-            );
-        }
-
         const boardId = Number((await params).boardId);
-
-        if (!Number.isInteger(boardId) || boardId <= 0) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Invalid board id.",
-                },
-                { status: 400 },
-            );
+        const gate = await editorFromRequest(request, boardId);
+        if (gate.failure) {
+            return gate.failure;
         }
 
-        const formData = await request.formData();
-        const file = formData.get("file");
-
-        if (!(file instanceof File) || file.size === 0) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Preview image file is required.",
-                },
-                { status: 400 },
-            );
+        if (Number(request.headers.get("Content-Length")) > maxPreviewSize + 4096) {
+            return NextResponse.json({ ok: false, message: "The preview exceeds 4 MiB." }, { status: 413 });
         }
-
-        if (!previewImageTypes.has(file.type)) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Preview image must be a PNG or WebP file.",
-                },
-                { status: 400 },
-            );
+        const file = (await request.formData().catch(() => null))?.get("file");
+        if (!(file instanceof File) || !file.size || !["image/png", "image/webp"].includes(file.type)) {
+            return NextResponse.json({ ok: false, message: "A PNG or WebP preview is required." }, { status: 400 });
         }
-
         if (file.size > maxPreviewSize) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Preview image must be 4 MB or smaller.",
-                },
-                { status: 413 },
-            );
+            return NextResponse.json({ ok: false, message: "The preview exceeds 4 MiB." }, { status: 413 });
         }
-
-        if (
-            !process.env.CLOUDINARY_CLOUD_NAME ||
-            !process.env.CLOUDINARY_API_KEY ||
-            !process.env.CLOUDINARY_API_SECRET
-        ) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Cloudinary environment variables are not set.",
-                },
-                { status: 500 },
-            );
+        const bytes = Buffer.from(await file.arrayBuffer()).toString("hex");
+        const updated = await getDb().execute(sql`
+            INSERT INTO board_previews (board_id, bytes, mime_type)
+            SELECT ${boardId}, decode(${bytes}, 'hex'), ${file.type}
+            WHERE ${editorSessionGuard(gate.identity, boardId)}
+            ON CONFLICT (board_id) DO UPDATE SET bytes = excluded.bytes, mime_type = excluded.mime_type
+            RETURNING board_id
+        `);
+        if (!updated.rows.length) {
+            return NextResponse.json({ ok: false, message: "Your permissions changed." }, { status: 403 });
         }
-
-        const db = getDb();
-        const targetBoard = await db
-            .select({ boardId: db_boards.boardId })
-            .from(db_boards)
-            .where(eq(db_boards.boardId, boardId))
-            .limit(1);
-
-        if (!targetBoard[0]) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "This board does not exist.",
-                },
-                { status: 404 },
-            );
-        }
-
-        cloudinary.config({
-            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-            api_key: process.env.CLOUDINARY_API_KEY,
-            api_secret: process.env.CLOUDINARY_API_SECRET,
-        });
-
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    folder: boardPreviewFolder(boardId),
-                    public_id: "PreviewIMG",
-                    format: "webp",
-                    overwrite: true,
-                },
-                (error, result) => {
-                    if (error || !result) {
-                        reject(error ?? new Error("Cloudinary preview upload failed"));
-                        return;
-                    }
-
-                    resolve(result);
-                },
-            );
-
-            uploadStream.end(buffer);
-        });
-
-        await db
-            .update(db_boards)
-            .set({ previewVersion: uploadResult.version })
-            .where(eq(db_boards.boardId, boardId));
-
-        return NextResponse.json(
-            {
-                ok: true,
-                preview: {
-                    publicId: uploadResult.public_id,
-                    version: uploadResult.version,
-                    secureUrl: uploadResult.secure_url,
-                    width: uploadResult.width,
-                    height: uploadResult.height,
-                    bytes: uploadResult.bytes,
-                    format: uploadResult.format,
-                },
-            },
-            { status: 200 },
-        );
+        return NextResponse.json({ ok: true });
     } catch (error) {
-        console.error("Error uploading board preview:", error);
-        return NextResponse.json(
-            {
-                ok: false,
-                message: "An error occurred while uploading the board preview.",
-            },
-            { status: 500 },
-        );
+        console.error("Error saving board preview:", error);
+        return NextResponse.json({ ok: false, message: "The preview could not be saved." }, { status: 500 });
     }
 }

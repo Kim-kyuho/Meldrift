@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { PgDialect } from "drizzle-orm/pg-core";
-import type { SQL } from "drizzle-orm";
+import { getTableName, type SQL, type Table } from "drizzle-orm";
 import { GET, POST } from "@/app/api/boards/[boardId]/changes/route";
 import { changeRequestDigest, parseChangeRequest } from "@/lib/sync-operations";
 
@@ -24,7 +24,9 @@ const where = () => Object.assign(Promise.resolve(mocks.assetRows()), { limit: m
 vi.mock("@/lib/db", () => ({ getDb: () => ({
     execute: (statement: SQL) => statement,
     batch: mocks.batch,
-    select: mocks.select,
+    select: () => ({ from: (table: Table) => getTableName(table) === "boards"
+        ? { where: () => ({ limit: async () => [{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }] }) }
+        : mocks.select().from(table) }),
 }) }));
 
 const mutationId = "mutation-identifier-1234";
@@ -53,7 +55,7 @@ const statements = () => (mocks.batch.mock.calls[0][0] as SQL[])
 describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.user.mockResolvedValue({ id: 5, isApproved: true });
+        mocks.user.mockResolvedValue({ id: 5, isApproved: true, email: "owner@example.com" });
         mocks.permission.mockReturnValue(null);
         mocks.limit.mockResolvedValue([]);
         mocks.assetRows.mockReturnValue([]);
@@ -72,7 +74,7 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
             { type: "memo", syncId: "memo-1", action: "update", changes: { x: 1 } },
         ])), context);
 
-        expect(response.status).toBe(403);
+        expect(response.status).toBe(401);
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
@@ -162,7 +164,7 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
         for (const sql of statements().slice(1)) {
             expect(sql).toContain("s.revision = $");
             expect(sql).toContain("s.mode = 'delta'");
-            expect(sql).toContain("u.permission_flg = true");
+            expect(sql).toContain("u.role = 'admin' OR (u.permission_flg AND b.owner_id = u.email)");
             expect(sql).toContain("u.session_token_hash = $");
             expect(sql).toContain("NOT EXISTS ( SELECT 1 FROM sync_mutations m");
         }

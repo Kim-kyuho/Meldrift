@@ -1,6 +1,4 @@
-import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
-import { assetChunkBytes } from "@meldrift/board-data/board-delta";
 import type { BoardInfo, BoardSnapshot } from "@meldrift/board-data/board-state";
 import { getDb } from "./db";
 import {
@@ -8,7 +6,7 @@ import {
 } from "./db/schema";
 import { loadSavedBoardSnapshot } from "./saved-board-snapshot";
 import { loadBoardState } from "./board-state-store";
-import { chunkCountFor } from "./assets";
+import { storeBoardAsset } from "./assets";
 
 export class TransitionError extends Error {}
 
@@ -26,27 +24,6 @@ const countsOf = (snapshot: BoardSnapshot) => ({
     tables: snapshot.tables.length,
     strokes: snapshot.strokes.length,
 });
-
-async function writeAsset(boardId: number, assetId: string, data: Uint8Array, mimeType: string) {
-    const db = getDb();
-    const digest = createHash("sha256").update(data).digest("hex");
-    const chunkCount = chunkCountFor(data.byteLength);
-    for (let index = 0; index < chunkCount; index += 1) {
-        const chunk = Buffer.from(data.subarray(index * assetChunkBytes, (index + 1) * assetChunkBytes));
-        await db.execute(sql`
-            INSERT INTO asset_chunks (board_id, asset_id, chunk_index, bytes)
-            VALUES (${boardId}, ${assetId}, ${index}, decode(${chunk.toString("hex")}, 'hex'))
-            ON CONFLICT (board_id, asset_id, chunk_index) DO UPDATE SET bytes = excluded.bytes`);
-    }
-    await db.execute(sql`
-        INSERT INTO assets (board_id, asset_id, digest, byte_length, mime_type, chunk_size, chunk_count)
-        VALUES (${boardId}, ${assetId}, ${digest}, ${data.byteLength}, ${mimeType},
-            ${assetChunkBytes}, ${chunkCount})
-        ON CONFLICT (board_id, asset_id) DO UPDATE SET
-            digest = excluded.digest, byte_length = excluded.byte_length, mime_type = excluded.mime_type,
-            chunk_size = excluded.chunk_size, chunk_count = excluded.chunk_count`);
-    return digest;
-}
 
 async function replaceTables(board: BoardInfo, snapshot: BoardSnapshot) {
     const db = getDb();
@@ -80,7 +57,7 @@ async function replaceTables(board: BoardInfo, snapshot: BoardSnapshot) {
     if (snapshot.images.length > 0) {
         await db.insert(db_images).values(snapshot.images.map((image) => ({
             boardId, syncId: image.syncId, assetId: image.assetId || null,
-            publicId: null, secureUrl: image.url || null, fileName: image.label,
+            publicId: null, secureUrl: image.data && image.assetId ? null : image.url || null, fileName: image.label,
             x: image.x, y: image.y, z: image.z, width: image.width, height: image.height,
         })));
     }
@@ -117,7 +94,7 @@ export async function transitionBoard(board: BoardInfo): Promise<TransitionRepor
             if (!image.data || !image.assetId) {
                 continue;
             }
-            digests.set(image.assetId, await writeAsset(
+            digests.set(image.assetId, await storeBoardAsset(
                 boardId, image.assetId, image.data, image.mimeType ?? "application/octet-stream"));
         }
     }

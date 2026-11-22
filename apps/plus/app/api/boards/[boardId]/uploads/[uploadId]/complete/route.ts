@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         FROM parts p
         WHERE p.chunk_count = ${session.chunkCount} AND p.last_index = ${session.chunkCount - 1}
             AND p.byte_length = ${session.byteLength} AND p.digest = ${session.digest}
-            AND ${editorSessionGuard(gate.identity)}
+            AND ${editorSessionGuard(gate.identity, boardId)}
         ON CONFLICT (board_id, asset_id) DO NOTHING
         RETURNING asset_id`);
 

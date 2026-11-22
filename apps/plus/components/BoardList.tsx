@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { EllipsisVertical, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, EllipsisVertical, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import BoardMenu from "./BoardMenu";
 import BoardMessage from "@meldrift/ui/BoardMessage";
@@ -13,12 +14,18 @@ import RenameBoardModal from "./RenameBoardModal";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import BoardActionMenu from "./BoardActionMenu";
 import AboutModal from "./AboutModal";
-import { useBoardAuth } from "@/hooks/useBoardAuth";
+import { useBoardAuth, type CurrentUser } from "@/hooks/useBoardAuth";
 import { BoardListBoard, useBoardList } from "@/hooks/useBoardList";
+import { canCreateBoard } from "@/lib/board-permissions";
+import MemberManagementModal from "./MemberManagementModal";
 
-export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
+export default function BoardList({ boards, initialUser }: { boards: BoardListBoard[]; initialUser: CurrentUser | null }) {
+    const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
+    const [membersOpen, setMembersOpen] = useState(false);
+    const [sortBy, setSortBy] = useState<"createdAt" | "title">("createdAt");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
     const [failedPreviewIds, setFailedPreviewIds] = useState<Set<number>>(new Set());
     const {
         signInOpen,
@@ -26,10 +33,14 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
         signUpOpen,
         setSignUpOpen,
         currentUser,
-        setCurrentUser,
         handleSignOut,
     } = useBoardAuth({
-        onSignOutComplete: () => setMenuOpen(false),
+        initialUser,
+        onSignOutComplete: () => {
+            setMenuOpen(false);
+            setMembersOpen(false);
+            router.refresh();
+        },
     });
 
     const {
@@ -58,6 +69,12 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
         boards,
         currentUser,
     });
+    const selectedBoard = boardList.find((board) => board.boardId === selectedBoardId);
+    const sortedBoards = [...boardList].sort((left, right) => {
+        const comparison = sortBy === "title" ? left.title.localeCompare(right.title)
+            : (left.createdAt ?? "").localeCompare(right.createdAt ?? "");
+        return comparison * (sortDirection === "asc" ? 1 : -1) || left.boardId - right.boardId;
+    });
 
     return (
         <>
@@ -69,7 +86,12 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                 currentUser={currentUser}
                 onSignOut={handleSignOut}
                 onAbout={() => setAboutOpen(true)}
+                onManageMembers={() => setMembersOpen(true)}
             />
+
+            {membersOpen && currentUser?.role === "admin" && (
+                <MemberManagementModal currentEmail={currentUser.email} onClose={() => setMembersOpen(false)} />
+            )}
 
             {aboutOpen && (
                 <AboutModal onClose={() => setAboutOpen(false)} />
@@ -78,7 +100,7 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
             {signInOpen && (
                 <SignInModal
                     onClose={() => setSignInOpen(false)}
-                    onSignIn={(user) => setCurrentUser(user)}
+                    onSignIn={() => router.refresh()}
                 />
             )}
 
@@ -88,18 +110,18 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                 />
             )}
 
-            {createBoardOpen && (
+            {createBoardOpen && canCreateBoard(currentUser) && (
                 <CreateBoardModal
-                    ownerId={currentUser?.email ?? null}
                     onClose={() => setCreateBoardOpen(false)}
                     onCreated={handleBoardCreated}
                 />
             )}
 
-            {renameBoardOpen && selectedBoardId !== null && selectedBoardTitle !== null &&(
+            {renameBoardOpen && currentUser && selectedBoard?.canEdit && selectedBoardTitle !== null && (
                 <RenameBoardModal
-                    boardId={selectedBoardId}
+                    boardId={selectedBoard.boardId}
                     title={selectedBoardTitle}
+                    privateFlg={selectedBoard.privateFlg}
                     onClose={() => setRenameBoardOpen(false)}
                     onRenamed={handleBoardRenamed}
                 />
@@ -119,8 +141,22 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                 }}
             >
                 <div className="mx-auto max-w-4xl">
+                    <div className="mb-4 flex items-center justify-end gap-2 text-sm">
+                        <label htmlFor="board-order">Sort:</label>
+                        <select id="board-order" value={sortBy}
+                            className="rounded border border-neutral-300 bg-white px-2 py-1"
+                            onChange={(event) => setSortBy(event.target.value === "title" ? "title" : "createdAt")}>
+                            <option value="createdAt">Date created</option>
+                            <option value="title">Title</option>
+                        </select>
+                        <button type="button" className="rounded border border-neutral-300 bg-white p-1.5"
+                            aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                            onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}>
+                            {sortDirection === "asc" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                        </button>
+                    </div>
                     <div className="grid grid-cols-2 gap-5" >
-                        {boardList.map((board) => (
+                        {sortedBoards.map((board) => (
                             <div
                                 key={board.boardId}
                                 className="group relative select-none rounded-lg bg-white shadow-sm ring-1 ring-neutral-200 transition hover:-translate-y-0.5 hover:shadow-md"
@@ -173,10 +209,14 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                                             <p className="truncate text-sm font-semibold text-neutral-900">
                                                 {board.title}
                                             </p>
+                                            {board.privateFlg === 1 && <p className="text-xs text-neutral-600">Private</p>}
+                                            {currentUser?.role === "admin" && board.ownerEmail && (
+                                                <p className="truncate text-xs text-neutral-600" title={board.ownerEmail}>{board.ownerEmail}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </Link>
-                                <button
+                                {currentUser && board.canEdit && <button
                                     type="button"
                                     aria-label="Board actions"
                                     className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-neutral-500 shadow-sm backdrop-blur-sm transition hover:bg-white hover:text-neutral-900 active:scale-95"
@@ -191,8 +231,8 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                                     }}
                                 >
                                     <EllipsisVertical className="h-5 w-5" />
-                                </button>
-                                {actionMenuOpen && selectedBoardId === board.boardId && (
+                                </button>}
+                                {currentUser && board.canEdit && actionMenuOpen && selectedBoardId === board.boardId && (
                                     <BoardActionMenu
                                         ref={menuRef}
                                         onRename={() => {
@@ -206,7 +246,7 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                             </div>
                         ))}
 
-                        <button
+                        {canCreateBoard(currentUser) && <button
                             type="button"
                             onClick={handleCreateBoardClick}
                             className="overflow-hidden rounded-lg bg-white text-left shadow-sm ring-1 ring-dashed ring-neutral-300 transition hover:-translate-y-0.5 hover:shadow-md"
@@ -219,13 +259,13 @@ export default function BoardList({ boards }: { boards: BoardListBoard[] }) {
                                     New Board
                                 </p>
                             </div>
-                        </button>
+                        </button>}
                     </div>
                 </div>
             </main>
-            {deleteDialogOpen && (
+            {deleteDialogOpen && currentUser && selectedBoard?.canEdit && (
                 <ConfirmDialog
-                    message="Delete this board and all memos?"
+                    message="Delete this board and all of its contents?"
                     onConfirm={handleDeleteBoard}
                     onCancel={closeDeleteDialog}
                 />

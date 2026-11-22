@@ -19,6 +19,19 @@ async function navigateAndWaitForUser(page: Page, navigate: () => Promise<unknow
 
 export async function gotoHydratedPage(page: Page, path: string) {
     const plusPath = path === "/" ? "/plus" : `/plus${path}`;
+    if (path === "/") {
+        await page.goto(plusPath);
+        const menu = getBoardMenuButton(page);
+        const authAction = page.getByRole("button", { name: /^Sign-(in|out)$/ });
+        await expect.poll(async () => {
+            if (!await authAction.isVisible()) {
+                await menu.click();
+            }
+            return authAction.isVisible();
+        }).toBe(true);
+        await menu.click();
+        return;
+    }
     await navigateAndWaitForUser(page, () => page.goto(plusPath));
 }
 

@@ -1,3 +1,4 @@
+import { boardAccess } from "@/lib/board-access";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
@@ -6,13 +7,18 @@ import { assetIdPattern } from "@/lib/assets";
 
 type Context = { params: Promise<{ boardId: string; assetId: string; index: string }> };
 
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(request: Request, { params }: Context) {
     const { boardId: rawBoardId, assetId, index: rawIndex } = await params;
     const boardId = Number(rawBoardId);
     const index = Number(rawIndex);
     if (!Number.isSafeInteger(boardId) || boardId <= 0 || !assetIdPattern.test(assetId)
         || !Number.isSafeInteger(index) || index < 0) {
         return new NextResponse(null, { status: 400 });
+    }
+
+    const gate = await boardAccess(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
     }
 
     const [chunk] = await getDb().select().from(db_assetChunks).where(and(

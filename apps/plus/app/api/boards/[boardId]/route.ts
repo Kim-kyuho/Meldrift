@@ -1,180 +1,119 @@
-import { getCurrentUserFromRequest } from "@/lib/auth/current-user";
+import { configureLegacyImageStorage } from "@/lib/board-preview-store";
 import { boardPreviewPublicId } from "@/lib/board-preview";
+import { BoardPrivacyError, prepareBoardPrivacy } from "@/lib/board-privacy";
 import { getDb } from "@/lib/db";
 import {
     db_assetChunks, db_assets, db_boards, db_boardSnapshots, db_boardSync, db_drawings, db_drawingStrokes,
     db_images, db_memos, db_mermaids, db_syncMutations, db_tables, db_uploadSessions,
 } from "@/lib/db/schema";
+import { editorFromRequest, editorSessionGuard } from "@/lib/editor-guard";
+import { membershipLock } from "@/lib/membership-guard";
 import { v2 as cloudinary } from "cloudinary";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ boardId: string }> }) {
+type Context = { params: Promise<{ boardId: string }> };
+export const maxDuration = 60;
+const boardUpdates = z.object({
+    title: z.string().trim().min(1).max(200).optional(),
+    privateFlg: z.union([z.literal(0), z.literal(1)]).optional(),
+}).strict().refine((data) => data.title !== undefined || data.privateFlg !== undefined);
+
+export async function PATCH(request: NextRequest, { params }: Context) {
     try {
-        const currentUser = await getCurrentUserFromRequest(request);
+        const boardId = Number((await params).boardId);
+        const gate = await editorFromRequest(request, boardId);
+        if (gate.failure) {
+            return gate.failure;
+        }
 
-        if (currentUser?.role !== "admin") {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Only administrators can rename boards.",
-                },
-                { status: 403 },
-            );
+        const parsed = boardUpdates.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json({ ok: false, message: "Invalid board title or visibility." }, { status: 400 });
+        }
+
+        const updates: Partial<typeof db_boards.$inferInsert> = { ...parsed.data, updatedAt: new Date() };
+        if (updates.privateFlg === 1 && (gate.board.privateFlg === 0 || gate.board.previewVersion !== null)) {
+            await prepareBoardPrivacy(boardId, gate.board.previewVersion !== null);
+            updates.previewVersion = null;
         }
 
         const db = getDb();
-        const boardId = Number((await params).boardId);
-        const body = await request.json();
-        const updates: Partial<typeof db_boards.$inferInsert> = {};
-
-        if (!Number.isInteger(boardId)) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Invalid board id.",
-                },
-                { status: 400 },
-            );
+        const [, [board]] = await db.batch([
+            db.execute(membershipLock),
+            db.update(db_boards).set(updates).where(and(
+                eq(db_boards.boardId, boardId),
+                editorSessionGuard(gate.identity, boardId),
+            )).returning({ boardId: db_boards.boardId, title: db_boards.title, privateFlg: db_boards.privateFlg }),
+        ]);
+        if (!board) {
+            return NextResponse.json({ ok: false, message: "Your permissions changed." }, { status: 403 });
         }
-        if (body.boardId !== undefined) {
-            updates.boardId = body.boardId;
+        if (parsed.data.privateFlg !== undefined && parsed.data.privateFlg !== gate.board.privateFlg) {
+            console.info("board.visibility_changed", { actor: gate.identity.userId, boardId, privateFlg: parsed.data.privateFlg });
         }
-        if (body.title !== undefined) {
-            updates.title = body.title;
-        }
-
-        if (Object.keys(updates).length === 0) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "No update fields were provided.",
-                },
-                { status: 400 },
-            );
-        }
-
-        const updatedBoard = await db.update(db_boards).set(updates).where(eq(db_boards.boardId, boardId)).returning();
-
-        return NextResponse.json(
-            {
-                ok: true,
-                board: updatedBoard[0],
-            },
-            { status: 200 },
-        );
+        return NextResponse.json({ ok: true, board });
     } catch (error) {
+        if (error instanceof BoardPrivacyError) {
+            return NextResponse.json({ ok: false, message: error.message }, { status: 503 });
+        }
         console.error("Error updating board:", error);
-        return NextResponse.json(
-            {
-                ok: false,
-                message: "An error occurred while updating the board.",
-            },
-            { status: 500 },
-        );
+        return NextResponse.json({ ok: false, message: "The board could not be updated." }, { status: 500 });
     }
 }
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ boardId: string }> }) {
+
+export async function DELETE(request: NextRequest, { params }: Context) {
     try {
-        const currentUser = await getCurrentUserFromRequest(request);
-
-        if (currentUser?.role !== "admin") {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Only administrators can delete boards.",
-                },
-                { status: 403 },
-            );
-        }
-
         const boardId = Number((await params).boardId);
-
-        if (!Number.isInteger(boardId)) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Invalid board id.",
-                },
-                { status: 400 },
-            );
+        const gate = await editorFromRequest(request, boardId);
+        if (gate.failure) {
+            return gate.failure;
         }
 
         const db = getDb();
-        const targetBoard = await db.select().from(db_boards).where(eq(db_boards.boardId, boardId)).limit(1);
-
-        if (!targetBoard[0]) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "This board does not exist.",
-                },
-                { status: 404 },
-            );
+        const guard = editorSessionGuard(gate.identity, boardId);
+        const images = await db.select({ publicId: db_images.publicId }).from(db_images).where(eq(db_images.boardId, boardId));
+        const legacyIds = images.flatMap(({ publicId }) => publicId ? [publicId] : []);
+        if (gate.board.previewVersion !== null) {
+            legacyIds.push(boardPreviewPublicId(boardId));
+        }
+        if (legacyIds.length && !configureLegacyImageStorage()) {
+            return NextResponse.json({ ok: false, message: "Legacy image storage is not configured." }, { status: 500 });
         }
 
-        if (
-            !process.env.CLOUDINARY_CLOUD_NAME ||
-            !process.env.CLOUDINARY_API_KEY ||
-            !process.env.CLOUDINARY_API_SECRET
-        ) {
-            return NextResponse.json(
-                {
-                    ok: false,
-                    message: "Cloudinary environment variables are not set.",
-                },
-                { status: 500 },
-            );
+        const results = await db.batch([
+            db.execute(membershipLock),
+            db.execute(sql`SELECT id FROM users WHERE id = ${gate.identity.userId} FOR UPDATE`),
+            db.execute(sql`SELECT board_id FROM boards WHERE board_id = ${boardId} FOR UPDATE`),
+            db.delete(db_boardSnapshots).where(and(eq(db_boardSnapshots.boardId, boardId), guard)),
+            db.delete(db_images).where(and(eq(db_images.boardId, boardId), guard)),
+            db.delete(db_memos).where(and(eq(db_memos.boardId, boardId), guard)),
+            db.delete(db_mermaids).where(and(eq(db_mermaids.boardId, boardId), guard)),
+            db.delete(db_drawings).where(and(eq(db_drawings.boardId, boardId), guard)),
+            db.delete(db_tables).where(and(eq(db_tables.boardId, boardId), guard)),
+            db.delete(db_drawingStrokes).where(and(eq(db_drawingStrokes.boardId, boardId), guard)),
+            db.delete(db_assetChunks).where(and(eq(db_assetChunks.boardId, boardId), guard)),
+            db.delete(db_assets).where(and(eq(db_assets.boardId, boardId), guard)),
+            db.delete(db_uploadSessions).where(and(eq(db_uploadSessions.boardId, boardId), guard)),
+            db.delete(db_boardSync).where(and(eq(db_boardSync.boardId, boardId), guard)),
+            db.delete(db_syncMutations).where(and(eq(db_syncMutations.boardId, boardId), guard)),
+            db.delete(db_boards).where(and(eq(db_boards.boardId, boardId), guard)).returning({ boardId: db_boards.boardId }),
+        ]);
+        const deleted = results.at(-1);
+        const board = Array.isArray(deleted) ? deleted[0] : undefined;
+        if (!board) {
+            return NextResponse.json({ ok: false, message: "Your permissions changed." }, { status: 403 });
         }
 
-        cloudinary.config({
-            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-            api_key: process.env.CLOUDINARY_API_KEY,
-            api_secret: process.env.CLOUDINARY_API_SECRET,
-        });
-
-        const boardImages = await db
-            .select({
-                publicId: db_images.publicId,
-            })
-            .from(db_images)
-            .where(eq(db_images.boardId, boardId));
-
-        const previewPublicId = boardPreviewPublicId(boardId);
-
-        await Promise.all([
-            ...boardImages.flatMap((image) => image.publicId ? [cloudinary.uploader.destroy(image.publicId)] : []),
-            cloudinary.uploader.destroy(previewPublicId, { invalidate: true }),
-        ]);
-
-        const [deletedBoard] = await db.batch([
-            db.delete(db_boards).where(eq(db_boards.boardId, boardId)).returning(),
-            db.delete(db_boardSnapshots).where(eq(db_boardSnapshots.boardId, boardId)),
-            db.delete(db_images).where(eq(db_images.boardId, boardId)),
-            db.delete(db_memos).where(eq(db_memos.boardId, boardId)),
-            db.delete(db_mermaids).where(eq(db_mermaids.boardId, boardId)),
-            db.delete(db_drawings).where(eq(db_drawings.boardId, boardId)),
-            db.delete(db_tables).where(eq(db_tables.boardId, boardId)),
-            db.delete(db_drawingStrokes).where(eq(db_drawingStrokes.boardId, boardId)),
-            db.delete(db_assetChunks).where(eq(db_assetChunks.boardId, boardId)),
-            db.delete(db_assets).where(eq(db_assets.boardId, boardId)),
-            db.delete(db_uploadSessions).where(eq(db_uploadSessions.boardId, boardId)),
-            db.delete(db_boardSync).where(eq(db_boardSync.boardId, boardId)),
-            db.delete(db_syncMutations).where(eq(db_syncMutations.boardId, boardId)),
-        ]);
-
-        return NextResponse.json({
-            ok: true,
-            board: deletedBoard[0],
-        });
+        const cleanup = await Promise.allSettled(legacyIds.map((id) => cloudinary.uploader.destroy(id, { invalidate: true })));
+        if (cleanup.some((result) => result.status === "rejected"
+            || (result.value.result !== "ok" && result.value.result !== "not found"))) {
+            console.error("Could not remove one or more legacy images for board", boardId);
+        }
+        return NextResponse.json({ ok: true, board });
     } catch (error) {
         console.error("Error deleting board:", error);
-        return NextResponse.json(
-            {
-                ok: false,
-                message: "An error occurred while deleting the board.",
-            },
-            { status: 500 },
-        );
+        return NextResponse.json({ ok: false, message: "The board could not be deleted." }, { status: 500 });
     }
 }

@@ -4,8 +4,8 @@ import { maxChangeBytes, maxStagedOperations } from "@meldrift/board-data/board-
 import { getDb } from "@/lib/db";
 import { db_assets, db_syncMutations } from "@/lib/db/schema";
 import { discardAsset, readAssetBytes, stagedChangeMimeType } from "@/lib/assets";
-import { getCurrentUserFromRequest, getCardPermissionMessage } from "@/lib/auth/current-user";
-import { getSessionTokenHash, sessionCookieName } from "@/lib/auth/session";
+import { boardAccess } from "@/lib/board-access";
+import { editorFromRequest } from "@/lib/editor-guard";
 import {
     ChangeRequestError, changeRequestDigest, maxOperationsPerRequest, parseChangeRequest,
 } from "@/lib/sync-operations";
@@ -24,6 +24,10 @@ export async function GET(request: NextRequest, { params }: Context) {
         return NextResponse.json({ message: "Invalid change lookup." }, { status: 400 });
     }
 
+    const gate = await boardAccess(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
+    }
     const [applied] = await getDb().select().from(db_syncMutations)
         .where(and(eq(db_syncMutations.boardId, boardId), eq(db_syncMutations.mutationId, mutationId)))
         .limit(1);
@@ -35,15 +39,10 @@ export async function GET(request: NextRequest, { params }: Context) {
 }
 
 export async function POST(request: NextRequest, { params }: Context) {
-    const user = await getCurrentUserFromRequest(request);
-    const message = getCardPermissionMessage(user);
-    if (message || !user) {
-        return NextResponse.json({ message }, { status: 403 });
-    }
-
     const boardId = Number((await params).boardId);
-    if (!Number.isSafeInteger(boardId) || boardId <= 0) {
-        return NextResponse.json({ message: "Invalid change request." }, { status: 400 });
+    const gate = await editorFromRequest(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
     }
     if (Number(request.headers.get("Content-Length")) > maxChangeBytes) {
         return tooLarge();
@@ -54,7 +53,6 @@ export async function POST(request: NextRequest, { params }: Context) {
         return tooLarge();
     }
 
-    const hash = getSessionTokenHash(request.cookies.get(sessionCookieName)?.value);
     const db = getDb();
 
     let payload: unknown;
@@ -92,7 +90,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         changeRequest = parseChangeRequest(payload, staged ? maxStagedOperations : maxOperationsPerRequest);
         digest = changeRequestDigest(changeRequest);
         statements = buildCommitStatements(changeRequest, {
-            boardId, userId: user.id, sessionHash: hash,
+            boardId, ...gate.identity,
             baseRevision: changeRequest.baseRevision, mutationId: changeRequest.mutationId, digest,
         });
     } catch (error) {

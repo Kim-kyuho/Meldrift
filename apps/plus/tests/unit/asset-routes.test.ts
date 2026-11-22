@@ -22,10 +22,11 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 vi.mock("@/lib/db", () => ({ getDb: () => ({
     select: () => ({ from: (table: Table) => ({
-        where: () => Object.assign(
-            Promise.resolve(mocks.rows(getTableName(table))),
-            { limit: async () => mocks.rows(getTableName(table)), orderBy: async () => mocks.rows(getTableName(table)) },
-        ),
+        where: () => getTableName(table) === "boards"
+            ? { limit: async () => [{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }] }
+            : Object.assign(Promise.resolve(mocks.rows(getTableName(table))), {
+                limit: async () => mocks.rows(getTableName(table)), orderBy: async () => mocks.rows(getTableName(table)),
+            }),
     }) }),
     execute: mocks.execute,
     delete: () => ({ where: mocks.deleteWhere }),
@@ -60,7 +61,7 @@ const chunk = (bytes: Buffer, digest = createHash("sha256").update(bytes).digest
 describe("자산 업로드 라우트", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.user.mockResolvedValue({ id: 5, isApproved: true });
+        mocks.user.mockResolvedValue({ id: 5, isApproved: true, email: "owner@example.com" });
         mocks.permission.mockReturnValue(null);
         mocks.rows.mockReturnValue([]);
         mocks.execute.mockResolvedValue({ rows: [{ upload_id: "u1", chunk_index: 0, asset_id: "asset-1" }] });

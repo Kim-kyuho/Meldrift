@@ -23,7 +23,17 @@ CREATE TABLE public.boards (
     owner_id text NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now(),
-    preview_version bigint
+    preview_version bigint,
+    private_flg smallint NOT NULL DEFAULT 1,
+    CONSTRAINT boards_private_flg_check CHECK (private_flg IN (0, 1))
+);
+
+CREATE INDEX boards_owner_id_idx ON public.boards (owner_id);
+
+CREATE TABLE public.board_previews (
+    board_id integer PRIMARY KEY REFERENCES public.boards(board_id) ON DELETE CASCADE,
+    bytes bytea NOT NULL,
+    mime_type text NOT NULL
 );
 
 CREATE TABLE public.memos (

@@ -1,85 +1,73 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getTableName, type Table } from "drizzle-orm";
 import { NextRequest } from "next/server";
-import { PUT } from "@/app/api/boards/[boardId]/preview/route";
+import { GET, PUT } from "@/app/api/boards/[boardId]/preview/route";
 import { boardPreviewUrl } from "@/lib/board-preview";
 
-const mocks = vi.hoisted(() => ({
-    user: vi.fn(), permission: vi.fn(), limit: vi.fn(), set: vi.fn(), where: vi.fn(),
-    upload: vi.fn(), uploadOptions: vi.fn(),
-}));
-vi.mock("@/lib/auth/current-user", () => ({ getCurrentUserFromRequest: mocks.user, getCardPermissionMessage: mocks.permission }));
+const mocks = vi.hoisted(() => ({ user: vi.fn(), rows: vi.fn(), execute: vi.fn() }));
+vi.mock("@/lib/auth/current-user", () => ({ getCurrentUserFromRequest: mocks.user }));
 vi.mock("@/lib/db", () => ({ getDb: () => ({
-    select: () => ({ from: () => ({ where: () => ({ limit: mocks.limit }) }) }),
-    update: () => ({ set: (values: unknown) => {
-        mocks.set(values);
-        return { where: mocks.where };
-    } }),
+    select: () => ({ from: (table: Table) => ({ where: () => ({ limit: () => mocks.rows(getTableName(table)) }) }) }),
+    execute: mocks.execute,
 }) }));
-vi.mock("cloudinary", () => ({ v2: {
-    config: vi.fn(),
-    uploader: {
-        upload_stream: (options: unknown, callback: (error: unknown, result?: unknown) => void) => {
-            mocks.uploadOptions(options);
-            return { end: () => mocks.upload().then((result: unknown) => callback(null, result), callback) };
-        },
-    },
-} }));
 
 const context = { params: Promise.resolve({ boardId: "7" }) };
-function request() {
+const url = "http://localhost/api/boards/7/preview";
+const board = { boardId: 7, ownerId: "owner@example.com", privateFlg: 1, previewVersion: null };
+const owner = { id: 5, email: board.ownerId, isApproved: true, role: "user" };
+
+function upload(type = "image/webp") {
     const form = new FormData();
-    form.append("file", new File([new Uint8Array(8)], "PreviewIMG.webp", { type: "image/webp" }));
-    const next = new NextRequest("http://localhost/api/boards/7/preview", { method: "PUT" });
-    vi.spyOn(next, "formData").mockResolvedValue(form);
-    return next;
+    form.append("file", new File([new Uint8Array(8)], "preview", { type }));
+    const request = new NextRequest(url, { method: "PUT" });
+    vi.spyOn(request, "formData").mockResolvedValue(form);
+    return PUT(request, context);
 }
 
 describe("미리보기 API", () => {
     beforeEach(() => {
         vi.stubEnv("CLOUDINARY_CLOUD_NAME", "demo");
-        vi.stubEnv("CLOUDINARY_API_KEY", "key");
-        vi.stubEnv("CLOUDINARY_API_SECRET", "secret");
-        mocks.user.mockResolvedValue({ id: 5, isApproved: true });
-        mocks.permission.mockReturnValue(null);
-        mocks.limit.mockResolvedValue([{ boardId: 7 }]);
-        mocks.where.mockResolvedValue(undefined);
-        mocks.upload.mockResolvedValue({
-            public_id: "meldrift/boards/7/PreviewIMG", version: 1790000000,
-            secure_url: "https://res.cloudinary.com/demo/image/upload/v1790000000/meldrift/boards/7/PreviewIMG.webp",
-            width: 320, height: 180, bytes: 8, format: "webp",
-        });
+        mocks.user.mockResolvedValue(owner);
+        mocks.rows.mockImplementation((table) => table === "boards" ? [board] : []);
+        mocks.execute.mockResolvedValue({ rows: [{ board_id: 7 }] });
     });
 
-    it("업로드한 version을 보드에 저장해 목록 URL이 바뀌게 한다", async () => {
-        const response = await PUT(request(), context);
-
+    it("stores previews through the authorized board write without returning an external URL", async () => {
+        const response = await upload();
         expect(response.status).toBe(200);
-        expect(mocks.set).toHaveBeenCalledWith({ previewVersion: 1790000000 });
-        expect((await response.json()).preview.version).toBe(1790000000);
+        expect(await response.json()).toEqual({ ok: true });
+        expect(mocks.execute).toHaveBeenCalledOnce();
     });
 
-    it("URL이 업로드마다 바뀌므로 CDN 무효화를 요청하지 않는다", async () => {
-        await PUT(request(), context);
-
-        expect(mocks.uploadOptions).toHaveBeenCalledWith(expect.objectContaining({
-            folder: "meldrift/boards/7", public_id: "PreviewIMG", overwrite: true,
-        }));
-        expect(mocks.uploadOptions.mock.calls[0][0]).not.toHaveProperty("invalidate");
+    it("rejects unauthorized uploads and does not read the image body", async () => {
+        mocks.user.mockResolvedValue(null);
+        const request = new NextRequest(url, { method: "PUT" });
+        const read = vi.spyOn(request, "formData");
+        expect((await PUT(request, context)).status).toBe(401);
+        expect(read).not.toHaveBeenCalled();
+        expect(mocks.execute).not.toHaveBeenCalled();
     });
 
-    it("업로드가 실패하면 version을 바꾸지 않는다", async () => {
-        mocks.upload.mockRejectedValue(new Error("cloudinary down"));
-        vi.spyOn(console, "error").mockImplementation(() => {});
-
-        expect((await PUT(request(), context)).status).toBe(500);
-        expect(mocks.set).not.toHaveBeenCalled();
+    it("requires board access before reading a private preview", async () => {
+        mocks.user.mockResolvedValue(null);
+        expect((await GET(new NextRequest(url), context)).status).toBe(404);
+        expect(mocks.rows).not.toHaveBeenCalledWith("board_previews");
     });
 
-    it("편집 권한이 없으면 업로드하지 않는다", async () => {
-        mocks.permission.mockReturnValue("Sign in to edit cards.");
+    it("serves the private owner's preview with no shared cache", async () => {
+        mocks.rows.mockImplementation((table) => table === "boards" ? [board]
+            : [{ bytes: Buffer.from([1, 2, 3]), mimeType: "image/webp" }]);
+        const response = await GET(new NextRequest(url), context);
+        expect(response.headers.get("Cache-Control")).toBe("no-store");
+        expect(response.headers.get("Content-Type")).toBe("image/webp");
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
+    });
 
-        expect((await PUT(request(), context)).status).toBe(403);
-        expect(mocks.uploadOptions).not.toHaveBeenCalled();
+    it("does not redirect a private board to its former public preview", async () => {
+        mocks.rows.mockImplementation((table) => table === "boards" ? [{ ...board, previewVersion: 42 }] : []);
+        const response = await GET(new NextRequest(url), context);
+        expect(response.status).toBe(404);
+        expect(response.headers.get("Location")).toBeNull();
     });
 });
 
@@ -89,7 +77,7 @@ describe("boardPreviewUrl 동작", () => {
             .toBe("https://res.cloudinary.com/demo/image/upload/v1790000000/meldrift/boards/7/PreviewIMG.webp");
     });
 
-    it("version이 없는 예전 보드는 고정 URL을 쓴다", () => {
+    it("supports older unversioned URLs", () => {
         expect(boardPreviewUrl("demo", 7, null))
             .toBe("https://res.cloudinary.com/demo/image/upload/meldrift/boards/7/PreviewIMG.webp");
     });
