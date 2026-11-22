@@ -148,19 +148,27 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                 }}
             >
                 <div className="mx-auto max-w-4xl">
-                    <div className="mb-4 flex items-center justify-end gap-2 text-sm">
+                    <div className="mb-4 flex flex-wrap items-center justify-end gap-2 text-xs">
                         <label htmlFor="board-order">Sort:</label>
                         <select id="board-order" value={sortBy}
-                            className="rounded border border-neutral-300 bg-white px-2 py-1"
+                            className="h-8 rounded-md border border-neutral-300 bg-white px-2"
                             onChange={(event) => setSortBy(event.target.value === "title" ? "title" : "createdAt")}>
                             <option value="createdAt">Date created</option>
                             <option value="title">Title</option>
                         </select>
-                        <button type="button" className="rounded border border-neutral-300 bg-white p-1.5"
+                        <button type="button" className="grid size-8 place-items-center rounded-md border border-neutral-300 bg-white"
                             aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}`}
                             onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}>
-                            {sortDirection === "asc" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                            {sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                         </button>
+                        {canCreateBoard(currentUser) && (
+                            <button type="button"
+                                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-sky-600 px-2.5 font-semibold text-white hover:bg-sky-700"
+                                onClick={handleCreateBoardClick}>
+                                <Plus size={14} aria-hidden="true" />
+                                New Board
+                            </button>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-5" >
                         {sortedBoards.map((board) => (
@@ -241,7 +249,7 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                                         openBoardActionMenu(board.boardId);
                                     }}
                                 >
-                                    <EllipsisVertical className="h-5 w-5" />
+                                    <EllipsisVertical size={16} />
                                 </button>}
                                 {currentUser && board.canEdit && actionMenuOpen && selectedBoardId === board.boardId && (
                                     <BoardActionMenu
@@ -258,20 +266,6 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                             </div>
                         ))}
 
-                        {canCreateBoard(currentUser) && <button
-                            type="button"
-                            onClick={handleCreateBoardClick}
-                            className="overflow-hidden rounded-lg bg-white text-left shadow-sm ring-1 ring-dashed ring-neutral-300 transition hover:-translate-y-0.5 hover:shadow-md"
-                        >
-                            <div className="flex aspect-video items-center justify-center bg-neutral-50">
-                                <Plus className="h-8 w-8 text-neutral-500" />
-                            </div>
-                            <div className="border-t border-neutral-100 px-3 py-2">
-                                <p className="truncate text-sm font-semibold text-neutral-700">
-                                    New Board
-                                </p>
-                            </div>
-                        </button>}
                     </div>
                 </div>
             </main>

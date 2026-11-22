@@ -4,14 +4,22 @@ import { defineConfig, devices } from "@playwright/test";
 // 실제 Next 라우트·고정 데이터베이스(PGlite)·개발용 Live 서버를 함께 띄워 두 사용자를 동시에 접속시킨다.
 const fixtureDb = "postgresql://e2e:e2e@localhost/meldrift_e2e";
 const livePort = 3104;
+const liveFixtureEnv = {
+    NEON_CONNECTION_STRING: fixtureDb,
+    REDIS_URL: "",
+    LIVE_TOKEN_SECRET: "meldrift-local-test-secret",
+    LIVE_MAX_DURATION_SECONDS: "300",
+};
 
 export default defineConfig({
     testDir: "./tests/e2e-live",
     testMatch: "**/*.spec.ts",
     fullyParallel: false,
+    forbidOnly: Boolean(process.env.CI),
     workers: 1,
     retries: 0,
     reporter: [["list"]],
+    outputDir: "test-results/live",
     timeout: 90_000,
     expect: { timeout: 10_000 },
     use: {
@@ -30,14 +38,14 @@ export default defineConfig({
         command: "npm run dev:live",
         url: `http://127.0.0.1:${livePort}/__live/health`,
         timeout: 60_000,
-        env: { NEON_CONNECTION_STRING: fixtureDb, LIVE_DEV_PORT: String(livePort), LIVE_MAX_DURATION_SECONDS: "300" },
+        env: { ...liveFixtureEnv, LIVE_DEV_PORT: String(livePort) },
     }, {
         command: "npm run dev -- --hostname 0.0.0.0 --port 3101",
         url: "http://localhost:3101/plus",
         timeout: 120_000,
         env: {
+            ...liveFixtureEnv,
             PLUS_STANDALONE: "false",
-            NEON_CONNECTION_STRING: fixtureDb,
             CLOUDINARY_CLOUD_NAME: "",
             CLOUDINARY_API_KEY: "",
             CLOUDINARY_API_SECRET: "",

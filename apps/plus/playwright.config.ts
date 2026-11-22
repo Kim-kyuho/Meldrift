@@ -78,6 +78,7 @@ export default defineConfig({
                 CLOUDINARY_CLOUD_NAME: "",
                 CLOUDINARY_API_KEY: "",
                 CLOUDINARY_API_SECRET: "",
+                LIVE_ENABLED: "false",
             },
         }, {
             command: "npm run dev --workspace=meldrift-free -- --hostname 0.0.0.0 --port 3102",

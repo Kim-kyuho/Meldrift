@@ -66,10 +66,8 @@ export async function openTestBoard(page: Page) {
     return true;
 }
 
-// BoardMenu의 Ellipsis 버튼에는 현재 accessible name이 없으므로 SVG 클래스 기준으로 찾는다.
-// 추후 aria-label을 추가하면 getByRole 기반 locator로 교체하는 것이 더 안정적이다.
 export function getBoardMenuButton(page: Page) {
-    return page.locator("button.fixed.right-5.top-5").first();
+    return page.getByRole("button", { name: "Open board menu" });
 }
 
 // BoardToolBar 아이콘 버튼도 현재 이름이 없으므로 아이콘 클래스로 찾는다.
