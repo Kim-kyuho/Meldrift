@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, bigint, bigserial, text, integer, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
+import { pgTable, serial, bigint, bigserial, text, integer, smallint, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
 import type { TableSource } from "@meldrift/core/table-card";
 import type { BoardStroke, StrokePoint } from "@meldrift/core/board-stroke";
 
@@ -108,7 +108,10 @@ export const db_boards = pgTable("boards", {
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     previewVersion: bigint("preview_version", { mode: "number" }),
-});
+    isPrivate: smallint("is_private").$type<0 | 1>().notNull().default(0),
+}, (table) => [
+    check("boards_is_private_check", sql`${table.isPrivate} IN (0, 1)`),
+]);
 
 export const db_memos = pgTable("memos", {
     id: serial("id").primaryKey(),

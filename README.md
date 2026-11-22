@@ -49,6 +49,16 @@ Undo/Redo history is kept in memory for the latest 50 operations and resets when
 
 The [design documents](docs/README.md) describe the shared editor, storage, and edition-specific behavior.
 
+## Deploying Free on Deploy Now
+
+Upload the repository root so Deploy Now receives the shared npm workspaces. Leave the `meldrift` project's build root empty. Deploy Now checks `next.config.mjs`, the shared `package-lock.json`, and the `next` dependency in the root `package.json` before running the Free workspace build.
+
+- Install command: `npm ci --workspace=meldrift-free --include-workspace-root --ignore-scripts --no-audit --no-fund`
+- Build command: `npm run build:deploy-now --workspace=meldrift-free`
+- Output directory: `.next/standalone`
+
+See the [Deploy Now CLI reference](https://deploy.lolipop.jp/docs/cli#build-config) for how to update an existing project.
+
 ## Development
 
 Meldrift is currently under development.

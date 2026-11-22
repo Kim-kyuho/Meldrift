@@ -1,7 +1,11 @@
 node_modules
 **/node_modules
-.next
-**/.next
+# Deploy Now needs the standalone server and its static assets.
+**/.next/*
+!.next/standalone
+!.next/static
+!apps/free/.next/standalone
+!apps/free/.next/static
 .git
 **/.env*
 !**/.env.example

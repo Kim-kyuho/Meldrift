@@ -23,7 +23,9 @@ CREATE TABLE public.boards (
     owner_id text NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now(),
-    preview_version bigint
+    preview_version bigint,
+    is_private smallint NOT NULL DEFAULT 0,
+    CONSTRAINT boards_is_private_check CHECK (is_private IN (0, 1))
 );
 
 CREATE TABLE public.memos (

@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@meldrift/diagram-engine": "^0.2.1",
-    "@meldrift/markdown-engine": "^0.4.1"
+    "@meldrift/markdown-engine": "^0.4.1",
+    "next": "^16.4.6"
   }
 }
