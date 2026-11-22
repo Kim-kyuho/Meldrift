@@ -1,7 +1,7 @@
 import BoardList from "@/components/BoardList";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { boardReadFilter } from "@/lib/board-access";
-import { canEditBoard } from "@/lib/board-permissions";
+import { canManageBoard } from "@/lib/board-permissions";
 import { getDb } from "@/lib/db";
 import { db_boards, db_boardPreviews } from "@/lib/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
@@ -17,6 +17,7 @@ export default async function Home() {
             height: db_boards.height,
             createdAt: db_boards.createdAt,
             privateFlg: db_boards.privateFlg,
+            collabFlg: db_boards.collabFlg,
             ownerId: db_boards.ownerId,
             previewVersion: db_boards.previewVersion,
             hasPreview: db_boardPreviews.boardId,
@@ -33,8 +34,9 @@ export default async function Home() {
         height: board.height,
         createdAt: board.createdAt?.toISOString() ?? null,
         privateFlg: board.privateFlg,
+        collabFlg: board.collabFlg,
         ownerEmail: user?.role === "admin" ? board.ownerId : null,
-        canEdit: canEditBoard(user, board),
+        canEdit: canManageBoard(user, board),
         previewUrl: board.hasPreview !== null || (board.privateFlg === 0 && Boolean(board.previewVersion))
             ? `${basePath}/api/boards/${board.boardId}/preview` : null,
     }));

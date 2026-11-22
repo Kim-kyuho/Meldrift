@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest, { params }: Context) {
     const boardId = Number((await params).boardId);
-    const gate = await boardAccess(request, boardId, "edit");
+    const gate = await boardAccess(request, boardId, "manage");
     if (gate.failure) {
         return gate.failure;
     }

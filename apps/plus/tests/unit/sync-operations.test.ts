@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { boardOperationFields } from "@meldrift/board-data/board-delta";
 import {
-    ChangeRequestError, changeFieldSchemas, changeRequestDigest, parseChangeRequest,
+    ChangeRequestError, changeFieldSchemas, changeRequestDigest, legacyChangeRequestDigest, parseChangeRequest,
 } from "@/lib/sync-operations";
 import { commitTargets } from "@/lib/sync-commit";
 
@@ -128,10 +128,11 @@ describe("changeRequestDigest 동작", () => {
         expect(changeRequestDigest(first)).not.toBe(changeRequestDigest(moved));
     });
 
-    it("mutationId가 같아도 baseRevision이 다르면 다른 값", () => {
+    it("baseRevision만 다른 재전송은 같은 값, 이전 digest는 판 번호를 구분한다", () => {
         const first = parseChangeRequest(request([memoCreate]));
         const later = parseChangeRequest({ ...request([memoCreate]), baseRevision: 4 });
 
-        expect(changeRequestDigest(first)).not.toBe(changeRequestDigest(later));
+        expect(changeRequestDigest(first)).toBe(changeRequestDigest(later));
+        expect(legacyChangeRequestDigest(first)).not.toBe(legacyChangeRequestDigest(later));
     });
 });

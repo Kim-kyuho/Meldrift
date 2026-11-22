@@ -182,3 +182,35 @@ export function mergeBoardOperations(pending: BoardOperation[], incoming: BoardO
 
     return [...merged.values()];
 }
+
+export const boardLockKey = "board:*";
+export const memoOrderKey = "order:memo";
+export const strokeLayerKey = "layer:strokes";
+export const specialLockKeys = [boardLockKey, memoOrderKey, strokeLayerKey] as const;
+
+export const objectKeyOf = (type: BoardOperationType, syncId: string) => `${type}:${syncId}`;
+
+// 연산 하나가 건드리는 잠금 키. 잠금 획득, 서버 잠금 검사, 커밋 겹침 검사가 모두 이 함수를 쓴다.
+// 메모 sortOrder는 순서 패널의 키가 관할하므로, 내용 편집과 순서 변경은 서로를 막지 않는다.
+export function touchedKeys(operation: BoardOperation): string[] {
+    const objectKey = objectKeyOf(operation.type, operation.syncId);
+    if (operation.type === "stroke") {
+        return operation.action === "create" ? [objectKey] : [objectKey, strokeLayerKey];
+    }
+    if (operation.type !== "memo" || operation.action !== "update") {
+        return [objectKey];
+    }
+    const fields = Object.keys(operation.changes);
+    const keys: string[] = [];
+    if (fields.includes("sortOrder")) {
+        keys.push(memoOrderKey);
+    }
+    if (fields.some((field) => field !== "sortOrder")) {
+        keys.push(objectKey);
+    }
+    return keys;
+}
+
+export function touchedKeysOf(operations: BoardOperation[]) {
+    return [...new Set(operations.flatMap(touchedKeys))];
+}

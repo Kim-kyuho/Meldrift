@@ -1,6 +1,6 @@
 import BoardSnapshotClient from "@/components/BoardSnapshotClient";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { findBoard, validBoardId } from "@/lib/board-access";
+import { findBoard, memberRoleFor, validBoardId } from "@/lib/board-access";
 import { canEditBoard, canReadBoard } from "@/lib/board-permissions";
 import { notFound } from "next/navigation";
 
@@ -11,13 +11,18 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
     }
 
     const [user, board] = await Promise.all([getCurrentUser(), findBoard(boardId)]);
-    if (!board || !canReadBoard(user, board)) {
+    if (!board) {
+        notFound();
+    }
+    const memberRole = await memberRoleFor(user, board);
+    if (!canReadBoard(user, board, memberRole)) {
         notFound();
     }
 
     return <BoardSnapshotClient
         key={boardId}
-        editingAllowed={canEditBoard(user, board)}
+        editingAllowed={canEditBoard(user, board, memberRole)}
+        collaborative={board.collabFlg === 1}
         board={{ boardId, title: board.title, width: board.width, height: board.height }}
     />;
 }

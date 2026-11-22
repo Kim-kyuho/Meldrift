@@ -45,6 +45,14 @@ import { useBoardPointerActive } from "./useBoardPointerActive";
 import BoardHistoryToolbar from "./BoardHistoryToolbar";
 import BoardCornerLinksLayer from "./BoardCornerLinksLayer";
 import { useIsMobile } from "../../shared/useIsMobile";
+import PresenceBar from "../collaboration/PresenceBar";
+import CollaborationLayer from "../collaboration/CollaborationLayer";
+import { blockedText, useBoardCollaboration } from "../collaboration/useBoardCollaboration";
+import type { BoardCollaboration } from "../collaboration/types";
+import {
+    boardLockKey, diffBoardSnapshots, memoOrderKey, strokeLayerKey, touchedKeysOf,
+} from "@meldrift/board-data/board-delta";
+import { tagRemoteSeq } from "@meldrift/board-data/remote-patch";
 
 export type BoardControls = {
     snapshot: BoardSnapshot;
@@ -71,16 +79,32 @@ type BoardClientProps = {
     viewportRef?: RefObject<HTMLDivElement | null>;
     renderControls: (controls: BoardControls) => ReactNode;
     renderBoardOverlay?: (info: { snapshot: BoardSnapshot; zoom: number; cornerLinks: MemoCornerLink[] }) => ReactNode;
+    collaboration?: BoardCollaboration;
 };
 
 export default function BoardClient({
     initialSnapshot,
-    canEdit: canEditCard = true,
-    permissionMessage = "Please sign in before editing cards.",
+    canEdit: canEditProp = true,
+    permissionMessage: basePermissionMessage = "Please sign in before editing cards.",
     viewportRef,
     renderControls,
     renderBoardOverlay,
+    collaboration,
 }: BoardClientProps) {
+    // Plus Live: 연결이 끊긴 동안과 누군가 보드 전체를 바꾸는 동안에는 편집을 멈춘다.
+    const live = collaboration ?? null;
+    const liveEditPaused = live !== null
+        && (live.status === "connecting" || live.status === "reconnecting" || live.status === "idle");
+    const liveBoardLock = live?.foreignLocks.get(boardLockKey) ?? null;
+    const canEditCard = canEditProp && !liveEditPaused && !liveBoardLock;
+    let permissionMessage = basePermissionMessage;
+    if (canEditProp && liveBoardLock) {
+        permissionMessage = blockedText(liveBoardLock.email, "replacing");
+    } else if (canEditProp && live?.status === "idle") {
+        permissionMessage = "Live collaboration paused while you were away. Reconnecting now…";
+    } else if (canEditProp && liveEditPaused) {
+        permissionMessage = "Connecting to live collaboration. Editing resumes once connected.";
+    }
     const {
         board: currentBoard,
         images: mappedImages,
@@ -92,6 +116,8 @@ export default function BoardClient({
     const boardWidth = currentBoard.width;
     const boardHeight = currentBoard.height;
     const localViewportRef = useRef<HTMLDivElement | null>(null);
+    const boardRef = useRef<HTMLDivElement | null>(null);
+    const [appliedRemoteSeq, setAppliedRemoteSeq] = useState(0);
     const cardLocationRef = viewportRef ?? localViewportRef;
     const [menuOpen, setMenuOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
@@ -465,8 +491,8 @@ export default function BoardClient({
     );
 
     const snapshot = useMemo<BoardSnapshot>(
-        () => ({ board: currentBoard, memos, images, mermaids, tables, strokes }),
-        [currentBoard, memos, images, mermaids, tables, strokes],
+        () => tagRemoteSeq({ board: currentBoard, memos, images, mermaids, tables, strokes }, appliedRemoteSeq),
+        [currentBoard, memos, images, mermaids, tables, strokes, appliedRemoteSeq],
     );
     const savePaused = isEditing || drawingMode || hasPendingAiCards;
     const pointerActive = useBoardPointerActive(cardLocationRef);
@@ -511,6 +537,7 @@ export default function BoardClient({
             lastInitialSnapshot.current = initialSnapshot;
             resetHistory(initialSnapshot);
             applyContent(initialSnapshot);
+            setAppliedRemoteSeq(0);
         }
     }, [initialSnapshot, resetHistory, applyContent]);
     const historyBlocked = !canEditCard
@@ -527,8 +554,38 @@ export default function BoardClient({
             action();
         }
     };
-    const undo = () => restoreHistory(history.undo);
-    const redo = () => restoreHistory(history.redo);
+    const collab = useBoardCollaboration({
+        live,
+        memos, images, mermaids, tables, strokes,
+        setMemos, setImages, setMermaids, setTables, setStrokes,
+        editingIds: { memo: editingMemoId, image: editingImageId, mermaid: editingMermaidId, table: editingTableId },
+        selectedCards,
+        groupOffset,
+        draggingMemoId,
+        drawingMode,
+        drawingTool,
+        zoom: boardZoom,
+        boardRef,
+        setAppliedRemoteSeq,
+        projectRemote: history.projectRemote,
+        clearSelection: handleClearSelection,
+        setMessage: setBoardMessage,
+    });
+    // 협업 중에는 되돌릴 변경이 건드리는 카드의 잠금을 먼저 얻는다. 남이 편집 중이면 되돌리지 않는다.
+    const stepHistory = (direction: "undo" | "redo") => restoreHistory(() => {
+        const step = live ? history.peek(direction) : null;
+        const run = direction === "undo" ? history.undo : history.redo;
+        if (!step) {
+            run();
+            return;
+        }
+        const keys = touchedKeysOf(diffBoardSnapshots(
+            { board: currentBoard, ...step.from }, { board: currentBoard, ...step.to },
+        ));
+        void collab.guard(keys, run, "edit");
+    });
+    const undo = () => stepHistory("undo");
+    const redo = () => stepHistory("redo");
     const handleGeometryChange = (type: CardType, id: number, geometry: SelectionRect) => {
         if (!canEditCard) {
             return;
@@ -635,9 +692,18 @@ export default function BoardClient({
                     if (next.board.boardId !== currentBoard.boardId) {
                         return;
                     }
-                    applyContent(next);
+                    void collab.guard([boardLockKey], () => applyContent(next), "edit");
                 },
             })}
+            {live && (
+                <PresenceBar
+                    status={live.status}
+                    lastError={live.lastError}
+                    peers={live.peers}
+                    locks={[...live.foreignLocks.values()]}
+                    selfLocks={live.heldKeys.size}
+                />
+            )}
             <BoardHistoryToolbar
                 canUndo={history.canUndo && !historyBlocked}
                 canRedo={history.canRedo && !historyBlocked}
@@ -665,7 +731,13 @@ export default function BoardClient({
             {cardsSelected && (
                 <SelectionToolBar
                     selectedCount={selectedCards.length}
-                    onDelete={handleDeleteSelection}
+                    onDelete={() => {
+                        const keys = selectedCards.flatMap((card) => {
+                            const key = collab.keyOfLocal(card.type, card.id);
+                            return key ? [key] : [];
+                        });
+                        void collab.guard(keys, handleDeleteSelection);
+                    }}
                 />
             )}
             {drawingMode && (
@@ -675,7 +747,14 @@ export default function BoardClient({
                     penWidth={penWidth}
                     onChangeColor={setPenColor}
                     onChangeWidth={setPenWidth}
-                    onToggleErase={handleToggleEraseTool}
+                    onToggleErase={() => {
+                        const lock = collab.foreignLock(strokeLayerKey);
+                        if (drawingTool !== "erase" && lock) {
+                            collab.blocked(lock);
+                            return;
+                        }
+                        handleToggleEraseTool();
+                    }}
                     onUndo={undo}
                     undoDisabled={!history.canUndo || historyBlocked}
                 />
@@ -708,6 +787,11 @@ export default function BoardClient({
                     onDragStart={(event, memoId) => {
                         if (!canEditCard) {
                             showPermissionMessage();
+                            return;
+                        }
+                        const orderLock = collab.foreignLock(memoOrderKey);
+                        if (orderLock) {
+                            collab.blocked(orderLock);
                             return;
                         }
                         handleReorderStart(event, memoId);
@@ -773,7 +857,15 @@ export default function BoardClient({
                     className="board-scroll-layer h-full w-full overflow-auto"
                     data-selection-active={selectionActive || undefined}
                     onPointerDown={selectionActive ? handleSelectionPointerDown : handleBoardPanStart}
-                    onPointerMove={selectionActive ? handleSelectionPointerMove : handleBoardPanMove}
+                    onPointerMove={(event) => {
+                        collab.handleCursorMove(event);
+                        if (selectionActive) {
+                            handleSelectionPointerMove(event);
+                        } else {
+                            handleBoardPanMove(event);
+                        }
+                    }}
+                    onPointerLeave={collab.handleCursorLeave}
                     onPointerUp={selectionActive ? handleSelectionPointerUp : handleBoardPanEnd}
                     onPointerCancel={selectionActive ? handleSelectionPointerCancel : undefined}
                     onDragEnter={handleDragEnter}
@@ -789,6 +881,7 @@ export default function BoardClient({
                         }}
                     >
                         <div
+                            ref={boardRef}
                             className="meldrift-board relative bg-white"
                             style={{
                                 width: `${boardWidth}px`,
@@ -803,9 +896,9 @@ export default function BoardClient({
                                 cursor: boardCursor,
                             }}
                         >
-                            {images.map((image) => (
+                            {images.map((image) => collab.wrapCard("image", image, `${contentVersion}:${image.imageId}`, (
                                 <ImageCard
-                                    key={`${contentVersion}:${image.imageId}`}
+                                    key={`${contentVersion}:${image.imageId}:${collab.versionOf("image", image.syncId)}`}
                                     image={image}
                                     zoom={boardZoom}
                                     isEditing={editingImageId === image.imageId}
@@ -815,12 +908,14 @@ export default function BoardClient({
                                             showPermissionMessage();
                                             return;
                                         }
-                                        setEditingImageId(image.imageId);
-                                        handleClearSelection();
-                                        setEditingMemoId(null);
-                                        setEditingMermaidId(null);
-                                        setEditingTableId(null);
-                                        setFocusedMemoId(null);
+                                        collab.requestEdit("image", image.imageId, () => {
+                                            setEditingImageId(image.imageId);
+                                            handleClearSelection();
+                                            setEditingMemoId(null);
+                                            setEditingMermaidId(null);
+                                            setEditingTableId(null);
+                                            setFocusedMemoId(null);
+                                        });
                                     }}
                                     onEditingClear={() => setEditingImageId(null)}
                                     onUpdate={handleUpdateImage}
@@ -829,10 +924,10 @@ export default function BoardClient({
                                     onBringToFront={() => handleCardLayer("image", image.imageId, "front")}
                                     onSendToBack={() => handleCardLayer("image", image.imageId, "back")}
                                 />
-                            ))}
-                            {memos.map((memo) => (
+                            )))}
+                            {memos.map((memo) => collab.wrapCard("memo", memo, `${contentVersion}:${memo.id}`, (
                                 <MemoCard
-                                    key={`${contentVersion}:${memo.id}`}
+                                    key={`${contentVersion}:${memo.id}:${collab.versionOf("memo", memo.syncId)}`}
                                     memo={memo}
                                     zoom={boardZoom}
                                     canEdit={canEditCard}
@@ -846,11 +941,13 @@ export default function BoardClient({
                                             showPermissionMessage();
                                             return;
                                         }
-                                        setEditingMemoId(memo.id);
-                                        handleClearSelection();
-                                        setEditingImageId(null);
-                                        setEditingMermaidId(null);
-                                        setEditingTableId(null);
+                                        collab.requestEdit("memo", memo.id, () => {
+                                            setEditingMemoId(memo.id);
+                                            handleClearSelection();
+                                            setEditingImageId(null);
+                                            setEditingMermaidId(null);
+                                            setEditingTableId(null);
+                                        });
                                     }}
                                     onEditingClear={() => setEditingMemoId(null)}
                                     onPermissionDenied={showPermissionMessage}
@@ -861,10 +958,10 @@ export default function BoardClient({
                                     onBringToFront={() => handleCardLayer("memo", memo.id, "front")}
                                     onSendToBack={() => handleCardLayer("memo", memo.id, "back")}
                                 />
-                            ))}
-                            {mermaids.map((mermaid) => (
+                            )))}
+                            {mermaids.map((mermaid) => collab.wrapCard("mermaid", mermaid, `${contentVersion}:${mermaid.id}`, (
                                 <MermaidCard
-                                    key={`${contentVersion}:${mermaid.id}`}
+                                    key={`${contentVersion}:${mermaid.id}:${collab.versionOf("mermaid", mermaid.syncId)}`}
                                     mermaid={mermaid}
                                     zoom={boardZoom}
                                     canEdit={canEditCard}
@@ -875,12 +972,14 @@ export default function BoardClient({
                                             showPermissionMessage();
                                             return;
                                         }
-                                        setEditingMermaidId(mermaid.id);
-                                        handleClearSelection();
-                                        setEditingMemoId(null);
-                                        setEditingImageId(null);
-                                        setEditingTableId(null);
-                                        setFocusedMemoId(null);
+                                        collab.requestEdit("mermaid", mermaid.id, () => {
+                                            setEditingMermaidId(mermaid.id);
+                                            handleClearSelection();
+                                            setEditingMemoId(null);
+                                            setEditingImageId(null);
+                                            setEditingTableId(null);
+                                            setFocusedMemoId(null);
+                                        });
                                     }}
                                     onEditingClear={() => setEditingMermaidId(null)}
                                     onPermissionDenied={showPermissionMessage}
@@ -891,10 +990,10 @@ export default function BoardClient({
                                     onBringToFront={() => handleCardLayer("mermaid", mermaid.id, "front")}
                                     onSendToBack={() => handleCardLayer("mermaid", mermaid.id, "back")}
                                 />
-                            ))}
-                            {tables.map((table) => (
+                            )))}
+                            {tables.map((table) => collab.wrapCard("table", table, `${contentVersion}:${table.id}`, (
                                 <TableCard
-                                    key={`${contentVersion}:${table.id}`}
+                                    key={`${contentVersion}:${table.id}:${collab.versionOf("table", table.syncId)}`}
                                     table={table}
                                     zoom={boardZoom}
                                     canEdit={canEditCard}
@@ -905,12 +1004,14 @@ export default function BoardClient({
                                             showPermissionMessage();
                                             return;
                                         }
-                                        setEditingTableId(table.id);
-                                        handleClearSelection();
-                                        setEditingMemoId(null);
-                                        setEditingImageId(null);
-                                        setEditingMermaidId(null);
-                                        setFocusedMemoId(null);
+                                        collab.requestEdit("table", table.id, () => {
+                                            setEditingTableId(table.id);
+                                            handleClearSelection();
+                                            setEditingMemoId(null);
+                                            setEditingImageId(null);
+                                            setEditingMermaidId(null);
+                                            setFocusedMemoId(null);
+                                        });
                                     }}
                                     onEditingClear={() => setEditingTableId(null)}
                                     onPermissionDenied={showPermissionMessage}
@@ -921,7 +1022,7 @@ export default function BoardClient({
                                     onBringToFront={() => handleCardLayer("table", table.id, "front")}
                                     onSendToBack={() => handleCardLayer("table", table.id, "back")}
                                 />
-                            ))}
+                            )))}
                             <BoardCornerLinksLayer links={cornerLinks} />
                             {renderBoardOverlay?.({ snapshot, zoom: boardZoom, cornerLinks })}
                             <DrawingLayer
@@ -936,6 +1037,15 @@ export default function BoardClient({
                                 onErase={handleErase}
                                 onInteractionChange={setDrawingInputActive}
                             />
+                            {live && (
+                                <CollaborationLayer
+                                    zoom={boardZoom}
+                                    lockedCards={collab.lockedCards}
+                                    transients={live.transients}
+                                    cursors={live.cursors}
+                                    onBlocked={collab.blocked}
+                                />
+                            )}
                             {selectionActive && (
                                 <SelectionLayer
                                     marqueeRect={marqueeRect}

@@ -57,6 +57,20 @@
       "when": 1795321383709,
       "tag": "0007_board_authorization",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795331554253,
+      "tag": "0008_live_collaboration",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795338431233,
+      "tag": "0009_board_collab_flg",
+      "breakpoints": true
     }
   ]
 }

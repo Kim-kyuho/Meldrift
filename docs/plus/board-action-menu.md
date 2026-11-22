@@ -7,7 +7,7 @@
 | Prop | 타입 | 사용처 |
 | --- | --- | --- |
 | `ref` | `Ref<HTMLDivElement>`, 옵셔널 (React 19 스타일 prop-ref) | 루트 `div`에 연결 (20줄) — 호출자(`useBoardList`)가 외부 클릭 판정에 사용 |
-| `onRename` | `() => void` | "Rename" 버튼 `onClick` (23줄) |
+| `onEdit` | `() => void` | "Edit" 버튼 `onClick` (23줄). 보드 편집 창(`EditBoardModal`)을 연다 |
 | `onDelete` | `() => void` | "Delete" 버튼 `onClick` (29줄) |
 
 ## State
@@ -19,7 +19,7 @@
 | 요소 | 위치/스타일 | 비고 |
 | --- | --- | --- |
 | 루트 `div` (19줄) | `absolute right-2 top-11`, `z-50000`, `bg-white rounded-md shadow-md` | 부모(보드 목록 항목)를 기준으로 절대 배치 |
-| "Rename" `PressableButton` (23줄) | `variant="menu"` | 아이콘 `Pencil`, 텍스트 "Rename" |
+| "Edit" `PressableButton` (23줄) | `variant="menu"` | 아이콘 `Pencil`, 텍스트 "Edit" |
 | "Delete" `PressableButton` (29줄) | `variant="menu"` | 아이콘 `Trash2`, 텍스트 "Delete", `text-rose-600`으로 강조 |
 
 ## 알려진 특이사항

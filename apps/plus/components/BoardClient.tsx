@@ -10,12 +10,15 @@ import type { BoardFileActions } from "@/hooks/useBoardTransfer";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import { canCreateBoard } from "@/lib/board-permissions";
+import { useBoardLive } from "@/hooks/useBoardLive";
+import type { LiveRuntime } from "@/lib/live/client/runtime";
 
 type BoardClientProps = BoardFileActions & {
     initialSnapshot: BoardSnapshot;
     editingAllowed: boolean;
     onSnapshotChange: (snapshot: BoardSnapshot) => void;
     serverSaveVersion: number;
+    live?: LiveRuntime | null;
 };
 
 export default function BoardClient({
@@ -25,7 +28,9 @@ export default function BoardClient({
     serverSaveVersion,
     exportSnapshot,
     readSnapshotFile,
+    live = null,
 }: BoardClientProps) {
+    const collaboration = useBoardLive(live);
     const viewportRef = useRef<HTMLDivElement | null>(null);
     const {
         signInOpen, setSignInOpen,
@@ -76,6 +81,7 @@ export default function BoardClient({
                 : "Please sign in before editing cards."}
             viewportRef={viewportRef}
             renderControls={renderControls}
+            collaboration={collaboration}
         />
     );
 }

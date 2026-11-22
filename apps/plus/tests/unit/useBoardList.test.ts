@@ -7,8 +7,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 import { useBoardList, type BoardListBoard } from "@/hooks/useBoardList";
 
 const boards: BoardListBoard[] = [
-    { boardId: 1, title: "One", width: 100, height: 100, previewUrl: "https://example.com/1.webp", privateFlg: 0, ownerEmail: null, createdAt: null, canEdit: true },
-    { boardId: 2, title: "Two", width: 200, height: 200, previewUrl: "https://example.com/2.webp", privateFlg: 1, ownerEmail: null, createdAt: null, canEdit: true },
+    { boardId: 1, title: "One", width: 100, height: 100, previewUrl: "https://example.com/1.webp", privateFlg: 0, collabFlg: 0, ownerEmail: null, createdAt: null, canEdit: true },
+    { boardId: 2, title: "Two", width: 200, height: 200, previewUrl: "https://example.com/2.webp", privateFlg: 1, collabFlg: 1, ownerEmail: null, createdAt: null, canEdit: true },
 ];
 
 describe("useBoardList 동작", () => {
@@ -44,7 +44,7 @@ describe("useBoardList 동작", () => {
             currentUser: { email: "admin@example.com", isApproved: true, role: "admin" },
         }));
 
-        act(() => result.current.handleBoardRenamed());
+        act(() => result.current.handleBoardEdited());
         expect(router.refresh).toHaveBeenCalled();
         act(() => result.current.handleBoardCreated(9));
         expect(router.push).toHaveBeenCalledWith("/boards/9");

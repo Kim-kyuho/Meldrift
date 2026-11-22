@@ -10,8 +10,13 @@ import {
     type BoardInfo,
     type BoardSnapshot,
 } from "@meldrift/board-data/board-state";
-import type { BrowserDbRequest, BrowserDbResponse, SyncMetadata, StoredAsset, StoredBoard, OutboxBatch, OutboxState } from "./protocol";
-import { diffBoardSnapshots, mergeBoardOperations, type BoardOperation } from "../board-delta";
+import type {
+    BrowserDbRequest, BrowserDbResponse, SyncMetadata, StoredAsset, StoredBoard, OutboxBatch, OutboxState, RemoteApplied,
+} from "./protocol";
+import { diffBoardSnapshots, mergeBoardOperations, touchedKeysOf, type BoardOperation } from "../board-delta";
+import {
+    applyRemotePatch, deferKeys, resolveRemoteOperations, type RemoteAsset, type RemotePatch,
+} from "../remote-patch";
 import { schemaSql, migrateDatabase, isSupportedVersion, readSnapshot, replaceSnapshot } from "../sqlite-codec";
 const exec = (db: Database, sql: string, bind: SqlValue[] = []) => db.exec({ sql, bind });
 
@@ -20,6 +25,10 @@ let browserDatabaseName = "meldrift-free";
 let initialBoard: BoardInfo = defaultBoard;
 let sync: SyncMetadata = { revision: 0, generation: 0, dirty: false, changedAt: 0 };
 let lastSaved: BoardSnapshot | null = null;
+// Live: 워커가 반영한 원격 배치. 늦게 도착한 로컬 저장을 이 기록 위에 다시 맞춘다. 새로고침하면 화면과 함께 0부터 시작한다.
+const remoteLogLimit = 32;
+let remoteSeq = 0;
+let remoteLog: { seq: number; patch: RemotePatch }[] = [];
 const workerScope = self as DedicatedWorkerGlobalScope;
 
 let sqlite3: Sqlite3Static;
@@ -187,6 +196,54 @@ async function persistDatabase() {
     await saveIndexedDbFile(exportDatabase(database));
 }
 
+async function persistSync() {
+    const storage = await openIndexedDb();
+    try {
+        await new Promise<void>((resolve, reject) => {
+            const transaction = storage.transaction("files", "readwrite");
+            transaction.objectStore("files").put(sync, "sync");
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error ?? new Error("Browser sync state could not be saved."));
+        });
+    } finally {
+        storage.close();
+    }
+}
+
+function outboxKeys() {
+    return touchedKeysOf(readOutboxRows("1 = 1").map((row) => row.operation));
+}
+
+// 화면이 아직 받지 못한 원격 배치가 있으면, 그 배치를 저장 스냅샷 위에 다시 적용해 되돌림을 막는다.
+function rebaseOnRemote(snapshot: BoardSnapshot, appliedSeq: number | undefined) {
+    if (appliedSeq === undefined || appliedSeq >= remoteSeq) {
+        return snapshot;
+    }
+    const missing = remoteLog.filter((entry) => entry.seq > appliedSeq);
+    if (missing.length === 0 || missing[0].seq !== appliedSeq + 1) {
+        console.warn("A local save arrived after too many remote changes; its edits are held back.");
+        return lastSaved ?? snapshot;
+    }
+    return missing.reduce((current, entry) => applyRemotePatch(current, entry.patch), snapshot);
+}
+
+async function applyRemote(operations: BoardOperation[], revision: number, assets: Map<string, RemoteAsset>): Promise<RemoteApplied> {
+    const base = lastSaved ?? readSnapshot(database, initialBoard.boardId);
+    const pending = new Set(outboxKeys());
+    if (touchedKeysOf(operations).some((key) => pending.has(key))) {
+        throw new Error("Remote changes overlap unsent local changes.");
+    }
+    const patch = resolveRemoteOperations(base, operations, assets);
+    const next = applyRemotePatch(base, patch);
+    replaceSnapshot(database, next);
+    lastSaved = next;
+    remoteSeq += 1;
+    remoteLog = [...remoteLog, { seq: remoteSeq, patch }].slice(-remoteLogLimit);
+    sync = { ...sync, revision, seeded: true };
+    await persistDatabase();
+    return { seq: remoteSeq, patch };
+}
+
 async function initialize() {
     sqlite3 = await sqlite3InitModule();
     const savedFile = await loadIndexedDbFile();
@@ -277,6 +334,9 @@ async function adoptSnapshot(snapshot: BoardSnapshot, revision: number) {
     exec(database, "DELETE FROM outbox");
     exec(database, "DELETE FROM outbox_assets");
     lastSaved = snapshot;
+    // 통째로 바꾼 내용 위에 화면도 새로 마운트되므로 원격 배치 번호를 처음부터 다시 센다.
+    remoteSeq = 0;
+    remoteLog = [];
     sync = { revision, generation: 0, dirty: false, changedAt: 0, seeded: true };
     await persistDatabase();
     return snapshot;
@@ -303,16 +363,20 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
                 throw new Error("Board ID mismatch.");
             }
             const previous = lastSaved;
-            replaceSnapshot(database, request.snapshot);
+            let incoming = rebaseOnRemote(request.snapshot, request.remoteSeq);
+            if (previous && request.deferredKeys && request.deferredKeys.length > 0) {
+                incoming = deferKeys(incoming, previous, request.deferredKeys);
+            }
+            replaceSnapshot(database, incoming);
             if (request.dirty) {
                 const generation = sync.generation + 1;
-                const operations = previous ? diffBoardSnapshots(previous, request.snapshot) : [];
+                const operations = previous ? diffBoardSnapshots(previous, incoming) : [];
                 if (operations.length > 0) {
                     recordOutbox(generation, operations);
                 }
                 sync = { ...sync, generation, dirty: true, changedAt: Date.now(), mutationId: crypto.randomUUID() };
             }
-            lastSaved = request.snapshot;
+            lastSaved = incoming;
             await persistDatabase();
             return undefined;
         }
@@ -398,10 +462,27 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
                 releaseUnreferencedAssets();
             });
             sync = {
-                ...sync, revision: request.revision,
+                ...sync, revision: request.revision ?? sync.revision,
                 dirty: sync.generation !== request.generation, seeded: true,
             };
             await persistDatabase();
+            return undefined;
+        case "applyRemote":
+            return applyRemote(request.operations, request.revision, new Map(request.assets.map((asset) => [
+                asset.assetId, { data: new Uint8Array(asset.data), mimeType: asset.mimeType },
+            ])));
+        case "advanceRevision":
+            if (request.revision > sync.revision) {
+                sync = { ...sync, revision: request.revision };
+                await persistSync();
+            }
+            return undefined;
+        case "pendingKeys":
+            return outboxKeys();
+        case "resetRemoteLog":
+            // 화면을 마운트하기 전에 반영한 원격 배치는 화면의 초기 스냅샷에 이미 들어 있다.
+            remoteSeq = 0;
+            remoteLog = [];
             return undefined;
         case "seed":
             if (request.snapshot.board.boardId !== initialBoard.boardId) {
@@ -420,6 +501,8 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
 }
 
 type BoardDbResult =
+    | RemoteApplied
+    | string[]
     | BoardSnapshot
     | ArrayBuffer
     | StoredBoard

@@ -3,12 +3,12 @@ import path from "node:path";
 
 const nextConfig: NextConfig = {
     transpilePackages: ["@meldrift/ai", "@meldrift/core", "@meldrift/ui", "@meldrift/board-data"],
-    serverExternalPackages: ["sql.js"],
+    serverExternalPackages: ["sql.js", "ws", "redis"],
     basePath: process.env.PLUS_STANDALONE === "true" ? undefined : "/plus",
     turbopack: {
         root: path.resolve(process.cwd(), "../.."),
     },
-    allowedDevOrigins: ['192.168.1.3', 'macbookpro.tail82cf40.ts.net'],
+    allowedDevOrigins: ['192.168.1.3', '192.168.1.38', 'macbookpro.tail82cf40.ts.net'],
     images: {
         remotePatterns: [
             {

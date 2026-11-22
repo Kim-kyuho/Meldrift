@@ -37,6 +37,27 @@ async function findSessionUser(token: string | undefined) {
     }
 }
 
+// Live 연결 토큰은 쿠키 대신 사용자 id와 세션 해시를 싣는다. 세션이 교체되면 더 이상 맞지 않는다.
+export async function findSessionUserById(userId: number, sessionTokenHash: string) {
+    const users = await getDb()
+        .select({
+            id: db_users.id,
+            email: db_users.email,
+            isApproved: db_users.isApproved,
+            role: db_users.role,
+        })
+        .from(db_users)
+        .where(
+            and(
+                eq(db_users.id, userId),
+                eq(db_users.sessionTokenHash, sessionTokenHash),
+                gt(db_users.sessionExpiresAt, new Date()),
+            ),
+        )
+        .limit(1);
+    return users[0] ?? null;
+}
+
 export function getCurrentUserFromRequest(request: Request) {
     const requestCookies = (request as NextRequest).cookies
         ?? new NextRequest(request.url, { headers: request.headers }).cookies;

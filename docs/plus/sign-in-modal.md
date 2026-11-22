@@ -41,6 +41,6 @@
 
 ## 알려진 특이사항
 
-- `RenameBoardModal`/`CreateBoardModal`과 동일한 backdrop(70)/panel(80) z-index, 동일한 레이아웃 클래스 패턴을 공유한다.
+- `EditBoardModal`/`CreateBoardModal`과 동일한 backdrop(70)/panel(80) z-index, 동일한 레이아웃 클래스 패턴을 공유한다.
 - 로그인 성공 시 이 컴포넌트가 직접 `onClose()`까지 호출하므로, `onSignIn` 콜백 안에서 별도로 모달을 닫는 로직을 넣으면 중복 호출이 된다(멱등하지 않은 부수효과가 있다면 주의).
-- fetch 자체가 실패(네트워크 오류)하는 경우에 대한 처리가 없다 — `RenameBoardModal`과 동일한 패턴의 공백.
+- fetch 자체가 실패(네트워크 오류)하는 경우에 대한 처리가 없다 — `EditBoardModal`과 동일한 패턴의 공백.

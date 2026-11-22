@@ -68,7 +68,8 @@
     "./useMemoToolBar": "./src/features/memo/useMemoToolBar.ts",
     "./useMermaidCard": "./src/features/mermaid/useMermaidCard.ts",
     "./useMermaidDiagram": "./src/features/mermaid/useMermaidDiagram.ts",
-    "./useTableCard": "./src/features/table/useTableCard.ts"
+    "./useTableCard": "./src/features/table/useTableCard.ts",
+    "./collaboration": "./src/features/collaboration/index.ts"
   },
   "scripts": {
     "test": "vitest run",

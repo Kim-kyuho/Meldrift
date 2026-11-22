@@ -10,7 +10,8 @@
     "./browser-db/client": "./src/browser-db/client.ts",
     "./browser-db/protocol": "./src/browser-db/protocol.ts",
     "./sqlite-codec": "./src/sqlite-codec.ts",
-    "./board-delta": "./src/board-delta.ts"
+    "./board-delta": "./src/board-delta.ts",
+    "./remote-patch": "./src/remote-patch.ts"
   },
   "dependencies": {
     "@meldrift/core": "*",

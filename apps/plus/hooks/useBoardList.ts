@@ -11,6 +11,7 @@ export type BoardListBoard = {
     height: number;
     previewUrl: string | null;
     privateFlg: 0 | 1;
+    collabFlg: 0 | 1;
     createdAt: string | null;
     ownerEmail: string | null;
     canEdit: boolean;
@@ -25,7 +26,7 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
     const router = useRouter();
     const boardList = currentUser ? boards : boards.filter((board) => board.privateFlg === 0);
     const [createBoardOpen, setCreateBoardOpen] = useState(false);
-    const [renameBoardOpen, setRenameBoardOpen] = useState(false);
+    const [editBoardOpen, setEditBoardOpen] = useState(false);
     const [boardListMessage, setBoardListMessage] = useState("");
     const [actionMenuOpen, setActionMenuOpen] = useState(false);
     const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
@@ -56,8 +57,8 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
         setCreateBoardOpen(true);
     };
 
-    const handleBoardRenamed = () => {
-        setRenameBoardOpen(false);
+    const handleBoardEdited = () => {
+        setEditBoardOpen(false);
         setActionMenuOpen(false);
         router.refresh();
     }
@@ -120,8 +121,8 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
         boardList,
         createBoardOpen,
         setCreateBoardOpen,
-        renameBoardOpen,
-        setRenameBoardOpen,
+        editBoardOpen,
+        setEditBoardOpen,
         boardListMessage,
         setBoardListMessage,
         actionMenuOpen,
@@ -132,7 +133,7 @@ export function useBoardList({ boards, currentUser }: UseBoardListOptions) {
         menuRef,
         handleCreateBoardClick,
         handleBoardCreated,
-        handleBoardRenamed,
+        handleBoardEdited,
         handleBoardClick,
         openBoardActionMenu,
         openDeleteDialog,

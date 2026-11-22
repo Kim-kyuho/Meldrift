@@ -1,7 +1,11 @@
 import { defaultBoard, type BoardInfo, type BoardSnapshot } from "../board-state";
 import type {
-    BrowserDbPayload, BrowserDbRequest, BrowserDbResponse, OutboxBatch, OutboxState, StoredAsset, StoredBoard,
+    BrowserDbPayload, BrowserDbRequest, BrowserDbResponse, OutboxBatch, OutboxState, RemoteApplied, StoredAsset,
+    StoredBoard, TransferredAsset,
 } from "./protocol";
+import type { BoardOperation } from "../board-delta";
+
+export type ReplaceOptions = { remoteSeq?: number; deferredKeys?: string[] };
 
 export function createBoardDatabase(storageName: string, board: BoardInfo) {
     let worker: Worker | null = null;
@@ -49,9 +53,9 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
 
     return {
         load: () => request<BoardSnapshot>({ type: "load" }),
-        replace: (snapshot: BoardSnapshot, dirty = false) => resetInProgress
+        replace: (snapshot: BoardSnapshot, dirty = false, options: ReplaceOptions = {}) => resetInProgress
             ? Promise.resolve()
-            : request<void>({ type: "replace", snapshot, dirty }),
+            : request<void>({ type: "replace", snapshot, dirty, ...options }),
         export: () => request<ArrayBuffer>({ type: "export" }),
         encode: (snapshot: BoardSnapshot) => request<ArrayBuffer>({ type: "encode", snapshot }),
         decode: (bytes: ArrayBuffer) => request<BoardSnapshot>({ type: "decode", bytes }, [bytes]),
@@ -62,8 +66,16 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
             request<void>({ type: "acknowledge", generation, revision }),
         seed: (snapshot: BoardSnapshot, revision: number) =>
             request<BoardSnapshot>({ type: "seed", snapshot, revision }),
-        commitOutbox: (claim: number, generation: number, revision: number) =>
+        commitOutbox: (claim: number, generation: number, revision: number | null) =>
             request<void>({ type: "commitOutbox", claim, generation, revision }),
+        applyRemote: (operations: BoardOperation[], revision: number, assets: TransferredAsset[]) =>
+            request<RemoteApplied>(
+                { type: "applyRemote", operations, revision, assets },
+                assets.map((asset) => asset.data),
+            ),
+        advanceRevision: (revision: number) => request<void>({ type: "advanceRevision", revision }),
+        pendingKeys: () => request<string[]>({ type: "pendingKeys" }),
+        resetRemoteLog: () => request<void>({ type: "resetRemoteLog" }),
         asset: (assetId: string) => request<StoredAsset | null>({ type: "asset", assetId }),
         outbox: () => request<OutboxState>({ type: "outbox" }),
         claimOutbox: (limit: number) => request<OutboxBatch>({ type: "claimOutbox", limit }),

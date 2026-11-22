@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, serial, bigint, bigserial, text, integer, smallint, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
 import type { TableSource } from "@meldrift/core/table-card";
 import type { BoardStroke, StrokePoint } from "@meldrift/core/board-stroke";
+import type { BoardOperation } from "@meldrift/board-data/board-delta";
 
 const bytea = customType<{ data: Buffer; driverData: Buffer | string }>({
     dataType: () => "bytea",
@@ -33,10 +34,16 @@ export const db_syncMutations = pgTable("sync_mutations", {
     mutationId: text("mutation_id").notNull(),
     digest: text("digest").notNull(),
     revision: integer("revision").notNull(),
+    // Live 협업: 겹침 검사와 놓친 변경 재전송에 쓴다.
+    touched: text("touched").array().notNull().default(sql`'{}'::text[]`),
+    operations: jsonb("operations").$type<BoardOperation[]>(),
+    authorId: integer("author_id"),
+    authorClient: text("author_client"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
     primaryKey({ columns: [table.boardId, table.mutationId] }),
     index("sync_mutations_created_at_idx").on(table.createdAt),
+    index("sync_mutations_board_revision_idx").on(table.boardId, table.revision),
 ]);
 
 export const db_assets = pgTable("assets", {
@@ -109,9 +116,24 @@ export const db_boards = pgTable("boards", {
     updatedAt: timestamp("updated_at").defaultNow(),
     previewVersion: bigint("preview_version", { mode: "number" }),
     privateFlg: smallint("private_flg").$type<0 | 1>().notNull().default(1),
+    // 1이면 실시간 협업(Live) 보드. 연결 시간만큼 서버 비용이 들어 기본값은 일반 보드다.
+    collabFlg: smallint("collab_flg").$type<0 | 1>().notNull().default(0),
 }, (table) => [
     check("boards_private_flg_check", sql`${table.privateFlg} IN (0, 1)`),
+    check("boards_collab_flg_check", sql`${table.collabFlg} IN (0, 1)`),
     index("boards_owner_id_idx").on(table.ownerId),
+]);
+
+export const db_boardMembers = pgTable("board_members", {
+    boardId: integer("board_id").notNull().references(() => db_boards.boardId, { onDelete: "cascade" }),
+    userId: integer("user_id").notNull().references(() => db_users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 16 }).notNull().$type<"editor" | "viewer">(),
+    addedBy: integer("added_by").references(() => db_users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+    primaryKey({ columns: [table.boardId, table.userId] }),
+    index("board_members_user_idx").on(table.userId),
+    check("board_members_role_check", sql`${table.role} IN ('editor', 'viewer')`),
 ]);
 
 export const db_boardPreviews = pgTable("board_previews", {

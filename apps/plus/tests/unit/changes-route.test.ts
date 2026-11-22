@@ -7,8 +7,9 @@ import { changeRequestDigest, parseChangeRequest } from "@/lib/sync-operations";
 
 const mocks = vi.hoisted(() => ({
     user: vi.fn(), permission: vi.fn(), batch: vi.fn(), limit: vi.fn(), assetRows: vi.fn(), select: vi.fn(),
-    readAssetBytes: vi.fn(), discardAsset: vi.fn(),
+    readAssetBytes: vi.fn(), discardAsset: vi.fn(), liveStore: vi.fn(),
 }));
+vi.mock("@/lib/live/store", () => ({ getLiveStore: mocks.liveStore }));
 vi.mock("@/lib/assets", async (importOriginal) => ({
     ...await importOriginal<typeof import("@/lib/assets")>(),
     readAssetBytes: mocks.readAssetBytes,
@@ -57,6 +58,7 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
         vi.clearAllMocks();
         mocks.user.mockResolvedValue({ id: 5, isApproved: true, email: "owner@example.com" });
         mocks.permission.mockReturnValue(null);
+        mocks.liveStore.mockReturnValue(null);
         mocks.limit.mockResolvedValue([]);
         mocks.assetRows.mockReturnValue([]);
         mocks.select.mockReturnValue({ from: () => ({ where }) });
@@ -164,10 +166,83 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
         for (const sql of statements().slice(1)) {
             expect(sql).toContain("s.revision = $");
             expect(sql).toContain("s.mode = 'delta'");
-            expect(sql).toContain("u.role = 'admin' OR (u.permission_flg AND b.owner_id = u.email)");
+            expect(sql).toContain("u.role = 'admin' OR (u.permission_flg AND (b.owner_id = u.email OR EXISTS");
+            expect(sql).toContain("m.role = 'editor'");
             expect(sql).toContain("u.session_token_hash = $");
             expect(sql).toContain("NOT EXISTS ( SELECT 1 FROM sync_mutations m");
         }
+    });
+
+    it("Live 클라이언트는 판 번호 대신 다른 클라이언트 커밋과의 키 겹침을 검사한다", async () => {
+        await POST(request(body([
+            { type: "memo", syncId: "memo-1", action: "update", changes: { x: 30, sortOrder: 2 } },
+        ]), { "X-Meldrift-Client": "0f8fad5b-d9cb-469f-a165-70867728950e" }), context);
+
+        const queries = (mocks.batch.mock.calls[0][0] as SQL[]).map((statement) => dialect.sqlToQuery(statement));
+        for (const query of queries.slice(1)) {
+            const sql = query.sql.replace(/\s+/g, " ");
+            expect(sql).toContain("s.revision >= $");
+            expect(sql).toContain("min(r.revision) - 1 FROM sync_mutations r");
+            expect(sql).toContain("m.author_client IS DISTINCT FROM $");
+            expect(sql).toContain("m.touched && ARRAY(SELECT jsonb_array_elements_text(");
+            expect(query.params).toContain(JSON.stringify(["order:memo", "memo:memo-1"]));
+        }
+        const commit = queries[queries.length - 1];
+        expect(commit.sql).toContain("INSERT INTO sync_mutations (board_id, mutation_id, digest, revision, touched, operations, author_id, author_client)");
+        expect(commit.params).toContain("0f8fad5b-d9cb-469f-a165-70867728950e");
+    });
+
+    it("다른 사람이 잠근 카드를 건드리는 커밋은 쓰기 전에 거절한다", async () => {
+        const store = {
+            foreignLock: vi.fn(async () => ({ key: "memo:memo-1", email: "other@example.com" })),
+            recordTouched: vi.fn(), publish: vi.fn(),
+        };
+        mocks.liveStore.mockReturnValue(store);
+
+        const response = await POST(request(body([
+            { type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } },
+        ]), { "X-Meldrift-Client": "0f8fad5b-d9cb-469f-a165-70867728950e" }), context);
+
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({ code: "locked", key: "memo:memo-1" });
+        expect(store.foreignLock).toHaveBeenCalledWith(7, "5:0f8fad5b-d9cb-469f-a165-70867728950e", ["memo:memo-1"]);
+        expect(mocks.batch).not.toHaveBeenCalled();
+    });
+
+    it("Redis가 2초 안에 답하지 않으면 잠금 검사와 알림 없이 커밋한다", async () => {
+        vi.useFakeTimers();
+        const never = () => new Promise<never>(() => {});
+        const store = { foreignLock: vi.fn(never), recordTouched: vi.fn(never), publish: vi.fn(never) };
+        mocks.liveStore.mockReturnValue(store);
+
+        const pending = POST(request(body([
+            { type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } },
+        ]), { "X-Meldrift-Client": "0f8fad5b-d9cb-469f-a165-70867728950e" }), context);
+        await vi.advanceTimersByTimeAsync(4100);
+        const response = await pending;
+        vi.useRealTimers();
+
+        expect(response.status).toBe(200);
+        expect(mocks.batch).toHaveBeenCalledOnce();
+        expect(store.publish).toHaveBeenCalledOnce();
+    });
+
+    it("커밋하면 키별 판 번호를 기록하고 작성자와 연산을 발행한다", async () => {
+        const store = { foreignLock: vi.fn(async () => null), recordTouched: vi.fn(), publish: vi.fn() };
+        mocks.liveStore.mockReturnValue(store);
+        const operations = [{ type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } }];
+
+        const response = await POST(request(body(operations), {
+            "X-Meldrift-Client": "0f8fad5b-d9cb-469f-a165-70867728950e",
+        }), context);
+
+        expect(response.status).toBe(200);
+        expect(store.recordTouched).toHaveBeenCalledWith(7, ["memo:memo-1"], 3);
+        expect(store.publish).toHaveBeenCalledWith(7, {
+            t: "commit", revision: 3, mutationId,
+            by: { userId: 5, email: "owner@example.com", clientId: "0f8fad5b-d9cb-469f-a165-70867728950e" },
+            operations,
+        });
     });
 
     it("동기화 식별자 기준의 업서트로 카드를 생성해 재전송 중복을 방지한다", async () => {

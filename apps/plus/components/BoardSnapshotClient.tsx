@@ -4,7 +4,9 @@ import type { BoardInfo } from "@meldrift/board-data/board-state";
 import { useBoardSnapshot } from "@/hooks/useBoardSnapshot";
 import BoardClient from "./BoardClient";
 
-export default function BoardSnapshotClient({ board, editingAllowed }: { board: BoardInfo; editingAllowed: boolean }) {
+type BoardSnapshotClientProps = { board: BoardInfo; editingAllowed: boolean; collaborative?: boolean };
+
+export default function BoardSnapshotClient({ board, editingAllowed, collaborative = false }: BoardSnapshotClientProps) {
     const {
         snapshot,
         status,
@@ -16,14 +18,15 @@ export default function BoardSnapshotClient({ board, editingAllowed }: { board: 
         serverSaveVersion,
         exportSnapshot,
         readSnapshotFile,
-    } = useBoardSnapshot(board, editingAllowed);
+        live,
+    } = useBoardSnapshot(board, editingAllowed, collaborative);
     return (
         <>
             {snapshot && (
                 <div inert={status === "blocked"}>
                     <BoardClient key={board.boardId} initialSnapshot={snapshot} editingAllowed={canEdit}
                         onSnapshotChange={save} serverSaveVersion={serverSaveVersion}
-                        exportSnapshot={exportSnapshot} readSnapshotFile={readSnapshotFile} />
+                        exportSnapshot={exportSnapshot} readSnapshotFile={readSnapshotFile} live={live} />
                 </div>
             )}
             {!snapshot || status === "blocked" ? (

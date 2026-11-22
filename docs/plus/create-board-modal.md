@@ -57,5 +57,9 @@
 
 ## 알려진 특이사항
 
-- `RenameBoardModal`과 z-index(70/80), 레이아웃 클래스, 오버레이·닫기 버튼 구조가 동일하다. 두 컴포넌트는 각각 문맥에 맞는 닫기 버튼 `aria-label`을 사용한다.
+- `EditBoardModal`과 z-index(70/80), 레이아웃 클래스, 오버레이·닫기 버튼 구조가 동일하다. 두 컴포넌트는 각각 문맥에 맞는 닫기 버튼 `aria-label`을 사용한다.
 - fetch 자체가 실패(네트워크 오류)하는 경우에 대한 처리가 없다 — 다른 모달들과 동일한 패턴의 공백.
+
+## 협업 보드 선택
+
+`BoardCollabSelect`가 "Collaboration" 항목을 그린다. `Standard board`(0, 기본값)와 `Live collaboration board`(1) 중 하나를 고르며, 값은 `collabFlg`로 `POST /api/boards`에 실린다. 1이면 [실시간 협업](./live-collaboration.md)을 쓰는 보드가 된다.

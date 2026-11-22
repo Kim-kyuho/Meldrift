@@ -4,6 +4,7 @@ import type { OutboxBatch } from "@meldrift/board-data/browser-db/protocol";
 import {
     changeEnvelopeBytes, maxChangeBytes, maxStagedOperations, stagedChangeMimeType,
 } from "@meldrift/board-data/board-delta";
+import { remoteSeqOf } from "@meldrift/board-data/remote-patch";
 import { AssetUploadError, uploadAsset } from "./asset-upload";
 import { snapshotDelayMs } from "./snapshot";
 import type { SyncStatus } from "./snapshot-sync";
@@ -25,6 +26,17 @@ const encoder = new TextEncoder();
 
 const inlineBudget = maxChangeBytes - changeEnvelopeBytes;
 
+// Live 협업일 때만 붙는다. 없으면 기존 단일 편집자 동작과 같다.
+export type LiveSyncHooks = {
+    clientId: string;
+    // 남이 잠갔거나 잠금 응답을 기다리는 키. 이 키의 로컬 변경은 아직 기록하지 않는다.
+    deferredKeys: () => string[];
+    // 낙관적 잠금 요청이 끝날 때까지 커밋을 미룬다. 거절되면 그 변경은 기록되지 않는다.
+    beforeCommit: () => Promise<void>;
+    // 판 번호는 RemoteApplier가 빈틈없이 올린다. 여기서는 내 커밋 번호만 알린다.
+    onCommitted: (revision: number, mutationId: string) => void;
+};
+
 export class ChangeSync {
     private timer: ReturnType<typeof setTimeout> | undefined;
     private queue = Promise.resolve();
@@ -33,6 +45,10 @@ export class ChangeSync {
     private lastChange = 0;
     private flight: Promise<void> | undefined;
     private controller: AbortController | undefined;
+    private urgent = false;
+    private pendingSaves = 0;
+    private latest: BoardSnapshot | null = null;
+    private live: LiveSyncHooks | null = null;
 
     constructor(
         private database: BoardDatabaseClient,
@@ -41,18 +57,51 @@ export class ChangeSync {
         private onCommitted: () => void = () => {},
     ) {}
 
+    attachLive(live: LiveSyncHooks) {
+        this.live = live;
+    }
+
     save(snapshot: BoardSnapshot) {
+        this.latest = snapshot;
+        this.pendingSaves += 1;
         this.queue = this.queue.then(async () => {
-            await this.database.replace(snapshot, true);
+            await this.database.replace(snapshot, true, this.live ? {
+                remoteSeq: remoteSeqOf(snapshot) ?? 0,
+                deferredKeys: this.live.deferredKeys(),
+            } : {});
             this.lastChange = Date.now();
             if (!this.stopped) {
                 this.onStatus("local");
             }
-            this.schedule(snapshotDelayMs);
+            this.schedule(this.urgent ? 0 : snapshotDelayMs);
         }).catch((error: unknown) => {
             this.onStatus("error", error instanceof Error ? error.message : "Local save failed.");
+        }).finally(() => {
+            this.pendingSaves -= 1;
         });
         return this.queue;
+    }
+
+    // 잠금을 얻어 미뤄 둔 변경을 기록할 수 있게 되면, 마지막 화면 상태를 다시 저장한다.
+    resave() {
+        if (this.latest && !this.stopped) {
+            void this.save(this.latest);
+        }
+    }
+
+    // 잠금을 풀기 전에 3초 디바운스를 건너뛰고 바로 보낸다.
+    flushNow() {
+        if (this.stopped) {
+            return;
+        }
+        this.urgent = true;
+        if (!this.committing) {
+            this.schedule(0);
+        }
+    }
+
+    idle() {
+        return !this.committing && this.pendingSaves === 0;
     }
 
     resume(changedAt: number) {
@@ -100,10 +149,11 @@ export class ChangeSync {
 
         const record = await this.database.record();
         const remaining = record.sync.changedAt + snapshotDelayMs - Date.now();
-        if (remaining > 0) {
+        if (remaining > 0 && !this.urgent) {
             this.schedule(remaining);
             return undefined;
         }
+        this.urgent = false;
         return this.database.claimOutbox(Math.min(outbox.pending.length, maxStagedOperations));
     }
 
@@ -124,6 +174,10 @@ export class ChangeSync {
         let retry = false;
         try {
             await this.queue;
+            if (this.live) {
+                await this.live.beforeCommit();
+                await this.queue;
+            }
             const record = await this.database.record();
             const batch = await this.nextBatch();
             if (!batch || batch.operations.length === 0 || this.stopped) {
@@ -143,9 +197,13 @@ export class ChangeSync {
                 await this.stage(batch.mutationId, encoded);
             }
 
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (this.live) {
+                headers["X-Meldrift-Client"] = this.live.clientId;
+            }
             const response = await fetch(`${this.boardEndpoint}/changes`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify(staged
                     ? { baseRevision: record.sync.revision, mutationId: batch.mutationId, staged: true }
                     : {
@@ -166,7 +224,8 @@ export class ChangeSync {
                 throw new Error(data.message ?? "Server save failed.");
             }
 
-            await this.database.commitOutbox(batch.claim, record.sync.generation, data.revision);
+            await this.database.commitOutbox(batch.claim, record.sync.generation, this.live ? null : data.revision);
+            this.live?.onCommitted(Number(data.revision), batch.mutationId);
             const outbox = await this.database.outbox();
             const pending = outbox.pending.length > 0;
             this.onStatus(pending ? "local" : "saved");

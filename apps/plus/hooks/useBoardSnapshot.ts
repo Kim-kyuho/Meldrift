@@ -7,8 +7,47 @@ import { ChangeSync, lookupChange } from "@/lib/change-sync";
 import { downloadAsset } from "@/lib/asset-download";
 import type { StoredBoard } from "@meldrift/board-data/browser-db/protocol";
 import { canCreateBoard } from "@/lib/board-permissions";
+import { touchedKeysOf } from "@meldrift/board-data/board-delta";
+import { LiveRuntime } from "@/lib/live/client/runtime";
+import { collectRemoteAssets, fetchChangeLog, ResyncRequired } from "@/lib/live/client/remote-applier";
 
 type BoardSync = SnapshotSync | ChangeSync;
+
+const conflictMessage = "Local unsaved changes conflict with the server. Download the local backup before restoring the server version.";
+
+// 열어 보니 미전송 변경이 있고 그 사이 다른 사람이 커밋했다면, 키가 겹치지 않는 한 그 변경을 받아 이어 쓴다.
+async function catchUpFromLog(database: BoardDatabaseClient, boardEndpoint: string, from: number, signal: AbortSignal) {
+    const outbox = await database.outbox();
+    const pending = new Set(touchedKeysOf([
+        ...outbox.pending, ...outbox.claimed.flatMap((batch) => batch.operations),
+    ]));
+    let after = from;
+    try {
+        for (let page = 0; page < 20; page += 1) {
+            const log = await fetchChangeLog(boardEndpoint, after, signal);
+            for (const mutation of log.mutations) {
+                if (touchedKeysOf(mutation.operations ?? []).some((key) => pending.has(key))) {
+                    return false;
+                }
+                const operations = mutation.operations ?? [];
+                const assets = await collectRemoteAssets(database, boardEndpoint, operations, signal);
+                await database.applyRemote(operations, mutation.revision, assets);
+                after = mutation.revision;
+            }
+            if (!log.more || log.mutations.length === 0) {
+                break;
+            }
+        }
+    } catch (error) {
+        if (error instanceof ResyncRequired) {
+            return false;
+        }
+        throw error;
+    } finally {
+        await database.resetRemoteLog();
+    }
+    return true;
+}
 
 async function loadServerState(
     database: BoardDatabaseClient, boardEndpoint: string, initial: StoredBoard, signal: AbortSignal,
@@ -31,8 +70,9 @@ async function loadServerState(
 
     const outbox = await database.outbox();
     if (outbox.pending.length + outbox.claimed.length > 0) {
-        if (local.sync.revision !== revision) {
-            throw new Error("Local unsaved changes conflict with the server. Download the local backup before restoring the server version.");
+        if (local.sync.revision !== revision
+            && !await catchUpFromLog(database, boardEndpoint, local.sync.revision, signal)) {
+            throw new Error(conflictMessage);
         }
         return database.load();
     }
@@ -61,15 +101,16 @@ type State = {
     status: SyncStatus;
     message: string;
     canEdit: boolean;
+    live: LiveRuntime | null;
 };
 
 // Route transitions in this tab must finish closing the previous worker before the next opens
 // the same browser database.
 let editorCleanup = Promise.resolve();
 
-export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
+export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean, collaborative = false) {
     const [serverSaveVersion, setServerSaveVersion] = useState(0);
-    const [state, setState] = useState<State>({ snapshot: null, status: "saved", message: "", canEdit: false });
+    const [state, setState] = useState<State>({ snapshot: null, status: "saved", message: "", canEdit: false, live: null });
     const managerRef = useRef<BoardSync | null>(null);
     const databaseRef = useRef<BoardDatabaseClient | null>(null);
     const [attempt, setAttempt] = useState(0);
@@ -79,6 +120,7 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
         let blocked = false;
         let database: BoardDatabaseClient | undefined;
         let manager: BoardSync | undefined;
+        let live: LiveRuntime | undefined;
         const controller = new AbortController();
         const update = (status: SyncStatus, message = "") => {
             if (blocked && status !== "blocked") {
@@ -91,6 +133,7 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
         const block = (message: string) => {
             blocked = true;
             manager?.stop();
+            live?.stop();
             update("blocked", message);
         };
 
@@ -183,8 +226,22 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
                 }
             }
             const pending = await database.record();
+            // 협업 보드에서 로그인한 사용자만 Live에 연결한다. 연결 시간만큼 서버 비용이 들기 때문이다.
+            if (collaborative && storageMode === "delta" && user && active && !blocked) {
+                live = new LiveRuntime({
+                    boardId: board.boardId,
+                    boardEndpoint,
+                    database,
+                    initialRevision: pending.sync.revision,
+                    sync: manager instanceof ChangeSync ? manager : null,
+                    onBlocked: block,
+                });
+                live.start();
+            }
             if (active && !blocked) {
-                setState({ snapshot, status: pending.sync.dirty ? "local" : "saved", message: "", canEdit });
+                setState({
+                    snapshot, status: pending.sync.dirty ? "local" : "saved", message: "", canEdit, live: live ?? null,
+                });
             }
         }
         void initialize().catch((error) => {
@@ -195,6 +252,7 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
         return () => {
             active = false;
             controller.abort();
+            live?.stop();
             managerRef.current = null;
             databaseRef.current = null;
             const previousCleanup = editorCleanup;
@@ -207,7 +265,7 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
                 }
             })().catch(() => {});
         };
-    }, [board, attempt, editingAllowed]);
+    }, [board, attempt, editingAllowed, collaborative]);
 
     const save = useCallback((snapshot: BoardSnapshot) => {
         return managerRef.current?.save(snapshot);
@@ -245,7 +303,7 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
             if (response.headers.get("X-Storage-Mode") === "delta") {
                 await managerRef.current?.pause();
                 await databaseRef.current.reset();
-                setState({ snapshot: null, status: "saved", message: "", canEdit: false });
+                setState({ snapshot: null, status: "saved", message: "", canEdit: false, live: null });
                 setAttempt((value) => value + 1);
                 return;
             }
@@ -254,7 +312,7 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean) {
             }
             await managerRef.current?.pause();
             await databaseRef.current.import(await response.arrayBuffer(), Number(response.headers.get("X-Snapshot-Revision")));
-            setState({ snapshot: null, status: "saved", message: "", canEdit: false });
+            setState({ snapshot: null, status: "saved", message: "", canEdit: false, live: null });
             setAttempt((value) => value + 1);
         } catch (error) {
             setState((prev) => ({ ...prev, message: error instanceof Error ? error.message : "Restore failed." }));
