@@ -59,7 +59,7 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/sql.js": "^1.4.11",
+    "@types/sql.js": "^1.16.0",
     "@types/turndown": "^5.0.6",
     "@types/ws": "^8.18.2",
     "drizzle-kit": "^0.31.11",
