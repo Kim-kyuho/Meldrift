@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "NODE_ENV=development next dev",
     "build": "next build --webpack",
+    "build:deploy-now": "npm run build && node scripts/pack-standalone.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
