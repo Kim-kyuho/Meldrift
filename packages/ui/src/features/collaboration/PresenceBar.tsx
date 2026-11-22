@@ -89,7 +89,7 @@ export default function PresenceBar({ status, lastError = "", peers, locks, self
                 type="button"
                 aria-label={`${statusLabel[status]}. ${groups.length} people on this board.`}
                 aria-expanded={open}
-                className="flex h-11 items-center gap-2 rounded-xl bg-white/75 px-2.5 shadow-md backdrop-blur-sm"
+                className="flex h-11 items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                 onClick={() => setOpen((value) => !value)}
             >
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor[status]}`} title={statusLabel[status]} />

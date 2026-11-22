@@ -140,7 +140,7 @@ export default function BoardList({ boards, initialUser }: { boards: BoardListBo
                 onDismiss={() => setBoardListMessage("")}
             />
 
-            <main className="min-h-screen bg-neutral-100 px-6 py-24"
+            <main className="min-h-screen bg-neutral-100 px-6 py-24 text-neutral-900"
                 onClick={() => {
                     if (boardListMessage) {
                         setBoardListMessage("");
