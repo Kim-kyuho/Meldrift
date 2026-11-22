@@ -4,11 +4,13 @@ import { defineConfig, devices } from "@playwright/test";
 // 예: PLAYWRIGHT_BASE_URL=https://meldrift.vercel.app npm run test:e2e
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3102";
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const fixtureDb = "postgresql://e2e:e2e@localhost/meldrift_e2e";
 
 export default defineConfig({
     // Vitest 파일과 Playwright 파일을 분리해 각 도구가 자신의 테스트만 검색하게 한다.
     testDir: "./tests/e2e",
     testMatch: "**/*.spec.ts",
+    globalSetup: "./tests/e2e/owner-session.ts",
 
     // 테스트 파일 간에는 병렬 실행한다. 같은 파일 안의 테스트는 기본적으로 선언 순서대로 실행한다.
     fullyParallel: true,
@@ -64,17 +66,22 @@ export default defineConfig({
     webServer: usesExternalServer
         ? undefined
         : [{
+            command: "node tests/e2e/fixture-db.mjs",
+            url: "http://127.0.0.1:3103/ready",
+        }, {
             command: "npm run dev -- --hostname 0.0.0.0 --port 3101",
             url: "http://localhost:3101/plus",
-            reuseExistingServer: !process.env.CI,
             timeout: 120_000,
             env: {
                 PLUS_STANDALONE: "false",
+                NEON_CONNECTION_STRING: fixtureDb,
+                CLOUDINARY_CLOUD_NAME: "",
+                CLOUDINARY_API_KEY: "",
+                CLOUDINARY_API_SECRET: "",
             },
         }, {
             command: "npm run dev --workspace=meldrift-free -- --hostname 0.0.0.0 --port 3102",
             url: `${baseURL}/plus`,
-            reuseExistingServer: !process.env.CI,
             timeout: 120_000,
             env: {
                 PLUS_ORIGIN: "http://localhost:3101",

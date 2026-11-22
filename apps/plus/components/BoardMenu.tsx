@@ -6,6 +6,7 @@ import Link from "next/link";
 import SharedBoardMenu, { type BoardMenuProps as SharedBoardMenuProps } from "@meldrift/ui/BoardMenu";
 import PressableButton from "@meldrift/ui/PressableButton";
 import type { CurrentUser } from "@/hooks/useBoardAuth";
+import { canCreateBoard } from "@/lib/board-permissions";
 
 type BoardMenuProps = {
     menuOpen: boolean;
@@ -15,6 +16,7 @@ type BoardMenuProps = {
     setSignUpOpen: Dispatch<SetStateAction<boolean>>;
     currentUser: CurrentUser | null;
     onSignOut: () => void;
+    onManageMembers?: () => void;
     onCompileMarkdown?: () => void;
     reorderOpen?: boolean;
     onReorder?: () => void;
@@ -27,7 +29,7 @@ type BoardMenuProps = {
 const noAction = () => {};
 
 export default function BoardMenu({
-    currentBoard, currentUser, setSignInOpen, setSignUpOpen, onSignOut,
+    currentBoard, currentUser, setSignInOpen, setSignUpOpen, onSignOut, onManageMembers,
     onCompileMarkdown = noAction, onReorder = noAction, reorderOpen = false,
     transfer, ...menu
 }: BoardMenuProps) {
@@ -43,7 +45,7 @@ export default function BoardMenu({
             transferring={transfer?.transferring ?? false}
             resetting={transfer?.resetting ?? false}
             transferDisabled={!currentUser || !transfer}
-            mutationDisabled={!currentUser?.isApproved || transfer?.mutationDisabled}
+            mutationDisabled={!canCreateBoard(currentUser) || transfer?.mutationDisabled}
             resetTitle="Clear the contents of this board"
             onExport={transfer?.onExport ?? noAction}
             onImport={transfer?.onImport ?? noAction}
@@ -63,6 +65,11 @@ export default function BoardMenu({
                         <p className="px-3 py-2 text-sm font-semibold text-neutral-800 break-all">
                             [{currentUser.role}]<br />{currentUser.email}
                         </p>
+                        {currentUser.role === "admin" && onManageMembers && (
+                            <PressableButton variant="menu" onClick={() => { menu.setMenuOpen(false); onManageMembers(); }}>
+                                Manage Members
+                            </PressableButton>
+                        )}
                         <PressableButton variant="menu" className="font-semibold text-red-500"
                             onClick={() => { menu.setMenuOpen(false); onSignOut(); }}>
                             Sign-out

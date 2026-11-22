@@ -9,6 +9,7 @@ import BoardControls from "./BoardControls";
 import type { BoardFileActions } from "@/hooks/useBoardTransfer";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
+import { canCreateBoard } from "@/lib/board-permissions";
 
 type BoardClientProps = BoardFileActions & {
     initialSnapshot: BoardSnapshot;
@@ -30,12 +31,11 @@ export default function BoardClient({
         signInOpen, setSignInOpen,
         signUpOpen, setSignUpOpen,
         currentUser, setCurrentUser,
-        canEditCard,
         handleSignOut,
     } = useBoardAuth({
         onSignOutComplete: () => window.location.reload(),
     });
-    const canEdit = canEditCard && editingAllowed;
+    const canEdit = canCreateBoard(currentUser) && editingAllowed;
     const { schedulePreviewUpdate } = useBoardPreview({
         boardId: initialSnapshot.board.boardId,
         boardViewportRef: viewportRef,
@@ -72,7 +72,7 @@ export default function BoardClient({
             initialSnapshot={initialSnapshot}
             canEdit={canEdit}
             permissionMessage={currentUser
-                ? "Your account is waiting for administrator approval."
+                ? "You can view this board, but you cannot edit it."
                 : "Please sign in before editing cards."}
             viewportRef={viewportRef}
             renderControls={renderControls}

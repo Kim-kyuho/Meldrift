@@ -3,6 +3,7 @@ import { getDb } from "./db";
 import { db_memos, db_images, db_mermaids, db_tables, db_drawingStrokes } from "./db/schema";
 import type { BoardInfo, BoardSnapshot } from "@meldrift/board-data/board-state";
 import { rankMemoOrders } from "@meldrift/core/memo-order";
+import { boardAssetBytesPath } from "./assets";
 
 export async function loadBoardState(board: BoardInfo): Promise<BoardSnapshot> {
     const db = getDb();
@@ -16,10 +17,11 @@ export async function loadBoardState(board: BoardInfo): Promise<BoardSnapshot> {
     ]);
     const orders = rankMemoOrders(memos.map((memo) => ({ id: memo.id, storedOrder: memo.sortOrder })));
     return {
-        board,
+        board: { boardId: board.boardId, title: board.title, width: board.width, height: board.height },
         memos: memos.map((memo) => ({ ...memo, sortOrder: orders.get(memo.id) ?? 1 })),
         images: images.map((image) => ({
-            ...image, url: image.secureUrl ?? "", assetId: image.assetId ?? "",
+            ...image, url: image.assetId ? boardAssetBytesPath(board.boardId, image.assetId) : image.secureUrl ?? "",
+            assetId: image.assetId ?? "",
             label: image.fileName, data: null, mimeType: null,
         })),
         mermaids: mermaids.map((card) => ({ ...card, id: card.mermaidId })),

@@ -59,9 +59,7 @@ export function createDeltaServer() {
             const path = url.pathname.replace(/^\/plus/, "");
             const method = request.method();
             if (path === "/api/me") {
-                return route.fulfill({ json: {
-                    user: { id: 1, email: "delta-e2e@example.test", isApproved: true, role: "user" },
-                } });
+                return route.fallback();
             }
             const match = path.match(/^\/api\/boards\/(\d+)\/(.*)$/);
             if (match) {

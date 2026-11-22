@@ -2,13 +2,12 @@ import { getSessionTokenHash, sessionCookieName } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { db_users } from "@/lib/db/schema";
 import { and, eq, gt } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
-export async function getCurrentUserFromRequest(request: NextRequest) {
+async function findSessionUser(token: string | undefined) {
     try {
-        const sessionTokenHash = getSessionTokenHash(
-            request.cookies.get(sessionCookieName)?.value
-        );
+        const sessionTokenHash = getSessionTokenHash(token);
 
         if (!sessionTokenHash) {
             return null;
@@ -37,6 +36,16 @@ export async function getCurrentUserFromRequest(request: NextRequest) {
         throw error;
     }
 }
+
+export function getCurrentUserFromRequest(request: Request) {
+    const requestCookies = (request as NextRequest).cookies
+        ?? new NextRequest(request.url, { headers: request.headers }).cookies;
+    return findSessionUser(requestCookies.get(sessionCookieName)?.value);
+}
+
+export const getCurrentUser = async () => findSessionUser((await cookies()).get(sessionCookieName)?.value);
+
+export type SessionUser = NonNullable<Awaited<ReturnType<typeof findSessionUser>>>;
 
 export function getCardPermissionMessage(
     user: Awaited<ReturnType<typeof getCurrentUserFromRequest>>

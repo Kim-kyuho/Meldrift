@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         }
         await db.execute(sql`
             UPDATE upload_sessions SET expires_at = now() + ${`${uploadSessionTtlMs} milliseconds`}::interval
-            WHERE upload_id = ${open.uploadId} AND ${editorSessionGuard(gate.identity)}`);
+            WHERE upload_id = ${open.uploadId} AND ${editorSessionGuard(gate.identity, boardId)}`);
         return NextResponse.json({
             ok: true, uploadId: open.uploadId, chunkSize: open.chunkSize, chunkCount: open.chunkCount,
             received: await receivedChunks(db, boardId, assetId),
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         SELECT ${uploadId}, ${boardId}, ${gate.identity.userId}, ${assetId}, ${digest}, ${byteLength},
             ${mimeType}, ${assetChunkBytes}, ${chunkCount},
             now() + ${`${uploadSessionTtlMs} milliseconds`}::interval
-        WHERE ${editorSessionGuard(gate.identity)} AND EXISTS (SELECT 1 FROM boards WHERE board_id = ${boardId})
+        WHERE ${editorSessionGuard(gate.identity, boardId)} AND EXISTS (SELECT 1 FROM boards WHERE board_id = ${boardId})
         RETURNING upload_id`);
     if (!result.rows.length) {
         return NextResponse.json(

@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
     const result = await db.execute(sql`
         INSERT INTO asset_chunks (board_id, asset_id, chunk_index, bytes)
         SELECT ${boardId}, ${session.assetId}, ${index}, decode(${bytes.toString("hex")}, 'hex')
-        WHERE ${editorSessionGuard(gate.identity)}
+        WHERE ${editorSessionGuard(gate.identity, boardId)}
             AND EXISTS (SELECT 1 FROM upload_sessions WHERE upload_id = ${uploadId} AND expires_at > now())
         ON CONFLICT (board_id, asset_id, chunk_index) DO UPDATE SET bytes = excluded.bytes
         RETURNING chunk_index`);

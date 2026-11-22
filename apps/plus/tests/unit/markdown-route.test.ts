@@ -27,7 +27,7 @@ describe("보드 마크다운 조회 API: GET /api/boards/[boardId]/markdown", (
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.loadSnapshot.mockResolvedValue(null);
-        mocks.limit.mockResolvedValue([{ boardId: 7, title: "Board", width: 100, height: 80 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, title: "Board", width: 100, height: 80, privateFlg: 0, ownerId: "owner@example.com" }]);
         mocks.execute.mockResolvedValue({ rows: [] });
         mocks.getDb.mockReturnValue({
             select: vi.fn(() => ({

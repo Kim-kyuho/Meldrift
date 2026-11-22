@@ -165,7 +165,7 @@ describe("보드 모달", () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: true, board: { boardId: 12 } }),
         }));
-        render(<CreateBoardModal ownerId="owner" onClose={vi.fn()} onCreated={onCreated} />);
+        render(<CreateBoardModal onClose={vi.fn()} onCreated={onCreated} />);
 
         fireEvent.change(screen.getByLabelText("Title"), { target: { value: "  Project  " } });
         fireEvent.change(screen.getByLabelText("Board size"), { target: { value: "1920 x 1080" } });
@@ -174,7 +174,7 @@ describe("보드 모달", () => {
         await waitFor(() => expect(onCreated).toHaveBeenCalledWith(12));
         expect(fetch).toHaveBeenCalledWith("/api/boards", expect.objectContaining({
             method: "POST",
-            body: JSON.stringify({ title: "Project", width: 1920, height: 1080, ownerId: "owner" }),
+            body: JSON.stringify({ title: "Project", width: 1920, height: 1080, privateFlg: 1 }),
         }));
     });
 
@@ -182,14 +182,14 @@ describe("보드 모달", () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: false, message: "Rejected" }),
         }));
-        const create = render(<CreateBoardModal ownerId={null} onClose={vi.fn()} onCreated={vi.fn()} />);
+        const create = render(<CreateBoardModal onClose={vi.fn()} onCreated={vi.fn()} />);
         fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Board" } });
         fireEvent.click(screen.getByRole("button", { name: "Create" }));
         expect(await screen.findByText("Rejected")).toBeInTheDocument();
         create.unmount();
 
-        render(<RenameBoardModal boardId={5} title="Old" onClose={vi.fn()} onRenamed={vi.fn()} />);
-        fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+        render(<RenameBoardModal boardId={5} title="Old" privateFlg={0} onClose={vi.fn()} onRenamed={vi.fn()} />);
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
         expect(await screen.findByText("Rejected")).toBeInTheDocument();
     });
 
@@ -198,15 +198,15 @@ describe("보드 모달", () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             json: vi.fn().mockResolvedValue({ ok: true, board: { boardId: 5, title: "New title" } }),
         }));
-        render(<RenameBoardModal boardId={5} title="Old" onClose={vi.fn()} onRenamed={onRenamed} />);
+        render(<RenameBoardModal boardId={5} title="Old" privateFlg={0} onClose={vi.fn()} onRenamed={onRenamed} />);
 
         fireEvent.change(screen.getByLabelText("Title"), { target: { value: "  New title  " } });
-        fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
         await waitFor(() => expect(onRenamed).toHaveBeenCalledWith(5, "New title"));
         expect(fetch).toHaveBeenCalledWith("/api/boards/5", expect.objectContaining({
             method: "PATCH",
-            body: JSON.stringify({ boardId: 5, title: "New title" }),
+            body: JSON.stringify({ title: "New title", privateFlg: 0 }),
         }));
     });
 });

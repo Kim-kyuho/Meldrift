@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { getBoardToolButton, openTestBoard } from "./helpers";
 import { createDeltaServer } from "./delta-server";
+import { ownerSession } from "./owner-session";
 
 test.describe.configure({ timeout: 90000 });
+test.use({ storageState: async ({}, setStorageState) => setStorageState(ownerSession()) });
 
 const saved = (page: Page) => page.getByRole("status").filter({ hasText: /^Saved$/ });
 
@@ -88,7 +90,7 @@ test("같은 이미지 세 장을 따로 동기화하고 새 브라우저 컨텍
     await expect(saved(page)).toBeVisible();
     expect(server.chunkUploads).toHaveLength(3);
 
-    const fresh = await browser.newContext();
+    const fresh = await browser.newContext({ storageState: ownerSession() });
     try {
         await server.install(fresh);
         const restored = await fresh.newPage();

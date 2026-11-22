@@ -7,15 +7,19 @@ export type CurrentUser = {
 };
 
 type UseBoardAuthOptions = {
+    initialUser?: CurrentUser | null;
     onSignOutComplete?: () => void;
 };
 
-export function useBoardAuth({ onSignOutComplete }: UseBoardAuthOptions = {}) {
+export function useBoardAuth({ initialUser, onSignOutComplete }: UseBoardAuthOptions = {}) {
     const [signInOpen, setSignInOpen] = useState(false);
     const [signUpOpen, setSignUpOpen] = useState(false);
-    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(initialUser ?? null);
 
     useEffect(() => {
+        if (initialUser !== undefined) {
+            return;
+        }
         const loadCurrentUser = async() => {
             const response = await fetch("/api/me");
             const data = await response.json();
@@ -24,7 +28,7 @@ export function useBoardAuth({ onSignOutComplete }: UseBoardAuthOptions = {}) {
         };
 
         loadCurrentUser();
-    }, []);
+    }, [initialUser]);
     
     const handleSignOut = useCallback(async() => {
         const response = await fetch("/api/signout", {

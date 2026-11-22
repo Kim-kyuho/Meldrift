@@ -47,7 +47,7 @@ export type CommitContext = EditorIdentity & {
 };
 
 function guardOf(context: CommitContext) {
-    return sql`${editorSessionGuard(context)} AND EXISTS (
+    return sql`${editorSessionGuard(context, context.boardId)} AND EXISTS (
         SELECT 1 FROM board_sync s
         WHERE s.board_id = ${context.boardId} AND s.revision = ${context.baseRevision}
             AND s.mode = 'delta'

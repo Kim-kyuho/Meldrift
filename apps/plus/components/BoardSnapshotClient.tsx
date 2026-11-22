@@ -4,7 +4,7 @@ import type { BoardInfo } from "@meldrift/board-data/board-state";
 import { useBoardSnapshot } from "@/hooks/useBoardSnapshot";
 import BoardClient from "./BoardClient";
 
-export default function BoardSnapshotClient({ board }: { board: BoardInfo }) {
+export default function BoardSnapshotClient({ board, editingAllowed }: { board: BoardInfo; editingAllowed: boolean }) {
     const {
         snapshot,
         status,
@@ -16,7 +16,7 @@ export default function BoardSnapshotClient({ board }: { board: BoardInfo }) {
         serverSaveVersion,
         exportSnapshot,
         readSnapshotFile,
-    } = useBoardSnapshot(board);
+    } = useBoardSnapshot(board, editingAllowed);
     return (
         <>
             {snapshot && (

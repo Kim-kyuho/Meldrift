@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { sql } from "drizzle-orm";
 import { db_assetChunks, db_assets } from "@/lib/db/schema";
+import { getDb } from "@/lib/db";
 import { assetChunkBytes, maxStagedChangeBytes, stagedChangeMimeType } from "@meldrift/board-data/board-delta";
 import { maxStoredImageBytes, supportedImageMimeTypes } from "@meldrift/board-data/image-file";
 
@@ -13,6 +15,33 @@ export const uploadSessionTtlMs = 60 * 60 * 1000;
 export const assetIdPattern = /^[a-zA-Z0-9:_-]{1,200}$/;
 
 export const chunkCountFor = (byteLength: number) => Math.ceil(byteLength / assetChunkBytes);
+
+export const boardAssetBytesPath = (boardId: number, assetId: string) => {
+    const basePath = process.env.PLUS_STANDALONE === "true" ? "" : "/plus";
+    return `${basePath}/api/boards/${boardId}/assets/${encodeURIComponent(assetId)}/bytes`;
+};
+
+export async function storeBoardAsset(boardId: number, assetId: string, data: Uint8Array, mimeType: string) {
+    const db = getDb();
+    const digest = createHash("sha256").update(data).digest("hex");
+    const chunkCount = chunkCountFor(data.byteLength);
+    const lockBoard = sql`SELECT board_id FROM boards WHERE board_id = ${boardId} FOR UPDATE`;
+    for (let index = 0; index < chunkCount; index += 1) {
+        const chunk = Buffer.from(data.subarray(index * assetChunkBytes, (index + 1) * assetChunkBytes));
+        await db.execute(sql`
+            INSERT INTO asset_chunks (board_id, asset_id, chunk_index, bytes)
+            SELECT board_id, ${assetId}, ${index}, decode(${chunk.toString("hex")}, 'hex') FROM (${lockBoard}) b
+            ON CONFLICT (board_id, asset_id, chunk_index) DO UPDATE SET bytes = excluded.bytes`);
+    }
+    await db.execute(sql`
+        INSERT INTO assets (board_id, asset_id, digest, byte_length, mime_type, chunk_size, chunk_count)
+        SELECT board_id, ${assetId}, ${digest}, ${data.byteLength}, ${mimeType}, ${assetChunkBytes}, ${chunkCount}
+        FROM (${lockBoard}) b
+        ON CONFLICT (board_id, asset_id) DO UPDATE SET
+            digest = excluded.digest, byte_length = excluded.byte_length, mime_type = excluded.mime_type,
+            chunk_size = excluded.chunk_size, chunk_count = excluded.chunk_count`);
+    return digest;
+}
 
 export const chunkLengthFor = (byteLength: number, index: number) =>
     Math.min(assetChunkBytes, byteLength - index * assetChunkBytes);

@@ -1,9 +1,11 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { getBoardToolButton } from "./helpers";
+import { ownerSession } from "./owner-session";
 
 test.describe.configure({ timeout: 60000 });
+test.use({ storageState: async ({}, setStorageState) => setStorageState(ownerSession()) });
 
-// Neon에서는 보드 메타데이터만 읽고 브라우저의 모든 API 요청은 가로챈다.
+// 실제 세션으로 보드를 열고 스냅샷 저장 응답만 모킹한다.
 async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 0) {
     let bytes: Buffer | null = null;
     let revision = 0;
@@ -15,7 +17,7 @@ async function mockSnapshotServer(context: BrowserContext, initialLoadDelayMs = 
         const request = route.request();
         const path = new URL(request.url()).pathname.replace(/^\/plus/, "");
         if (path === "/api/me") {
-            return route.fulfill({ json: { user: { email: "snapshot-e2e@example.test", isApproved: true, role: "user" } } });
+            return route.fallback();
         }
         const match = path.match(/^\/api\/boards\/(\d+)\/snapshot$/);
         if (match) {

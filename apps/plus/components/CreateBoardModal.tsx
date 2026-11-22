@@ -5,9 +5,9 @@ import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useState } from "react";
 import BoardMessage from "@meldrift/ui/BoardMessage";
+import BoardVisibilitySelect from "./BoardVisibilitySelect";
 
 type CreateBoardModalProps = {
-    ownerId: string | null;
     onClose: () => void;
     onCreated: (boardId: number) => void;
 };
@@ -22,10 +22,10 @@ const boardSizeOptions = [
 
 ];
 
-export default function CreateBoardModal({ ownerId, onClose, onCreated }: CreateBoardModalProps) {
+export default function CreateBoardModal({ onClose, onCreated }: CreateBoardModalProps) {
     const [errorMessage, setErrorMessage] = useState("");
 
-    const handleCreateBoard = async(title: string, sizeValue: string) => {
+    const handleCreateBoard = async(title: string, sizeValue: string, privateFlg: number) => {
         const selectedSize = boardSizeOptions.find((option) => option.label === sizeValue);
         if (!title.trim()) {
             setErrorMessage("Please enter a board title.");
@@ -45,7 +45,7 @@ export default function CreateBoardModal({ ownerId, onClose, onCreated }: Create
                 title: title.trim(),
                 width: selectedSize.width,
                 height: selectedSize.height,
-                ownerId: ownerId,
+                privateFlg,
             }),
         });
         const data = await response.json();
@@ -87,7 +87,7 @@ export default function CreateBoardModal({ ownerId, onClose, onCreated }: Create
                         const title = String(formData.get("title"));
                         const size = String(formData.get("size"));
 
-                        handleCreateBoard(title, size);
+                        handleCreateBoard(title, size, Number(formData.get("privateFlg")));
                     }}
                 >
                     <label className="block text-sm font-semibold">
@@ -113,6 +113,7 @@ export default function CreateBoardModal({ ownerId, onClose, onCreated }: Create
                             ))}
                         </select>
                     </label>
+                    <BoardVisibilitySelect />
                     <BoardMessage
                         variant="inline"
                         message={errorMessage}

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, serial, bigint, bigserial, text, integer, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
+import { pgTable, serial, bigint, bigserial, text, integer, smallint, boolean, doublePrecision, timestamp, varchar, check, index, uniqueIndex, primaryKey, jsonb, customType } from "drizzle-orm/pg-core";
 import type { TableSource } from "@meldrift/core/table-card";
 import type { BoardStroke, StrokePoint } from "@meldrift/core/board-stroke";
 
@@ -108,6 +108,16 @@ export const db_boards = pgTable("boards", {
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     previewVersion: bigint("preview_version", { mode: "number" }),
+    privateFlg: smallint("private_flg").$type<0 | 1>().notNull().default(1),
+}, (table) => [
+    check("boards_private_flg_check", sql`${table.privateFlg} IN (0, 1)`),
+    index("boards_owner_id_idx").on(table.ownerId),
+]);
+
+export const db_boardPreviews = pgTable("board_previews", {
+    boardId: integer("board_id").primaryKey().references(() => db_boards.boardId, { onDelete: "cascade" }),
+    bytes: bytea("bytes").notNull(),
+    mimeType: text("mime_type").notNull(),
 });
 
 export const db_memos = pgTable("memos", {

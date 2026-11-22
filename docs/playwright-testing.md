@@ -13,7 +13,7 @@ Vitest는 공통 상태·변경분·저장 예약·이력·권한·카드 훅을
 | Plus 저장 | 로컬 저장 후 서버 디바운스, 변경 필드·자산 청크, revision, 복원·재시도 |
 | 인증 화면 | 로그인·가입 모달, 읽기 권한과 편집 권한의 구분 |
 
-Plus의 `board-snapshot.spec.ts`와 `board-delta.spec.ts`는 보드 메타데이터를 읽되 브라우저 API를 가짜 서버로 가로채 저장 응답을 검증한다. 실제 Neon 바이너리 전송·트랜잭션·배포 제한 검증을 대신하지 않는다. snapshot 테스트는 이전 저장 경로, delta 테스트는 변경분 저장 경로를 검증한다.
+Plus의 `board-snapshot.spec.ts`와 `board-delta.spec.ts`는 실제 소유자 세션으로 보드 페이지를 열고 브라우저의 저장 API를 모킹한다. snapshot 테스트는 이전 저장 경로, delta 테스트는 변경분 저장 경로를 검증한다. Neon에 배포된 환경의 바이너리 전송과 제한은 별도로 확인해야 한다.
 
 ## 실행
 
@@ -39,14 +39,13 @@ npm exec --workspace=meldrift-free -- playwright test --project=tablet-safari --
 
 ## 서버와 데이터
 
-Free는 기본 3100 포트를 사용한다. Plus는 3101의 Plus 서버와 3102의 Free 프록시를 통해 `/plus` 멀티존 경로를 검증한다. 이미 실행 중인 서버를 로컬에서는 재사용할 수 있다.
+Free는 기본 3100 포트를 사용한다. Plus는 3101의 Plus 서버와 3102의 Free 프록시를 통해 `/plus` 멀티존 경로를 검증한다. Plus의 로컬 실행은 3103에서 격리된 PostgreSQL을 시작하고 마이그레이션과 테스트 데이터를 적용한다.
 
 ```bash
 PLAYWRIGHT_BASE_URL=https://your-test-domain.example npm run test:e2e:plus
-E2E_BOARD_ID=13 npm run test:e2e:plus
 ```
 
-외부 URL을 지정하면 로컬 서버를 새로 실행하지 않는다. Plus에는 Neon 연결과 테스트용 보드 메타데이터가 필요하다. `E2E_BOARD_ID`가 없으면 첫 보드를 사용한다. 보드가 없을 때 일부 읽기 spec은 로컬에서 skip하지만 저장 흐름 spec은 fixture를 요구한다.
+외부 테스트 서버로 저장 테스트를 실행할 때는 `E2E_OWNER_EMAIL`과 `E2E_OWNER_PASSWORD`에 테스트용 작성 가능 계정을 지정한다. `E2E_BOARD_ID`를 지정하면 해당 보드를 사용하므로 계정에 편집 권한이 있어야 한다. 비로그인 화면 테스트에서도 해당 보드를 여는 경우 공개 테스트 보드를 지정한다.
 
 ## 실패 자료
 
@@ -68,8 +67,6 @@ npm ci → lint → typecheck → unit tests → Free/Plus build
 → Chromium/WebKit 설치 → Free E2E → Plus E2E
 ```
 
-- `NEON_CONNECTION_STRING`이 있을 때만 Plus E2E를 실행한다. 없으면 이유를 남기고 건너뛴다.
-- `E2E_BOARD_ID`는 선택 secret이다.
-- Dependabot 등 secret을 받지 못하는 실행의 Plus skip은 Plus 테스트 통과와 구분한다.
+- Plus E2E는 매번 격리된 PostgreSQL을 사용하므로 Neon 연결이나 테스트 계정 secret 없이 실행된다.
 - 취소되지 않은 실행은 각 앱의 HTML 보고서를 30일 artifact로 보관한다.
 - 같은 PR의 새 실행은 이전 실행을 취소한다.

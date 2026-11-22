@@ -22,7 +22,7 @@ describe("보드 전환 API: POST /api/boards/[boardId]/transition", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.user.mockResolvedValue({ id: 1, role: "admin", isApproved: true });
-        mocks.limit.mockResolvedValue([{ boardId: 7, title: "Board", width: 100, height: 80 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, title: "Board", width: 100, height: 80, privateFlg: 0, ownerId: "owner@example.com" }]);
         mocks.transition.mockResolvedValue({
             source: "snapshot", revision: 4, assets: 1,
             counts: { memos: 1, images: 1, mermaids: 0, tables: 0, strokes: 1 },
@@ -39,7 +39,7 @@ describe("보드 전환 API: POST /api/boards/[boardId]/transition", () => {
     it.each([["user"], [undefined]])("관리자만 보드를 전환할 수 있다: %s", async (role) => {
         mocks.user.mockResolvedValue(role ? { id: 1, role } : null);
 
-        expect((await call()).status).toBe(403);
+        expect((await call()).status).toBe(role ? 403 : 401);
         expect(mocks.transition).not.toHaveBeenCalled();
     });
 

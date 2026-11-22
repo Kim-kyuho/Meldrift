@@ -1,9 +1,9 @@
+import { boardAccess } from "@/lib/board-access";
 import { NextRequest, NextResponse } from "next/server";
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { db_boards, db_boardSnapshots, db_boardSync } from "@/lib/db/schema";
-import { getCurrentUserFromRequest, getCardPermissionMessage } from "@/lib/auth/current-user";
-import { getSessionTokenHash, sessionCookieName } from "@/lib/auth/session";
+import { db_boardSnapshots, db_boardSync } from "@/lib/db/schema";
+import { editorFromRequest, editorSessionGuard } from "@/lib/editor-guard";
 import { loadBoardState } from "@/lib/board-state-store";
 import { decodeSnapshot } from "@/lib/snapshot-codec";
 import { maxSnapshotBytes, snapshotFormatVersion } from "@/lib/snapshot";
@@ -11,16 +11,18 @@ import { maxSnapshotBytes, snapshotFormatVersion } from "@/lib/snapshot";
 type Context = { params: Promise<{ boardId: string }> };
 export const maxDuration = 60;
 
-export async function GET(_request: NextRequest, { params }: Context) {
+export async function GET(request: NextRequest, { params }: Context) {
     const boardId = Number((await params).boardId);
     if (!Number.isSafeInteger(boardId) || boardId <= 0) {
         return new NextResponse(null, { status: 404 });
     }
     const db = getDb();
-    const [board] = await db.select().from(db_boards).where(eq(db_boards.boardId, boardId)).limit(1);
-    if (!board) {
-        return new NextResponse(null, { status: 404 });
+    const gate = await boardAccess(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
     }
+    const { board } = gate;
+
     const [sync] = await db.select().from(db_boardSync).where(eq(db_boardSync.boardId, boardId)).limit(1);
     const mode = sync?.mode ?? "snapshot";
     if (mode !== "snapshot") {
@@ -46,12 +48,11 @@ export async function GET(_request: NextRequest, { params }: Context) {
 }
 
 export async function PUT(request: NextRequest, { params }: Context) {
-    const user = await getCurrentUserFromRequest(request);
-    const message = getCardPermissionMessage(user);
-    if (message || !user) {
-        return NextResponse.json({ message }, { status: 403 });
-    }
     const boardId = Number((await params).boardId);
+    const gate = await editorFromRequest(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
+    }
     const revisionHeader = request.headers.get("X-Snapshot-Revision");
     const revision = Number(revisionHeader);
     const mutationId = request.headers.get("X-Snapshot-Mutation") ?? "";
@@ -73,15 +74,13 @@ export async function PUT(request: NextRequest, { params }: Context) {
     } catch (error) {
         return NextResponse.json({ message: error instanceof Error ? error.message : "Invalid snapshot." }, { status: 400 });
     }
-    const hash = getSessionTokenHash(request.cookies.get(sessionCookieName)?.value);
     // The lease, session and expected revision are checked by the write itself.
     const result = await getDb().execute(sql`
         INSERT INTO board_snapshots (board_id, snapshot, format_version, revision, mutation_id)
         SELECT b.board_id, decode(${Buffer.from(bytes).toString("hex")}, 'hex'), ${snapshotFormatVersion},
             ${revision + 1}, ${mutationId}
-        FROM (SELECT board_id FROM boards WHERE board_id = ${boardId} FOR UPDATE) b, users u
-        WHERE b.board_id = ${boardId} AND u.id = ${user.id} AND u.permission_flg = true
-            AND u.session_token_hash = ${hash} AND u.session_expires_at > now()
+        FROM (SELECT board_id FROM boards WHERE board_id = ${boardId} FOR UPDATE) b
+        WHERE ${editorSessionGuard(gate.identity, boardId)}
             AND (${revision} = 0 OR EXISTS (SELECT 1 FROM board_snapshots WHERE board_id = ${boardId}))
             AND NOT EXISTS (SELECT 1 FROM board_sync WHERE board_id = ${boardId} AND mode <> 'snapshot')
         ON CONFLICT (board_id) DO UPDATE SET

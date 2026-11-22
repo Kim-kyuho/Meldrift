@@ -25,16 +25,16 @@ function request(headers: Record<string, string> = {}) {
 
 describe("스냅샷 API", () => {
     beforeEach(() => {
-        mocks.user.mockResolvedValue({ id: 5, isApproved: true });
+        mocks.user.mockResolvedValue({ id: 5, isApproved: true, email: "owner@example.com" });
         mocks.permission.mockReturnValue(null);
         mocks.execute.mockResolvedValue({ rows: [{ revision: 3 }] });
         mocks.decode.mockResolvedValue({});
-        mocks.limit.mockResolvedValue([{ boardId: 7 }]);
+        mocks.limit.mockResolvedValue([{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }]);
     });
 
     it("본문을 읽기 전에 미인증 쓰기를 거부한다", async () => {
         mocks.user.mockResolvedValue(null);
-        expect((await PUT(request(), context)).status).toBe(403);
+        expect((await PUT(request(), context)).status).toBe(401);
         expect(mocks.decode).not.toHaveBeenCalled();
         expect(mocks.execute).not.toHaveBeenCalled();
     });
@@ -86,7 +86,7 @@ describe("스냅샷 API", () => {
 
     it("캐시 없이 바이너리 바이트와 확정된 리비전을 반환한다", async () => {
         mocks.limit
-            .mockResolvedValueOnce([{ boardId: 7 }])
+            .mockResolvedValueOnce([{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }])
             .mockResolvedValueOnce([{ boardId: 7, mode: "snapshot", revision: 4 }])
             .mockResolvedValueOnce([{ snapshot: Buffer.from([1, 2, 3]), revision: 4, mutationId: "change-4" }]);
         const response = await GET(request(), context);
@@ -98,17 +98,17 @@ describe("스냅샷 API", () => {
 
     it("첫 스냅샷 이전에만 구버전 카드를 불러온다", async () => {
         mocks.limit
-            .mockResolvedValueOnce([{ boardId: 7 }])
+            .mockResolvedValueOnce([{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }])
             .mockResolvedValueOnce([{ boardId: 7, mode: "snapshot", revision: 0 }])
             .mockResolvedValueOnce([]);
         mocks.legacy.mockResolvedValue({ board: { boardId: 7 }, memos: [] });
         expect((await GET(request(), context)).status).toBe(200);
-        expect(mocks.legacy).toHaveBeenCalledWith({ boardId: 7 });
+        expect(mocks.legacy).toHaveBeenCalledWith(expect.objectContaining({ boardId: 7 }));
     });
 
     it("보드를 변경분 동기화로 전환하면 스냅샷 제공을 중단한다", async () => {
         mocks.limit
-            .mockResolvedValueOnce([{ boardId: 7 }])
+            .mockResolvedValueOnce([{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }])
             .mockResolvedValueOnce([{ boardId: 7, mode: "delta", revision: 9 }]);
         const response = await GET(request(), context);
         expect(response.headers.get("X-Storage-Mode")).toBe("delta");

@@ -19,7 +19,8 @@ test.describe("보드 목록", () => {
                 element.complete && element.naturalWidth > 0
             ), { message: "Meldrift logo must load successfully" }).toBe(true);
         }
-        await expect(page.getByRole("button", { name: "New Board" })).toBeVisible();
+        await expect(page.getByRole("combobox", { name: "Sort:", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "New Board" })).toHaveCount(0);
     });
 
     test("로그인 모달을 열고 닫는다", async ({ page }) => {

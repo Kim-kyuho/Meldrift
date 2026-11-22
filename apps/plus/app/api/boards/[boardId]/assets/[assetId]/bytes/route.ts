@@ -1,3 +1,4 @@
+import { boardAccess } from "@/lib/board-access";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
@@ -5,11 +6,16 @@ import { assetIdPattern } from "@/lib/assets";
 
 type Context = { params: Promise<{ boardId: string; assetId: string }> };
 
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(request: Request, { params }: Context) {
     const { boardId: rawBoardId, assetId } = await params;
     const boardId = Number(rawBoardId);
     if (!Number.isSafeInteger(boardId) || boardId <= 0 || !assetIdPattern.test(assetId)) {
         return new NextResponse(null, { status: 400 });
+    }
+
+    const gate = await boardAccess(request, boardId);
+    if (gate.failure) {
+        return gate.failure;
     }
 
     const result = await getDb().execute(sql`
