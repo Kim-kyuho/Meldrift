@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { createEmptyBoardSnapshot } from "@meldrift/board-data/board-state";
-import { useBoardSnapshot } from "@/hooks/useBoardSnapshot";
+import { useBoardSync } from "@/hooks/useBoardSync";
 
 const mocks = vi.hoisted(() => ({ createDatabase: vi.fn() }));
 vi.mock("@meldrift/board-data/browser-db/client", () => ({ createBoardDatabase: mocks.createDatabase }));
@@ -29,7 +29,7 @@ function makeDatabase() {
     };
 }
 
-describe("플러스 스냅샷 생명주기", () => {
+describe("플러스 보드 동기화 생명주기", () => {
     beforeEach(() => {
         sessionStorage.clear();
         sync = { revision: 1, generation: 1, dirty: false, changedAt: 0 };
@@ -48,7 +48,7 @@ describe("플러스 스냅샷 생명주기", () => {
     });
 
     it("같은 로컬 리비전은 가져오기 없이 불러오고 언마운트 시 데이터베이스를 닫는다", async () => {
-        const { result, unmount } = renderHook(() => useBoardSnapshot(board, true));
+        const { result, unmount } = renderHook(() => useBoardSync(board, true));
         await waitFor(() => expect(result.current.canEdit).toBe(true));
         expect(database.import).not.toHaveBeenCalled();
         expect(mocks.createDatabase).toHaveBeenCalledWith("meldrift-plus:editor%40example.com:7", board);
@@ -57,15 +57,15 @@ describe("플러스 스냅샷 생명주기", () => {
     });
 
     it("StrictMode에서도 초기화를 완료한다", async () => {
-        const { result, unmount } = renderHook(() => useBoardSnapshot(board, true), { wrapper: StrictMode });
+        const { result, unmount } = renderHook(() => useBoardSync(board, true), { wrapper: StrictMode });
         await waitFor(() => expect(result.current.canEdit).toBe(true));
         unmount();
     });
 
     it("같은 보드의 두 번째 화면을 거부하지 않고 연다", async () => {
-        const first = renderHook(() => useBoardSnapshot(board, true));
+        const first = renderHook(() => useBoardSync(board, true));
         await waitFor(() => expect(first.result.current.canEdit).toBe(true));
-        const second = renderHook(() => useBoardSnapshot(board, true));
+        const second = renderHook(() => useBoardSync(board, true));
         await waitFor(() => expect(second.result.current.canEdit).toBe(true));
         expect(second.result.current.status).not.toBe("blocked");
         first.unmount();
@@ -74,7 +74,7 @@ describe("플러스 스냅샷 생명주기", () => {
 
     it("서버 복원을 명시적으로 선택하기 전까지 충돌한 로컬 데이터를 보존한다", async () => {
         sync = { revision: 0, generation: 3, dirty: true, changedAt: Date.now(), mutationId: "local-change" };
-        const { result, unmount } = renderHook(() => useBoardSnapshot(board, true));
+        const { result, unmount } = renderHook(() => useBoardSync(board, true));
         await waitFor(() => expect(result.current.status).toBe("blocked"));
         expect(database.import).not.toHaveBeenCalled();
         expect(database.replace).not.toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe("플러스 스냅샷 생명주기", () => {
             }
             return response;
         });
-        const { result, unmount } = renderHook(() => useBoardSnapshot(board, true));
+        const { result, unmount } = renderHook(() => useBoardSync(board, true));
         await waitFor(() => expect(result.current.canEdit).toBe(true));
         expect(database.acknowledge).toHaveBeenCalledWith(3, 1);
         expect(database.import).not.toHaveBeenCalled();

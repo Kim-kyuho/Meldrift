@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 
-type UseBoardShortcutsOptions = {
+type UseHelpShortcutOptions = {
     onOpenHelp: () => void;
 };
 
-export function useBoardShortcuts({ onOpenHelp }: UseBoardShortcutsOptions) {
+export function useHelpShortcut({ onOpenHelp }: UseHelpShortcutOptions) {
     useEffect(() => {
         const handleHelpShortcut = (event: KeyboardEvent) => {
             const modifierPressed = event.ctrlKey || event.metaKey;

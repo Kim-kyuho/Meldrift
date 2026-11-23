@@ -58,7 +58,8 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
             : request<void>({ type: "replace", snapshot, dirty, ...options }),
         export: () => request<ArrayBuffer>({ type: "export" }),
         encode: (snapshot: BoardSnapshot) => request<ArrayBuffer>({ type: "encode", snapshot }),
-        decode: (bytes: ArrayBuffer) => request<BoardSnapshot>({ type: "decode", bytes }, [bytes]),
+        decode: (bytes: ArrayBuffer, expectedBoardId?: number) =>
+            request<BoardSnapshot>({ type: "decode", bytes, expectedBoardId }, [bytes]),
         import: (bytes: ArrayBuffer, revision = 0) =>
             request<BoardSnapshot>({ type: "import", bytes, revision }, [bytes]),
         record: () => request<StoredBoard>({ type: "record" }),
@@ -101,6 +102,5 @@ export type BoardDatabaseClient = ReturnType<typeof createBoardDatabase>;
 const freeDatabase = createBoardDatabase("meldrift-free", defaultBoard);
 export const loadBoardState = freeDatabase.load;
 export const replaceBoardState = (snapshot: BoardSnapshot) => freeDatabase.replace(snapshot);
-export const exportBoardDatabase = freeDatabase.export;
-export const importBoardDatabase = freeDatabase.import;
-export const resetBoardDatabase = freeDatabase.reset;
+export const encodeBoardDatabase = freeDatabase.encode;
+export const decodeBoardDatabase = (bytes: ArrayBuffer) => freeDatabase.decode(bytes, defaultBoard.boardId);

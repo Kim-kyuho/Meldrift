@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import SharedBoardClient, { type BoardControls as SharedBoardControls } from "@meldrift/ui/BoardClient";
+import SharedBoardClient from "@meldrift/ui/BoardClient";
+import type { BoardStorage } from "@meldrift/ui/board-storage";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
 import { useBoardAuth } from "@/hooks/useBoardAuth";
 import { useBoardPreview } from "@/hooks/useBoardPreview";
-import BoardControls from "./BoardControls";
-import type { BoardFileActions } from "@/hooks/useBoardTransfer";
+import BoardMenu from "./BoardMenu";
 import SignInModal from "./SignInModal";
 import SignUpModal from "./SignUpModal";
 import { canCreateBoard } from "@/lib/board-permissions";
+import { plusBoardGuide } from "@/lib/board-guide";
 import { useBoardLive } from "@/hooks/useBoardLive";
 import type { LiveRuntime } from "@/lib/live/client/runtime";
 
-type BoardClientProps = BoardFileActions & {
+type BoardClientProps = {
     initialSnapshot: BoardSnapshot;
     editingAllowed: boolean;
-    onSnapshotChange: (snapshot: BoardSnapshot) => void;
+    storage: BoardStorage;
     serverSaveVersion: number;
     live?: LiveRuntime | null;
 };
@@ -24,10 +25,8 @@ type BoardClientProps = BoardFileActions & {
 export default function BoardClient({
     initialSnapshot,
     editingAllowed,
-    onSnapshotChange,
+    storage,
     serverSaveVersion,
-    exportSnapshot,
-    readSnapshotFile,
     live = null,
 }: BoardClientProps) {
     const collaboration = useBoardLive(live);
@@ -52,15 +51,28 @@ export default function BoardClient({
         }
     }, [serverSaveVersion, canEdit, schedulePreviewUpdate]);
 
-    const renderControls = (controls: SharedBoardControls) => (
+    return (
         <>
-            <BoardControls
-                controls={controls}
+            <SharedBoardClient
+                initialSnapshot={initialSnapshot}
+                storage={storage}
+                guide={plusBoardGuide}
                 canEdit={canEdit}
-                onSnapshotChange={onSnapshotChange}
-                exportSnapshot={exportSnapshot}
-                readSnapshotFile={readSnapshotFile}
-                auth={{ currentUser, setSignInOpen, setSignUpOpen, onSignOut: handleSignOut }}
+                canExport={Boolean(currentUser)}
+                permissionMessage={currentUser
+                    ? "You can view this board, but you cannot edit it."
+                    : "Please sign in before editing cards."}
+                viewportRef={viewportRef}
+                renderMenu={(menu) => (
+                    <BoardMenu
+                        {...menu}
+                        currentUser={currentUser}
+                        setSignInOpen={setSignInOpen}
+                        setSignUpOpen={setSignUpOpen}
+                        onSignOut={handleSignOut}
+                    />
+                )}
+                collaboration={collaboration}
             />
             {signInOpen && (
                 <SignInModal
@@ -70,18 +82,5 @@ export default function BoardClient({
             )}
             {signUpOpen && <SignUpModal onClose={() => setSignUpOpen(false)} />}
         </>
-    );
-
-    return (
-        <SharedBoardClient
-            initialSnapshot={initialSnapshot}
-            canEdit={canEdit}
-            permissionMessage={currentUser
-                ? "You can view this board, but you cannot edit it."
-                : "Please sign in before editing cards."}
-            viewportRef={viewportRef}
-            renderControls={renderControls}
-            collaboration={collaboration}
-        />
     );
 }

@@ -1,60 +1,53 @@
 # BoardClient 상세설계
 
-소스: `packages/ui/src/features/board/BoardClient.tsx`
+소스: `packages/ui/src/features/board/BoardClient.tsx`, `packages/ui/src/features/board/BoardWorkspace.tsx`
 
 보드 화면 전체다. 카드 네 종류, 드로잉, 다중 선택, 검색, 탐색, 줌, 순서 패널, 단축키, Undo/Redo, Markdown 뷰, AI 어시스턴트를 여기서 조립한다. 두 Edition이 같은 파일을 쓴다.
 
-Edition마다 다른 것은 **저장 방식과 껍데기**뿐이라, 그 둘만 밖으로 뺐다.
+Edition마다 다른 것은 **저장소, 메뉴 껍데기, 보드 위 오버레이**뿐이라 그것만 밖에서 받는다. 저장 예약과 반출입 흐름은 [BoardControls](./board-controls.md)가 안에서 처리한다.
+
+## 두 겹
+
+| 컴포넌트 | 역할 |
+| --- | --- |
+| `BoardClient` | 앱이 쓰는 입구. 일반 보드와 튜토리얼 샌드박스를 바꿔 끼우고, 새 보드 첫 진입이면 Help를 자동으로 연다 |
+| `BoardWorkspace` | 보드 화면 본체. 카드·드로잉·선택·검색·줌·이력·협업과 `BoardControls`, Help·튜토리얼 화면을 조립한다 |
+
+일반 보드와 튜토리얼 보드는 동시에 마운트하지 않는다. 자세한 전환 규칙은 [인터랙티브 튜토리얼](./interactive-tutorial.md), 첫 진입 규칙은 [Help](./help-modal.md)를 참조한다.
 
 ## 계약
 
 ```ts
 type BoardClientProps = {
     initialSnapshot: BoardSnapshot;
+    storage?: BoardStorage;
+    guide?: BoardGuide;
     canEdit?: boolean;
+    canExport?: boolean;
     permissionMessage?: string;
     viewportRef?: RefObject<HTMLDivElement | null>;
-    renderControls: (controls: BoardControls) => ReactNode;
-    renderBoardOverlay?: (info: { snapshot: BoardSnapshot; zoom: number; cornerLinks: MemoCornerLink[] }) => ReactNode;
+    menuTitle?: string;
+    renderMenu: (menu: BoardMenuControls) => ReactNode;
+    collaboration?: BoardCollaboration;
 };
 ```
 
 | Prop | 기본값 | 의미 |
 | --- | --- | --- |
 | `initialSnapshot` | 필수 | 화면을 채울 초기 보드. 이미 읽혀 있는 값이어야 한다 |
+| `storage` | 없음 | 저장과 세이브 파일 구현. 없으면 저장하지 않고 파일 항목을 잠근다. [BoardControls](./board-controls.md) 참조 |
+| `guide` | 없음 | Help 문서·마스코트 경로와 첫 진입 기록 범위. 없으면 Help와 튜토리얼이 꺼진다. [Help](./help-modal.md) 참조 |
 | `canEdit` | `true` | 카드 편집 허용 여부. Free는 넘기지 않고, Plus는 계정 권한과 보드가 열린 상태인지를 곱해 넘긴다 |
+| `canExport` | `true` | 세이브 파일 내보내기 허용 여부. Plus는 로그인 여부를 넘긴다 |
 | `permissionMessage` | `Please sign in before editing cards.` | `canEdit`이 false일 때 띄울 문구 |
-| `viewportRef` | 내부 ref | 보드 스크롤 레이어. Plus가 미리보기 캡처에, Free 튜토리얼이 쇼케이스 기준 좌표 계산에 사용한다 |
-| `renderControls` | 필수 | 메뉴와 저장 계층을 Edition이 그린다 |
-| `renderBoardOverlay` | 선택 | 캔버스 내부(`BoardCornerLinksLayer` 뒤)에 추가 오버레이 SVG 등을 그린다. Free 튜토리얼의 50px 반경 시각화 등에 사용한다 |
+| `viewportRef` | 내부 ref | 보드 스크롤 레이어. Plus가 미리보기 캡처에 쓴다. 튜토리얼 보드에는 넘기지 않는다 |
+| `menuTitle` | 보드 제목 | 메뉴 머리 제목. Free는 `Free Board`를 넘긴다. 튜토리얼에서는 샌드박스 보드 제목을 쓴다 |
+| `renderMenu` | 필수 | 앱별 메뉴 래퍼를 그린다. 넘겨받은 `BoardMenuControls`를 공통 `BoardMenu`에 펼쳐 넣는다 |
+| `collaboration` | 없음 | Plus Live 협업 상태와 동작. 튜토리얼 보드에는 넘기지 않는다 |
 
 `initialSnapshot`을 Promise나 `null`로 받지 않는다. **불러오기는 껍데기의 일이고**, 이 컴포넌트는 값이 있는 상태로만 마운트된다.
 
-## `renderControls`
-
-Edition이 그려 넣는 자리다. 넘겨받는 값은 이렇다.
-
-| 값 | 의미 |
-| --- | --- |
-| `snapshot` | 현재 화면 전체를 담은 값 |
-| `savePaused` | 지금 저장하면 안 되는 상태인가 |
-| `isEditing` | 카드 네 종류 중 하나라도 편집 중인지 여부 |
-| `markdownViewOpen` | Markdown 미리보기 모달 열림 여부 |
-| `boardZoom` | 현재 보드 확대/축소 배율 |
-| `cornerLinks` | 계산된 50px 메모 코너 연결 목록 |
-| `setMessage` | 보드 메시지 띄우기 |
-| `menuOpen`, `setMenuOpen` | 보드 메뉴 열림 상태 |
-| `reorderOpen`, `onReorder` | 순서 패널 상태와 토글 |
-| `onCompileMarkdown`, `onAbout` | Markdown 뷰·About 열기 |
-| `closeOverlays` | 메뉴·About·Markdown 뷰를 한꺼번에 닫기 |
-| `replaceSnapshot` | 현재 보드의 내용을 교체하고 내부 카드 상태·선택·편집을 정리한다. Import·Reset도 이 경로를 쓰며 이력에 기록한다 |
-
-저장은 이 컴포넌트가 하지 않는다. `snapshot`과 `savePaused`를 내주기만 하고, 그것으로 무엇을 할지는 Edition이 정한다.
-
-| Edition | `renderControls`가 그리는 것 |
-| --- | --- |
-| Free | `BoardControls` — 보드 메뉴, Help, 반출입, `useBoardPersistance`(브라우저 DB 저장) |
-| Plus | `BoardControls`의 공통 메뉴·반출입·`useBoardPersistence`, 로그인·가입 모달. 로컬 저장은 `onSnapshotChange`로 동기화 계층에 전달 |
+앱이 그리는 것은 메뉴 래퍼(`renderMenu`) 하나뿐이다. 저장·반출입은 `BoardControls`, Help·튜토리얼은 `BoardWorkspace`가 내부 상태로 직접 그린다. 앱으로 보드 내부 상태를 내보내는 통로는 없다.
 
 ## 스냅샷
 
@@ -108,7 +101,9 @@ Undo/Redo 실행과 `onGeometryChange`로 전달된 카드 좌표 반영도 같�
 
 ```text
 hidden image input
-renderControls(...)          ← Edition이 그리는 자리
+BoardControls               ← 저장 예약, 반출입, renderMenu(...)
+HelpOverlay (help)          ← Help 모달, Help 종료 후 런처, Help 단축키
+TutorialGuide (tutorial)    ← 튜토리얼 단계 안내
 BoardHistoryToolbar         ← 하단 중앙 Undo/Redo
 BoardToolBar
 SelectionToolBar (cardsSelected)
@@ -145,3 +140,4 @@ main
 - 새 카드 종류는 컬렉션 훅, 스냅샷 조립, 레이어 계산, Markdown 컴파일, `board-state` 스키마, SQLite 스키마를 함께 본다.
 - `viewportRef`는 좌표 계산·패닝·Plus 미리보기 캡처가 공유한다. 다른 DOM으로 옮기면 셋의 기준이 동시에 바뀐다.
 - `savePaused`에 조건을 더하면 Free의 자동 저장과 Plus의 서버 업로드가 같이 멈춘다.
+- 메뉴 항목의 잠금 조건은 `BoardControls`가 계산한다. 앱 메뉴 래퍼에 권한 판단을 다시 넣지 않는다.

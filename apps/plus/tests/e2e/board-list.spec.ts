@@ -99,6 +99,15 @@ test.describe("보드 목록", () => {
         expect(created.ok()).toBe(true);
         const { board: { boardId } } = await created.json();
         await gotoHydratedPage(page, `/boards/${boardId}`);
+        const help = page.getByRole("dialog", { name: "Help" });
+        await expect(help).toBeVisible();
+        await expect(help.getByText("Meldrift+ Storage")).toBeVisible();
+        await help.getByRole("button", { name: "Close Help" }).click();
+        await page.getByRole("button", { name: "Close (Esc)" }).click();
+        await gotoHydratedPage(page, `/boards/${boardId}`);
+        await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: 20000 });
+        await expect(help).toHaveCount(0);
+
         await getBoardMenuButton(page).click();
         await expect(page.getByText(boardTitle, { exact: true })).toBeVisible();
         await expect(page.getByRole("separator")).toBeVisible();

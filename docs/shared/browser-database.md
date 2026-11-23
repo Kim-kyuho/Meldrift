@@ -45,7 +45,7 @@ createBoardDatabase(storageName, board)
 | `replace` | `snapshot`, `dirty` | 없음 |
 | `export` | 없음 | `ArrayBuffer` (SQLite 파일 바이트) |
 | `encode` | `snapshot` | `ArrayBuffer` — 현재 DB를 건드리지 않고 만든 세이브 파일 |
-| `decode` | `bytes: ArrayBuffer` | `BoardSnapshot` — 검증만 하고 반영하지 않는다 |
+| `decode` | `bytes: ArrayBuffer`, `expectedBoardId?` | `BoardSnapshot` — 검증만 하고 반영하지 않는다. `expectedBoardId`를 주면 그 보드의 파일만 받는다 |
 | `import` | `bytes: ArrayBuffer`, `revision` | 교체 후의 `BoardSnapshot` |
 | `record` | 없음 | `{ bytes, sync }` |
 | `acknowledge` | `generation`, `revision` | 없음 |

@@ -1,32 +1,35 @@
 "use client";
 
 import type { BoardInfo } from "@meldrift/board-data/board-state";
-import { useBoardSnapshot } from "@/hooks/useBoardSnapshot";
+import { useBoardSync } from "@/hooks/useBoardSync";
 import BoardClient from "./BoardClient";
 
-type BoardSnapshotClientProps = { board: BoardInfo; editingAllowed: boolean; collaborative?: boolean };
+type BoardSyncProps = { board: BoardInfo; editingAllowed: boolean; collaborative?: boolean };
 
-export default function BoardSnapshotClient({ board, editingAllowed, collaborative = false }: BoardSnapshotClientProps) {
+export default function BoardSync({ board, editingAllowed, collaborative = false }: BoardSyncProps) {
     const {
         snapshot,
         status,
         message,
         canEdit,
-        save,
+        storage,
         downloadLocal,
         restoreServer,
         serverSaveVersion,
-        exportSnapshot,
-        readSnapshotFile,
         live,
-    } = useBoardSnapshot(board, editingAllowed, collaborative);
+    } = useBoardSync(board, editingAllowed, collaborative);
     return (
         <>
             {snapshot && (
                 <div inert={status === "blocked"}>
-                    <BoardClient key={board.boardId} initialSnapshot={snapshot} editingAllowed={canEdit}
-                        onSnapshotChange={save} serverSaveVersion={serverSaveVersion}
-                        exportSnapshot={exportSnapshot} readSnapshotFile={readSnapshotFile} live={live} />
+                    <BoardClient
+                        key={board.boardId}
+                        initialSnapshot={snapshot}
+                        editingAllowed={canEdit}
+                        storage={storage}
+                        serverSaveVersion={serverSaveVersion}
+                        live={live}
+                    />
                 </div>
             )}
             {!snapshot || status === "blocked" ? (

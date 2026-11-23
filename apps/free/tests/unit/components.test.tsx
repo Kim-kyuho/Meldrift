@@ -49,15 +49,19 @@ describe("프리 보드 컨트롤", () => {
         render(<BoardMenu
             menuOpen
             setMenuOpen={setMenuOpen}
-            exportDisabled
-            transferring={false}
-            resetting={false}
-            reorderOpen={false}
-            onReorder={vi.fn()}
-            onExport={vi.fn()}
-            onImport={vi.fn()}
-            onCompileMarkdown={vi.fn()}
-            onReset={onReset}
+            title="Free Board"
+            boardActions={{
+                reorderOpen: false,
+                exportDisabled: true,
+                exportPaused: true,
+                importDisabled: false,
+                resetDisabled: false,
+                onReorder: vi.fn(),
+                onExport: vi.fn(),
+                onImport: vi.fn(),
+                onCompileMarkdown: vi.fn(),
+                onReset,
+            }}
             onAbout={vi.fn()}
         />);
 

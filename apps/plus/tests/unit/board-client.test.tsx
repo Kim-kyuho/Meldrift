@@ -1,41 +1,34 @@
-import { act, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import SharedBoardClient from "@meldrift/ui/BoardClient";
+import type { BoardStorage } from "@meldrift/ui/board-storage";
 import { createEmptyBoardSnapshot } from "@meldrift/board-data/board-state";
 import BoardClient from "@/components/BoardClient";
 
 const mocks = vi.hoisted(() => ({
-    canEditCard: true,
-    savePaused: false,
-    changedSnapshot: null as unknown,
+    approved: true,
+    signedIn: true,
     schedulePreviewUpdate: vi.fn(),
-    setMessage: vi.fn(),
+    sharedProps: null as ComponentProps<typeof SharedBoardClient> | null,
+    menuProps: null as Record<string, unknown> | null,
 }));
 
 vi.mock("@meldrift/ui/BoardClient", () => ({
-    default: vi.fn((props: ComponentProps<typeof SharedBoardClient>) => (
-        <div data-testid="shared-board" data-can-edit={props.canEdit}>
-            {props.renderControls({
-                snapshot: (mocks.changedSnapshot ?? props.initialSnapshot) as typeof props.initialSnapshot,
-                savePaused: mocks.savePaused,
-                setMessage: mocks.setMessage,
-                menuOpen: false,
-                setMenuOpen: vi.fn(),
-                reorderOpen: false,
-                onReorder: vi.fn(),
-                onCompileMarkdown: vi.fn(),
-                onAbout: vi.fn(),
-                closeOverlays: vi.fn(),
-                replaceSnapshot: vi.fn(),
-            })}
-        </div>
-    )),
+    default: vi.fn((props: ComponentProps<typeof SharedBoardClient>) => {
+        mocks.sharedProps = props;
+        return (
+            <div data-testid="shared-board" data-can-edit={props.canEdit} data-can-export={props.canExport}>
+                {props.renderMenu({ menuOpen: false, setMenuOpen: vi.fn(), onAbout: vi.fn() })}
+            </div>
+        );
+    }),
 }));
 vi.mock("@/hooks/useBoardAuth", () => ({
     useBoardAuth: () => ({
-        canEditCard: mocks.canEditCard,
-        currentUser: { email: "editor@example.com", isApproved: mocks.canEditCard, role: "user" },
+        currentUser: mocks.signedIn
+            ? { email: "editor@example.com", isApproved: mocks.approved, role: "user" }
+            : null,
         signInOpen: false, signUpOpen: false,
         setSignInOpen: vi.fn(), setSignUpOpen: vi.fn(),
         setCurrentUser: vi.fn(), handleSignOut: vi.fn(),
@@ -44,111 +37,82 @@ vi.mock("@/hooks/useBoardAuth", () => ({
 vi.mock("@/hooks/useBoardPreview", () => ({
     useBoardPreview: () => ({ schedulePreviewUpdate: mocks.schedulePreviewUpdate }),
 }));
-vi.mock("@/components/BoardMenu", () => ({ default: () => null }));
+vi.mock("@/components/BoardMenu", () => ({
+    default: (props: Record<string, unknown>) => {
+        mocks.menuProps = props;
+        return null;
+    },
+}));
 vi.mock("@/components/SignInModal", () => ({ default: () => null }));
 vi.mock("@/components/SignUpModal", () => ({ default: () => null }));
 
 describe("플러스 공통 보드 통합", () => {
-    const files = {
-        exportSnapshot: vi.fn(async () => new ArrayBuffer(16)),
-        readSnapshotFile: vi.fn(async () => createEmptyBoardSnapshot()),
-    };
+    const storage: BoardStorage = { save: vi.fn() };
+    const initialSnapshot = createEmptyBoardSnapshot();
+    const props = { initialSnapshot, storage, editingAllowed: true, serverSaveVersion: 0 };
+
     beforeEach(() => {
-        vi.useFakeTimers();
-        mocks.canEditCard = true;
-        mocks.savePaused = false;
-        mocks.changedSnapshot = null;
-    });
-    afterEach(() => vi.useRealTimers());
-
-    it("변경을 합치고 언마운트 후에는 저장하지 않는다", async () => {
-        const initialSnapshot = createEmptyBoardSnapshot();
-        const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
-        const { rerender, unmount } = render(<BoardClient {...props} />);
-        mocks.changedSnapshot = { ...initialSnapshot, strokes: [] };
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(100));
-
-        const latest = { ...initialSnapshot, strokes: [] };
-        mocks.changedSnapshot = latest;
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(149));
-        expect(onSnapshotChange).not.toHaveBeenCalled();
-        await act(async () => vi.advanceTimersByTimeAsync(1));
-        expect(onSnapshotChange).toHaveBeenCalledExactlyOnceWith(latest);
-
-        mocks.changedSnapshot = { ...latest, strokes: [] };
-        rerender(<BoardClient {...props} />);
-        unmount();
-        await act(async () => vi.advanceTimersByTimeAsync(150));
-        expect(onSnapshotChange).toHaveBeenCalledTimes(1);
+        mocks.approved = true;
+        mocks.signedIn = true;
+        mocks.sharedProps = null;
+        mocks.menuProps = null;
     });
 
-    it.each(["editing", "permission"])("%s 변경 시 예약된 저장을 취소하고 최신 스냅샷으로 재개한다", async (reason) => {
-        const initialSnapshot = createEmptyBoardSnapshot();
-        const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
+    it("저장소를 공통 에디터에 그대로 넘긴다", () => {
+        render(<BoardClient {...props} />);
+
+        expect(mocks.sharedProps?.storage).toBe(storage);
+    });
+
+    it("승인된 편집자에게 편집과 내보내기를 허용한다", () => {
+        render(<BoardClient {...props} />);
+
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "true");
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-export", "true");
+    });
+
+    it("보드 권한이나 계정 승인이 없으면 편집을 막고, 로그인했다면 내보내기는 허용한다", () => {
+        const { rerender } = render(<BoardClient {...props} editingAllowed={false} />);
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "false");
+
+        mocks.approved = false;
+        rerender(<BoardClient {...props} />);
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "false");
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-export", "true");
+    });
+
+    it("로그인하지 않으면 내보내기도 막는다", () => {
+        mocks.signedIn = false;
+        render(<BoardClient {...props} />);
+
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "false");
+        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-export", "false");
+    });
+
+    it("메뉴에 계정 정보를 넘긴다", () => {
+        render(<BoardClient {...props} />);
+
+        expect(mocks.menuProps?.currentUser).toEqual(expect.objectContaining({ email: "editor@example.com" }));
+    });
+
+    it("Plus Help 문서와 마스코트로 안내를 켠다", () => {
+        render(<BoardClient {...props} />);
+
+        expect(mocks.sharedProps?.guide).toEqual(expect.objectContaining({
+            key: "plus",
+            helpMarkdownUrl: "/plus/help/Help_Meldrift.md",
+            mascotUrl: "/plus/meldrift-mascot.png",
+        }));
+    });
+
+    it("서버 저장이 끝나면 편집자에게만 미리보기 갱신을 예약한다", () => {
         const { rerender } = render(<BoardClient {...props} />);
-        mocks.changedSnapshot = { ...initialSnapshot, strokes: [] };
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(100));
+        expect(mocks.schedulePreviewUpdate).not.toHaveBeenCalled();
 
-        mocks.savePaused = reason === "editing";
-        rerender(<BoardClient {...props} editingAllowed={reason !== "permission"} />);
-        await act(async () => vi.advanceTimersByTimeAsync(500));
-        expect(onSnapshotChange).not.toHaveBeenCalled();
-
-        const latest = { ...initialSnapshot, strokes: [] };
-        mocks.changedSnapshot = latest;
-        mocks.savePaused = false;
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(150));
-        expect(onSnapshotChange).toHaveBeenCalledExactlyOnceWith(latest);
-    });
-
-    it("초기 데이터는 재전송하지 않고 편집 종료 150ms 후 변경 데이터를 저장한다", async () => {
-        const initialSnapshot = createEmptyBoardSnapshot();
-        const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: true, serverSaveVersion: 0, ...files };
-        const { rerender } = render(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(150));
-        expect(onSnapshotChange).not.toHaveBeenCalled();
-
-        const updated = { ...initialSnapshot, strokes: [...initialSnapshot.strokes] };
-        mocks.changedSnapshot = updated;
-        mocks.savePaused = true;
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(150));
-        expect(onSnapshotChange).not.toHaveBeenCalled();
-
-        mocks.savePaused = false;
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(149));
-        expect(onSnapshotChange).not.toHaveBeenCalled();
-        await act(async () => vi.advanceTimersByTimeAsync(1));
-        expect(onSnapshotChange).toHaveBeenCalledExactlyOnceWith(updated);
         rerender(<BoardClient {...props} serverSaveVersion={1} />);
-        expect(onSnapshotChange).toHaveBeenCalledTimes(1);
         expect(mocks.schedulePreviewUpdate).toHaveBeenCalledOnce();
-    });
 
-    it("계정·리스 권한을 공통 에디터에 전달하고 저장을 차단한다", async () => {
-        const initialSnapshot = createEmptyBoardSnapshot();
-        const onSnapshotChange = vi.fn();
-        const props = { initialSnapshot, onSnapshotChange, editingAllowed: false, serverSaveVersion: 0, ...files };
-        const { rerender } = render(<BoardClient {...props} />);
-        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "false");
-
-        mocks.changedSnapshot = { ...initialSnapshot, strokes: [] };
-        rerender(<BoardClient {...props} />);
-        await act(async () => vi.advanceTimersByTimeAsync(150));
-        expect(onSnapshotChange).not.toHaveBeenCalled();
-
-        mocks.canEditCard = false;
-        rerender(<BoardClient {...props} editingAllowed />);
-        await act(async () => vi.advanceTimersByTimeAsync(150));
-        expect(screen.getByTestId("shared-board")).toHaveAttribute("data-can-edit", "false");
-        expect(onSnapshotChange).not.toHaveBeenCalled();
+        rerender(<BoardClient {...props} editingAllowed={false} serverSaveVersion={2} />);
+        expect(mocks.schedulePreviewUpdate).toHaveBeenCalledOnce();
     });
 });

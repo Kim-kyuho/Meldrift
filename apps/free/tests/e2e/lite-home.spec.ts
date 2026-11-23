@@ -120,7 +120,7 @@ test.describe("Meldrift 프리 보드 첫 화면", () => {
 
         await getBoardMenuButton(page).click();
         await page.getByRole("button", { name: "Reset" }).click();
-        await expect(page.getByRole("heading", { name: "Reset Meldrift Free Edition?" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Reset this board?" })).toBeVisible();
         await expect(page.getByText("All cards and drawings on this board will be removed. You can undo this change until you reload the page.")).toBeVisible();
         await page.getByRole("button", { name: "No" }).click();
         await expect(imageCard).toBeVisible();
@@ -151,7 +151,7 @@ test.describe("Meldrift 프리 보드 첫 화면", () => {
 });
 
 test.describe("Meldrift 프리 보드 도움말", () => {
-    test("빈 보드에서 도움말을 열고 Ctrl·Command 도움말 단축키로 다시 연다", async ({ page }) => {
+    test("새 보드 첫 진입에만 도움말을 열고 Ctrl·Command 도움말 단축키로 다시 연다", async ({ page }) => {
         await page.goto("/");
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
 
@@ -179,9 +179,8 @@ test.describe("Meldrift 프리 보드 도움말", () => {
 
         await page.reload();
         await expect(page.locator(".board-scroll-layer")).toBeVisible();
-        await expect(helpDialog).toBeVisible();
+        await expect(helpDialog).toHaveCount(0);
 
-        await helpDialog.getByRole("button", { name: "Close Help" }).click();
         await getBoardToolButton(page, "lucide-square-pen").click();
         const editingCard = page.locator(".card-editing");
         await expect(editingCard).toBeVisible();

@@ -25,8 +25,9 @@ export function rankMemoOrders(memos: { id: number; storedOrder: number }[]) {
     );
 }
 
+// 태그 안에 '<'를 허용하지 않아 '<'가 반복된 입력에서도 선형 시간에 끝난다. 메모 본문의 '<'는 &lt;로 저장된다.
 export const memoPlainText = (content: string) =>
-    content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    content.replace(/<[^<>]*>/g, " ").replace(/\s+/g, " ").trim();
 
 
 export function reorderMemos<T extends OrderedMemo>(memos: T[], memoId: number, targetIndex: number): T[] {

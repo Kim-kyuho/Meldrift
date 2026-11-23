@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createBoardDatabase, type BoardDatabaseClient } from "@meldrift/board-data/browser-db/client";
 import { createAssetId, type BoardInfo, type BoardSnapshot } from "@meldrift/board-data/board-state";
 import { prepareImageFile } from "@meldrift/board-data/image-file";
+import { createPlusBoardStorage } from "@/lib/board-storage";
 import { SnapshotSync, type SyncStatus } from "@/lib/snapshot-sync";
 import { ChangeSync, lookupChange } from "@/lib/change-sync";
 import { downloadAsset } from "@/lib/asset-download";
@@ -15,7 +16,7 @@ type BoardSync = SnapshotSync | ChangeSync;
 
 const conflictMessage = "Local unsaved changes conflict with the server. Download the local backup before restoring the server version.";
 
-// 열어 보니 미전송 변경이 있고 그 사이 다른 사람이 커밋했다면, 키가 겹치지 않는 한 그 변경을 받아 이어 쓴다.
+// 미전송 변경이 있고 그 사이 다른 사람이 커밋했다면, 키가 겹치지 않는 한 그 변경을 받아 이어 쓴다.
 async function catchUpFromLog(database: BoardDatabaseClient, boardEndpoint: string, from: number, signal: AbortSignal) {
     const outbox = await database.outbox();
     const pending = new Set(touchedKeysOf([
@@ -108,7 +109,7 @@ type State = {
 // the same browser database.
 let editorCleanup = Promise.resolve();
 
-export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean, collaborative = false) {
+export function useBoardSync(board: BoardInfo, editingAllowed: boolean, collaborative = false) {
     const [serverSaveVersion, setServerSaveVersion] = useState(0);
     const [state, setState] = useState<State>({ snapshot: null, status: "saved", message: "", canEdit: false, live: null });
     const managerRef = useRef<BoardSync | null>(null);
@@ -282,6 +283,10 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean, coll
         }
         return databaseRef.current.decode(bytes);
     }, []);
+    const storage = useMemo(
+        () => createPlusBoardStorage({ save, encode: exportSnapshot, decode: readSnapshotFile }),
+        [save, exportSnapshot, readSnapshotFile],
+    );
     const downloadLocal = useCallback(async () => {
         const bytes = await databaseRef.current?.export();
         if (!bytes) {
@@ -318,5 +323,5 @@ export function useBoardSnapshot(board: BoardInfo, editingAllowed: boolean, coll
             setState((prev) => ({ ...prev, message: error instanceof Error ? error.message : "Restore failed." }));
         }
     }, [board.boardId]);
-    return { ...state, save, downloadLocal, restoreServer, serverSaveVersion, exportSnapshot, readSnapshotFile };
+    return { ...state, storage, downloadLocal, restoreServer, serverSaveVersion };
 }

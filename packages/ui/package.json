@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     "./BoardClient": "./src/features/board/BoardClient.tsx",
+    "./board-storage": "./src/features/board/board-storage.ts",
+    "./board-guide": "./src/features/guide/board-guide.ts",
     "./BoardCornerLinksLayer": "./src/features/board/BoardCornerLinksLayer.tsx",
     "./BoardMarkdownView": "./src/features/markdown/BoardMarkdownView.tsx",
     "./ImageCard": "./src/features/image/ImageCard.tsx",

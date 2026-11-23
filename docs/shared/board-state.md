@@ -75,6 +75,7 @@ BoardImage = imageId, boardId, syncId, assetId, url, data, mimeType, label, x, y
 | --- | --- |
 | `createEmptyBoardSnapshot()` | 기본 보드 하나에 카드·획이 전부 빈 스냅샷 |
 | `parseBoardSnapshot(value)` | 통과하면 검증된 스냅샷, 실패하면 `The SQLite file contains invalid Meldrift Free Edition data.` |
+| `assignSnapshotToBoard(snapshot, board)` | 보드 정보를 `board`로 바꾸고 카드별 `boardId`를 맞춘다. 세이브 파일 Import에서 현재 보드에 적용할 때 쓴다 |
 | `nextPositiveId(ids)` | 양수 id 중 최댓값 + 1. 비어 있으면 1 |
 
 `createSyncId()`와 `createAssetId()`는 신규 객체·자산의 ID를 생성한다. `reissueSyncIds()`는 파일을 복제 Import할 때 카드·획·로컬 자산의 ID를 재발급한다. 서버 복원과 Undo/Redo에는 이 재발급을 적용하지 않는다.

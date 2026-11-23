@@ -17,7 +17,7 @@ import {
     getTutorialStepMeta,
     tutorialTotalSteps,
     type TutorialStepId,
-} from "@/lib/tutorial";
+} from "./tutorial";
 
 export type TutorialChecklistItem = {
     label: string;

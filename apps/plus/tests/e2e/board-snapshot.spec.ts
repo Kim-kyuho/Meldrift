@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { getBoardToolButton } from "./helpers";
+import { closeFirstEntryHelp, getBoardToolButton } from "./helpers";
 import { ownerSession } from "./owner-session";
 
 test.describe.configure({ timeout: 60000 });
@@ -75,6 +75,7 @@ async function openBoard(page: Page) {
     }
     // 클라이언트 화면 이동에는 개발 서버의 최초 컴파일과 SQLite 워커 초기화가 포함된다.
     await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: 20000 });
+    await closeFirstEntryHelp(page);
     await expect(page.getByRole("status", { name: "" }).filter({ hasText: /^Saved$/ })).toBeVisible({ timeout: 10000 });
 }
 

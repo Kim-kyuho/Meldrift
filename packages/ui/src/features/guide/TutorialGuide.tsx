@@ -1,21 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import SharedBoardClient, { type BoardControls } from "@meldrift/ui/BoardClient";
-import { cornerLinkRadius } from "@meldrift/core/cards";
-import { createEmptyBoardSnapshot, type BoardSnapshot } from "@meldrift/board-data/board-state";
-import BoardMenu from "./BoardMenu";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { cornerLinkRadius, type MemoCornerLink } from "@meldrift/core/cards";
+import type { BoardMemo, BoardSnapshot } from "@meldrift/board-data/board-state";
+import type { BoardTutorialOptions } from "./board-guide";
 import TutorialOverlay, { type TutorialChecklistItem } from "./TutorialOverlay";
 import {
     buildTutorialShowcaseSnapshot,
     getMemoOrderKey,
     loadTutorialMascotBytes,
     type TutorialStepId,
-} from "@/lib/tutorial";
-
-type TutorialBoardClientProps = {
-    onExit: () => void;
-};
+} from "./tutorial";
 
 type TutorialProgressState = {
     step5Compiled: boolean;
@@ -31,40 +26,47 @@ const initialProgress: TutorialProgressState = {
     step6Recompiled: false,
 };
 
-const noopAsync = async () => {};
-
-type TutorialSandboxControlsProps = BoardControls & {
-    step: TutorialStepId;
-    setStep: (step: TutorialStepId) => void;
-    viewportRef: React.RefObject<HTMLDivElement | null>;
-    mascotBytesRef: React.RefObject<Uint8Array | null>;
-    onExit: () => void;
+type TutorialGuideProps = {
+    tutorial: BoardTutorialOptions;
+    snapshot: BoardSnapshot;
+    isEditing: boolean;
+    markdownViewOpen: boolean;
+    boardZoom: number;
+    cornerLinks: MemoCornerLink[];
+    viewportRef: RefObject<HTMLDivElement | null>;
+    closeOverlays: () => void;
+    replaceSnapshot: (snapshot: BoardSnapshot) => void;
 };
 
-function TutorialSandboxControls({
+export default function TutorialGuide({
+    tutorial,
     snapshot,
-    isEditing = false,
-    markdownViewOpen = false,
-    boardZoom = 1,
-    cornerLinks = [],
-    menuOpen,
-    setMenuOpen,
-    reorderOpen,
-    onReorder,
-    onCompileMarkdown,
-    onAbout,
+    isEditing,
+    markdownViewOpen,
+    boardZoom,
+    cornerLinks,
+    viewportRef,
     closeOverlays,
     replaceSnapshot,
-    step,
-    setStep,
-    viewportRef,
-    mascotBytesRef,
-    onExit,
-}: TutorialSandboxControlsProps) {
+}: TutorialGuideProps) {
+    const { guide, step, onStepChange, onExit } = tutorial;
     const [progress, setProgress] = useState<TutorialProgressState>(initialProgress);
+    const mascotBytesRef = useRef<Uint8Array | null>(null);
     const showcaseInjectedRef = useRef(false);
     const prevStepRef = useRef<TutorialStepId | null>(null);
     const prevSnapshotMemosRef = useRef(snapshot.memos);
+
+    useEffect(() => {
+        let active = true;
+        void loadTutorialMascotBytes(guide.mascotUrl).then((bytes) => {
+            if (active) {
+                mascotBytesRef.current = bytes;
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [guide.mascotUrl]);
 
     const computeShowcaseOrigin = useCallback(() => {
         const viewport = viewportRef.current;
@@ -82,6 +84,7 @@ function TutorialSandboxControls({
     const injectShowcase = useCallback(() => {
         const showcase = buildTutorialShowcaseSnapshot(
             computeShowcaseOrigin(),
+            guide.mascotUrl,
             mascotBytesRef.current,
         );
         replaceSnapshot(showcase);
@@ -92,7 +95,7 @@ function TutorialSandboxControls({
             step6Reordered: false,
             step6Recompiled: false,
         }));
-    }, [computeShowcaseOrigin, mascotBytesRef, replaceSnapshot]);
+    }, [computeShowcaseOrigin, guide.mascotUrl, replaceSnapshot]);
 
     useEffect(() => {
         if (prevStepRef.current === step) {
@@ -250,137 +253,73 @@ function TutorialSandboxControls({
     }, [closeOverlays, onExit]);
 
     return (
-        <>
-            <BoardMenu
-                title={snapshot.board.title}
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-                reorderOpen={reorderOpen}
-                exportDisabled={true}
-                transferDisabled={true}
-                mutationDisabled={true}
-                resetting={false}
-                transferring={false}
-                onReorder={onReorder}
-                onExport={noopAsync}
-                onImport={noopAsync}
-                onCompileMarkdown={onCompileMarkdown}
-                onReset={noopAsync}
-                onAbout={onAbout}
-            />
-            <TutorialOverlay
-                step={step}
-                checklist={checklist}
-                stepCompleted={stepCompleted}
-                markdownViewOpen={markdownViewOpen}
-                cornerLinkCount={cornerLinks.length}
-                memoCount={snapshot.memos.length}
-                onPrev={() => setStep(Math.max(1, step - 1) as TutorialStepId)}
-                onNext={() => setStep(Math.min(6, step + 1) as TutorialStepId)}
-                onExit={handleExit}
-                onRestoreShowcase={injectShowcase}
-            />
-        </>
+        <TutorialOverlay
+            step={step}
+            checklist={checklist}
+            stepCompleted={stepCompleted}
+            markdownViewOpen={markdownViewOpen}
+            cornerLinkCount={cornerLinks.length}
+            memoCount={snapshot.memos.length}
+            onPrev={() => onStepChange(Math.max(1, step - 1) as TutorialStepId)}
+            onNext={() => onStepChange(Math.min(6, step + 1) as TutorialStepId)}
+            onExit={handleExit}
+            onRestoreShowcase={injectShowcase}
+        />
     );
 }
 
-export default function TutorialBoardClient({ onExit }: TutorialBoardClientProps) {
-    const [step, setStep] = useState<TutorialStepId>(1);
-    const viewportRef = useRef<HTMLDivElement | null>(null);
-    const mascotBytesRef = useRef<Uint8Array | null>(null);
-
-    const sandboxInitialSnapshot = useMemo<BoardSnapshot>(() => {
-        const empty = createEmptyBoardSnapshot();
-        return {
-            ...empty,
-            board: {
-                ...empty.board,
-                title: "Meldrift Tutorial Sandbox",
-            },
-        };
-    }, []);
-
-    useEffect(() => {
-        let active = true;
-        void loadTutorialMascotBytes().then((bytes) => {
-            if (active) {
-                mascotBytesRef.current = bytes;
-            }
-        });
-        return () => {
-            active = false;
-        };
-    }, []);
-
+export function TutorialLinkZones({ memos }: { memos: BoardMemo[] }) {
+    if (memos.length === 0) {
+        return null;
+    }
+    const firstMemo = memos[0];
     return (
-        <SharedBoardClient
-            initialSnapshot={sandboxInitialSnapshot}
-            viewportRef={viewportRef}
-            renderControls={(controls) => (
-                <TutorialSandboxControls
-                    {...controls}
-                    step={step}
-                    setStep={setStep}
-                    viewportRef={viewportRef}
-                    mascotBytesRef={mascotBytesRef}
-                    onExit={onExit}
+        <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            style={{ zIndex: 45000 }}
+        >
+            {memos.map((memo) => {
+                const corners = [
+                    { x: memo.x, y: memo.y },
+                    { x: memo.x + memo.width, y: memo.y },
+                    { x: memo.x, y: memo.y + memo.height },
+                    { x: memo.x + memo.width, y: memo.y + memo.height },
+                ];
+                return corners.map((corner, index) => (
+                    <circle
+                        key={`${memo.id}-corner-${index}`}
+                        cx={corner.x}
+                        cy={corner.y}
+                        r={cornerLinkRadius}
+                        fill="rgba(244, 63, 94, 0.06)"
+                        stroke="#f43f5e"
+                        strokeOpacity={0.55}
+                        strokeWidth={2}
+                        strokeDasharray="6 4"
+                    />
+                ));
+            })}
+            <g transform={`translate(${firstMemo.x + firstMemo.width + 8}, ${firstMemo.y - cornerLinkRadius - 6})`}>
+                <rect
+                    x={0}
+                    y={0}
+                    width={94}
+                    height={20}
+                    rx={6}
+                    fill="#f43f5e"
                 />
-            )}
-            renderBoardOverlay={({ snapshot }) => {
-                if (step !== 4 || snapshot.memos.length === 0) {
-                    return null;
-                }
-                const firstMemo = snapshot.memos[0];
-                return (
-                    <svg
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-                        style={{ zIndex: 45000 }}
-                    >
-                        {snapshot.memos.map((memo) => {
-                            const corners = [
-                                { x: memo.x, y: memo.y },
-                                { x: memo.x + memo.width, y: memo.y },
-                                { x: memo.x, y: memo.y + memo.height },
-                                { x: memo.x + memo.width, y: memo.y + memo.height },
-                            ];
-                            return corners.map((corner, index) => (
-                                <circle
-                                    key={`${memo.id}-corner-${index}`}
-                                    cx={corner.x}
-                                    cy={corner.y}
-                                    r={cornerLinkRadius}
-                                    fill="rgba(244, 63, 94, 0.06)"
-                                    stroke="#f43f5e"
-                                    strokeOpacity={0.55}
-                                    strokeWidth={2}
-                                    strokeDasharray="6 4"
-                                />
-                            ));
-                        })}
-                        <g transform={`translate(${firstMemo.x + firstMemo.width + 8}, ${firstMemo.y - cornerLinkRadius - 6})`}>
-                            <rect
-                                x={0}
-                                y={0}
-                                width={94}
-                                height={20}
-                                rx={6}
-                                fill="#f43f5e"
-                            />
-                            <text
-                                x={47}
-                                y={14}
-                                textAnchor="middle"
-                                fill="#ffffff"
-                                fontSize={11}
-                                fontWeight={700}
-                            >
-                                50px Link Zone
-                            </text>
-                        </g>
-                    </svg>
-                );
-            }}
-        />
+                <text
+                    x={47}
+                    y={14}
+                    textAnchor="middle"
+                    fill="#ffffff"
+                    fontSize={11}
+                    fontWeight={700}
+                >
+                    50px Link Zone
+                </text>
+            </g>
+        </svg>
     );
 }

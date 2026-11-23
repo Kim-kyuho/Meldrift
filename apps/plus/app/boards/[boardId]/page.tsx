@@ -1,4 +1,4 @@
-import BoardSnapshotClient from "@/components/BoardSnapshotClient";
+import BoardSync from "@/components/BoardSync";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { findBoard, memberRoleFor, validBoardId } from "@/lib/board-access";
 import { canEditBoard, canReadBoard } from "@/lib/board-permissions";
@@ -19,7 +19,7 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
         notFound();
     }
 
-    return <BoardSnapshotClient
+    return <BoardSync
         key={boardId}
         editingAllowed={canEditBoard(user, board, memberRole)}
         collaborative={board.collabFlg === 1}

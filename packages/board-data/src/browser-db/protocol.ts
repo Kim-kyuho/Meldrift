@@ -22,7 +22,7 @@ export type BrowserDbPayload =
     | { type: "replace"; snapshot: BoardSnapshot; dirty?: boolean; remoteSeq?: number; deferredKeys?: string[] }
     | { type: "export" }
     | { type: "encode"; snapshot: BoardSnapshot }
-    | { type: "decode"; bytes: ArrayBuffer }
+    | { type: "decode"; bytes: ArrayBuffer; expectedBoardId?: number }
     | { type: "import"; bytes: ArrayBuffer; revision?: number }
     | { type: "record" }
     | { type: "acknowledge"; generation: number; revision: number }
