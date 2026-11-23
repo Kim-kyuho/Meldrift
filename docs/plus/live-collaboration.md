@@ -11,7 +11,7 @@
 - 확정된 변경은 새로고침 없이 반영된다.
 - 상대가 카드를 끄는 동안에는 그 위치가 점선 윤곽으로 보인다.
 
-Live는 **협업 보드**(`boards.collab_flg = 1`)에서만 켜진다. 보드를 만들 때(`CreateBoardModal`)와 편집할 때(`RenameBoardModal`) "Collaboration"에서 고르며, 기본값은 일반 보드(0)다. 일반 보드는 클라이언트가 연결하지 않고, 토큰 라우트는 404, 서버 연결은 4404로 거절한다. 연결 중에 협업을 끄면 60초마다 하는 재검증에서 닫히고, 그 뒤로는 일반 보드처럼 동작한다. 보드 목록에는 "Live"로 표시된다.
+Live는 **협업 보드**(`boards.collab_flg = 1`)에서만 켜진다. 보드를 만들 때(`CreateBoardModal`)와 편집할 때(`EditBoardModal`) "Collaboration"에서 고르며, 기본값은 일반 보드(0)다. 일반 보드는 클라이언트가 연결하지 않고, 토큰 라우트는 404, 서버 연결은 4404로 거절한다. 연결 중에 협업을 끄면 60초마다 하는 재검증에서 닫히고, 그 뒤로는 일반 보드처럼 동작한다. 보드 목록에는 "Live"로 표시된다.
 
 `snapshot` 모드 보드와 Free Edition에는 Live가 없다. 공통 `BoardClient`의 `collaboration` prop이 없으면 기존 동작과 똑같다.
 
