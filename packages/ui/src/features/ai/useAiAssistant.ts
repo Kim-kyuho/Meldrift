@@ -11,7 +11,7 @@ import {
     type BoardEdit,
     type BoardPlan,
 } from "@meldrift/core/board-plan";
-import { nextMemoOrder } from "@meldrift/core/memo-order";
+import { memoPlainText, nextMemoOrder } from "@meldrift/core/memo-order";
 import { createSyncId } from "@meldrift/board-data/board-state";
 import type { BoardImage } from "@meldrift/board-data/board-state";
 import type { BoardMemo } from "@meldrift/board-data/board-state";
@@ -486,13 +486,10 @@ export function useAiAssistant({
     };
 
     const getBoardSnapshot = () => {
-        const stripHtml = (html: string) =>
-            html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-
         return {
             memos: memos
                 .filter((memo) => memo.id > 0)
-                .map((memo) => ({ id: memo.id, summary: stripHtml(memo.content).slice(0, 120) || "(empty memo)" })),
+                .map((memo) => ({ id: memo.id, summary: memoPlainText(memo.content).slice(0, 120) || "(empty memo)" })),
             mermaids: mermaids
                 .filter((card) => card.id > 0)
                 .map((card) => ({ id: card.id, summary: card.source.split("\n")[0].slice(0, 120) })),

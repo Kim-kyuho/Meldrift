@@ -111,4 +111,18 @@ describe("memoPlainText 동작", () => {
     it("빈 메모이면 빈 문자열을 반환한다", () => {
         expect(memoPlainText("<p></p>")).toBe("");
     });
+
+    it("엔티티로 저장된 본문의 꺾쇠는 남긴다", () => {
+        expect(memoPlainText("<p>a &lt; b &gt; c</p>")).toBe("a &lt; b &gt; c");
+    });
+
+    it("닫히지 않은 '<'가 반복돼도 선형 시간에 끝난다", () => {
+        const content = "<".repeat(50_000);
+
+        const startedAt = performance.now();
+        const result = memoPlainText(content);
+
+        expect(result).toBe(content);
+        expect(performance.now() - startedAt).toBeLessThan(1000);
+    });
 });
