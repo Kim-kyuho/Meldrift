@@ -14,12 +14,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@google/genai": "^3.3.0",
+    "@google/genai": "^3.6.1",
     "@meldrift/core": "*",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }

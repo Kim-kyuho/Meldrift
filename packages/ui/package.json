@@ -83,7 +83,7 @@
     "@meldrift/diagram-engine": "^0.2.1",
     "@meldrift/markdown-engine": "^0.4.1",
     "@meldrift/table-engine": "^0.3.0",
-    "lucide-react": "^1.70.0",
+    "lucide-react": "^1.76.0",
     "react-markdown": "^10.1.0",
     "react-rnd": "^10.5.3",
     "rehype-raw": "^7.0.0",
@@ -95,9 +95,9 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "jsdom": "^31.0.1",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }
