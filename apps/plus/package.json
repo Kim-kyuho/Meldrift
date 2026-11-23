@@ -52,7 +52,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.17",
     "@next/env": "^16.2.4",
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
@@ -69,6 +69,6 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^7",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }
