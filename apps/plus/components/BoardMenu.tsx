@@ -3,36 +3,21 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import SharedBoardMenu, { type BoardMenuProps as SharedBoardMenuProps } from "@meldrift/ui/BoardMenu";
+import SharedBoardMenu, { type BoardMenuControls } from "@meldrift/ui/BoardMenu";
 import PressableButton from "@meldrift/ui/PressableButton";
 import type { CurrentUser } from "@/hooks/useBoardAuth";
-import { canCreateBoard } from "@/lib/board-permissions";
 import MyPageModal from "./MyPageModal";
 
-type BoardMenuProps = {
-    menuOpen: boolean;
-    currentBoard?: { title: string };
-    setMenuOpen: Dispatch<SetStateAction<boolean>>;
+type BoardMenuProps = BoardMenuControls & {
+    currentUser: CurrentUser | null;
     setSignInOpen: Dispatch<SetStateAction<boolean>>;
     setSignUpOpen: Dispatch<SetStateAction<boolean>>;
-    currentUser: CurrentUser | null;
     onSignOut: () => void;
     onManageMembers?: () => void;
-    onCompileMarkdown?: () => void;
-    reorderOpen?: boolean;
-    onReorder?: () => void;
-    onAbout: () => void;
-    transfer?: Pick<SharedBoardMenuProps,
-        "exportDisabled" | "transferring" | "resetting" | "mutationDisabled" |
-        "onExport" | "onImport" | "onReset">;
 };
 
-const noAction = () => {};
-
 export default function BoardMenu({
-    currentBoard, currentUser, setSignInOpen, setSignUpOpen, onSignOut, onManageMembers,
-    onCompileMarkdown = noAction, onReorder = noAction, reorderOpen = false,
-    transfer, ...menu
+    currentUser, setSignInOpen, setSignUpOpen, onSignOut, onManageMembers, ...menu
 }: BoardMenuProps) {
     const [myPageOpen, setMyPageOpen] = useState(false);
     const homeLink = useRef<HTMLAnchorElement>(null);
@@ -40,22 +25,9 @@ export default function BoardMenu({
     return <>
         <SharedBoardMenu
             {...menu}
-            title={currentBoard?.title ?? "Board List"}
-            titleDivider={Boolean(currentBoard)}
-            boardActions={Boolean(currentBoard)}
-            compact={!currentBoard}
-            reorderOpen={reorderOpen}
-            onReorder={onReorder}
-            onCompileMarkdown={onCompileMarkdown}
-            exportDisabled={transfer?.exportDisabled ?? false}
-            transferring={transfer?.transferring ?? false}
-            resetting={transfer?.resetting ?? false}
-            transferDisabled={!currentUser || !transfer}
-            mutationDisabled={!canCreateBoard(currentUser) || transfer?.mutationDisabled}
-            resetTitle="Clear the contents of this board"
-            onExport={transfer?.onExport ?? noAction}
-            onImport={transfer?.onImport ?? noAction}
-            onReset={transfer?.onReset ?? noAction}
+            title={menu.title ?? "Board List"}
+            titleDivider={Boolean(menu.boardActions)}
+            compact={!menu.boardActions}
             brand={
                 <Link ref={homeLink} href="/" aria-label="Meldrift home"
                     className="flex items-center gap-1.5 transition duration-300 hover:opacity-75 active:scale-[0.98]"

@@ -19,8 +19,16 @@ vi.mock("@meldrift/diagram-engine", () => ({
     },
 }));
 
-import HelpModal from "@/components/HelpModal";
-import { getHelpShortcut, helpMarkdownUrl, helpShortcutsUrl } from "@/lib/help";
+import HelpModal from "../src/features/guide/HelpModal";
+import { getHelpShortcut, type BoardGuide } from "../src/features/guide/board-guide";
+
+const guide: BoardGuide = {
+    key: "test",
+    helpMarkdownUrl: "/help/Help_Meldrift.md",
+    helpShortcutsUrl: "/help/Help_Shortcuts.md",
+    mascotUrl: "/meldrift-mascot.png",
+};
+const { helpMarkdownUrl, helpShortcutsUrl } = guide;
 
 describe("HelpModal 동작", () => {
     afterEach(() => vi.unstubAllGlobals());
@@ -37,7 +45,7 @@ describe("HelpModal 동작", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        render(<HelpModal onClose={onClose} />);
+        render(<HelpModal guide={guide} onClose={onClose} />);
 
         expect(screen.getByRole("dialog", { name: "Help" })).toBeVisible();
         expect(screen.getByText("Loading Help...")).toBeVisible();
@@ -103,7 +111,7 @@ describe("HelpModal 동작", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        render(<HelpModal onClose={vi.fn()} />);
+        render(<HelpModal guide={guide} onClose={vi.fn()} />);
 
         const introduceTab = screen.getByRole("tab", { name: "Introduce" });
         const shortcutTab = screen.getByRole("tab", { name: "Short-cut" });

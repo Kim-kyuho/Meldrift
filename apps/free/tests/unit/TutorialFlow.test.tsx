@@ -1,8 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createEmptyBoardSnapshot, type BoardSnapshot } from "@meldrift/board-data/board-state";
-import { compileBoardMarkdownDocument } from "@meldrift/board-data/board-markdown";
-import { resolveMemoCornerLinks } from "@meldrift/core/cards";
 
 const hoisted = vi.hoisted(() => {
     const persistenceCalls = vi.fn();
@@ -53,26 +51,15 @@ vi.mock("@/hooks/useBoardLoad", () => ({
     }),
 }));
 
-vi.mock("@/hooks/useBoardPersistance", () => ({
-    useBoardPersistance: (args: unknown) => {
-        hoisted.persistenceCalls(args);
+vi.mock("@/lib/board-storage", () => ({
+    freeBoardStorage: {
+        save: (snapshot: unknown) => {
+            hoisted.persistenceCalls(snapshot);
+        },
     },
 }));
 
-vi.mock("@/hooks/useBoardTransfer", () => ({
-    useBoardTransfer: () => ({
-        importInputRef: { current: null },
-        transferring: false,
-        resetting: false,
-        handleExport: vi.fn(),
-        handleImport: vi.fn(),
-        handleReset: vi.fn(),
-    }),
-}));
-
 import BoardClient from "@/components/BoardClient";
-import TutorialBoardClient from "@/components/TutorialBoardClient";
-import { buildTutorialShowcaseSnapshot } from "@/lib/tutorial";
 
 function createPopulatedSnapshot(): BoardSnapshot {
     const empty = createEmptyBoardSnapshot();
@@ -99,6 +86,7 @@ function createPopulatedSnapshot(): BoardSnapshot {
 describe("Meldrift Interactive Tutorial", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        window.localStorage.clear();
         Element.prototype.scrollIntoView = vi.fn();
         hoisted.setLoadedSnapshot(createEmptyBoardSnapshot());
         vi.stubGlobal(
@@ -170,6 +158,9 @@ describe("Meldrift Interactive Tutorial", () => {
         const persistenceCallCountOnEnter = hoisted.persistenceCalls.mock.calls.length;
 
         fireEvent.click(screen.getByRole("button", { name: "Create memo" }));
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+        });
         expect(hoisted.persistenceCalls.mock.calls.length).toBe(persistenceCallCountOnEnter);
 
         fireEvent.click(screen.getByRole("button", { name: "Exit tutorial" }));
@@ -180,51 +171,42 @@ describe("Meldrift Interactive Tutorial", () => {
         expect(screen.queryByText(/Quick guide/)).not.toBeInTheDocument();
     });
 
-    it("builds valid 50px memo corner links for showcase cards in Step 3", () => {
-        const showcase = buildTutorialShowcaseSnapshot({ x: 200, y: 240 }, new Uint8Array([1, 2, 3]));
+    it("opens Help automatically only on the first entry to a new board", async () => {
+        hoisted.setLoadedSnapshot(createEmptyBoardSnapshot());
 
-        expect(showcase.memos).toHaveLength(2);
-        expect(showcase.images).toHaveLength(1);
-        expect(showcase.tables).toHaveLength(1);
-        expect(showcase.mermaids).toHaveLength(1);
+        const first = render(<BoardClient />);
+        await screen.findByText(/Quick guide/);
+        first.unmount();
 
-        const links = resolveMemoCornerLinks(showcase.memos, [
-            ...showcase.images.map((image) => ({
-                type: "image" as const,
-                id: image.imageId,
-                x: image.x,
-                y: image.y,
-                z: image.z,
-                width: image.width,
-                height: image.height,
-            })),
-            ...showcase.tables.map((table) => ({
-                type: "table" as const,
-                id: table.id,
-                x: table.x,
-                y: table.y,
-                z: table.z,
-                width: table.width,
-                height: table.height,
-            })),
-            ...showcase.mermaids.map((mermaid) => ({
-                type: "mermaid" as const,
-                id: mermaid.id,
-                x: mermaid.x,
-                y: mermaid.y,
-                z: mermaid.z,
-                width: mermaid.width,
-                height: mermaid.height,
-            })),
-        ]);
-
-        expect(links.length).toBeGreaterThanOrEqual(3);
+        render(<BoardClient />);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(screen.queryByText(/Quick guide/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it("walks through Steps 1 to 6 in TutorialBoardClient, including showcase generation, 50px zone overlay, and Markdown compile modal", async () => {
-        const onExit = vi.fn();
+    it("does not treat a board as new after it has been opened with content, even once it becomes empty", async () => {
+        hoisted.setLoadedSnapshot(createPopulatedSnapshot());
+        const first = render(<BoardClient />);
+        first.unmount();
 
-        render(<TutorialBoardClient onExit={onExit} />);
+        hoisted.setLoadedSnapshot(createEmptyBoardSnapshot());
+        render(<BoardClient />);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("walks through Steps 1 to 6 in the tutorial sandbox, including showcase generation, 50px zone overlay, and Markdown compile modal", async () => {
+        hoisted.setLoadedSnapshot(createEmptyBoardSnapshot());
+
+        render(<BoardClient />);
+        await screen.findByText(/Quick guide/);
+        fireEvent.click(screen.getByRole("button", { name: /close/i }));
+        fireEvent.click(await screen.findByRole("button", { name: "Tutorial" }));
+        expect(await screen.findByLabelText("Interactive tutorial guide")).toBeInTheDocument();
 
         // Step 1: Memo creation + padding glow highlight (no border ring)
         expect(screen.getByText("Create & Edit a Memo Card")).toBeInTheDocument();
@@ -268,12 +250,6 @@ describe("Meldrift Interactive Tutorial", () => {
         expect(screen.getByText(/Download button at the top-right/i)).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Exit tutorial" })).not.toHaveClass("ui-button-menu");
 
-        const showcaseMarkdown = compileBoardMarkdownDocument(
-            buildTutorialShowcaseSnapshot({ x: 200, y: 240 }, new Uint8Array([1, 2, 3])),
-        ).markdown;
-        expect(showcaseMarkdown).toContain("# Welcome to Meldrift");
-        expect(showcaseMarkdown).not.toContain("    \n-");
-
         fireEvent.click(screen.getByRole("button", { name: "Close Markdown view" }));
         await waitFor(() => {
             expect(screen.queryByLabelText("Tutorial Markdown preview guide")).not.toBeInTheDocument();
@@ -290,7 +266,8 @@ describe("Meldrift Interactive Tutorial", () => {
         await act(async () => {
             fireEvent.click(screen.getByRole("button", { name: "Close Tutorial" }));
         });
-        expect(onExit).toHaveBeenCalledTimes(1);
+        expect(screen.queryByLabelText("Interactive tutorial guide")).not.toBeInTheDocument();
+        expect(screen.queryByText(/Quick guide/)).not.toBeInTheDocument();
     });
 
     it("keeps the Upload image file input label unique and hides HelpCanvasMenu when board panels open", () => {

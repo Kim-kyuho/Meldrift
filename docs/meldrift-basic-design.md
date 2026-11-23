@@ -69,7 +69,7 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 
 ## 5. 화면과 상태 소유권
 
-공통 `BoardClient`가 카드 컬렉션, 편집 ID, 드로잉, 검색·탐색·정렬, 다중 선택, 뷰포트, 단축키, 이력을 연결한다. 앱별 `renderControls`가 메뉴·인증 모달·Help·저장·파일 반출입을 조립한다.
+공통 `BoardClient`가 카드 컬렉션, 편집 ID, 드로잉, 검색·탐색·정렬, 다중 선택, 뷰포트, 단축키, 이력을 연결하고, 안쪽 `BoardControls`가 저장 예약과 파일 반출입을 처리한다. Help·튜토리얼도 공통 BoardClient가 그린다. 앱은 저장소 구현(`storage`), Help 문서·마스코트 경로(`guide`), 메뉴 래퍼(`renderMenu`)만 넘긴다.
 
 | 상태 | 소유자 |
 | --- | --- |
@@ -84,7 +84,7 @@ Free는 IndexedDB 저장에서 끝난다. Plus의 `delta` 보드는 전체 SQLit
 | 과거·현재·미래 객체 상태 | `useBoardHistory` |
 | 작업 중인 물리 포인터 | `useBoardPointerActive` |
 | 로컬 저장 예약 | `useBoardPersistence` |
-| Plus 원격 큐·revision·재시도 | `useBoardSnapshot`, `ChangeSync` 또는 `SnapshotSync` |
+| Plus 원격 큐·revision·재시도 | `useBoardSync`, `ChangeSync` 또는 `SnapshotSync` |
 
 현재 화면의 `BoardSnapshot`은 보드 정보, 네 카드 컬렉션, 획 목록을 묶는다. 저장, 파일 반출입과 브라우저 Markdown 컴파일은 이 값을 입력으로 사용한다.
 
@@ -222,4 +222,4 @@ Vitest로 공통 규칙·이력·큐·저장·권한·API를, Playwright로 실�
 - [보드 이력](./shared/board-history.md), [단축키](./shared/board-shortcuts.md)
 - [브라우저 DB](./shared/browser-database.md), [보드 상태](./shared/board-state.md)
 - [Plus 변경분 동기화](./plus/change-sync.md), [호환 스냅샷](./plus/board-snapshot.md)
-- [Free 반출입](./free/board-transfer.md), [Markdown](./shared/markdown-export.md)
+- [저장·반출입(BoardControls)](./shared/board-controls.md), [Markdown](./shared/markdown-export.md)

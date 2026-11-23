@@ -35,6 +35,16 @@ export async function gotoHydratedPage(page: Page, path: string) {
     await navigateAndWaitForUser(page, () => page.goto(plusPath));
 }
 
+// 이 브라우저에서 처음 여는 빈 보드는 Help가 자동으로 뜬다. Help를 다루지 않는 테스트는 닫고 시작한다.
+export async function closeFirstEntryHelp(page: Page) {
+    const help = page.getByRole("dialog", { name: "Help" });
+    if (await help.count() === 0) {
+        return;
+    }
+    await help.getByRole("button", { name: "Close Help" }).click();
+    await page.getByRole("button", { name: "Close (Esc)" }).click();
+}
+
 // 보드 화면이 뜨기까지 dev 서버의 첫 컴파일, SQLite 워커 부팅, delta 보드의 상태·자산 내려받기가
 // 차례로 들어간다. 기본 expect 타임아웃(5초)으로는 모자란다.
 const boardOpenTimeoutMs = 20000;
@@ -47,6 +57,7 @@ export async function openTestBoard(page: Page) {
     if (configuredBoardId) {
         await gotoHydratedPage(page, `/boards/${configuredBoardId}`);
         await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: boardOpenTimeoutMs });
+        await closeFirstEntryHelp(page);
         return true;
     }
 
@@ -63,6 +74,7 @@ export async function openTestBoard(page: Page) {
 
     await navigateAndWaitForUser(page, () => firstBoardLink.click());
     await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: boardOpenTimeoutMs });
+    await closeFirstEntryHelp(page);
     return true;
 }
 

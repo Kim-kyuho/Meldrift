@@ -59,7 +59,8 @@ Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다.
 | 알고 싶은 것 | 문서 |
 | --- | --- |
 | 보드 화면이 어떻게 조립되나 | [shared/board-client.md](./shared/board-client.md) |
-| Free 인터랙티브 튜토리얼 구조 | [free/interactive-tutorial.md](./free/interactive-tutorial.md) |
+| 저장 예약과 Export·Import·Reset은 어떻게 도나 | [shared/board-controls.md](./shared/board-controls.md) |
+| Help와 인터랙티브 튜토리얼 구조 | [shared/help-modal.md](./shared/help-modal.md), [shared/interactive-tutorial.md](./shared/interactive-tutorial.md) |
 | 이전 스냅샷 보드는 어떻게 저장하나 | [plus/board-snapshot.md](./plus/board-snapshot.md) |
 | Plus가 변경분만 어떻게 올리나 | [plus/change-sync.md](./plus/change-sync.md) |
 | 여러 사람이 같은 보드를 어떻게 함께 편집하나 | [plus/live-collaboration.md](./plus/live-collaboration.md) |

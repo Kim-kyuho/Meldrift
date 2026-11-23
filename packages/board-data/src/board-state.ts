@@ -197,6 +197,17 @@ export function reissueSyncIds(snapshot: BoardSnapshot): BoardSnapshot {
     };
 }
 
+export function assignSnapshotToBoard(snapshot: BoardSnapshot, board: BoardInfo): BoardSnapshot {
+    return {
+        ...snapshot,
+        board,
+        memos: snapshot.memos.map((card) => ({ ...card, boardId: board.boardId })),
+        images: snapshot.images.map((card) => ({ ...card, boardId: board.boardId })),
+        mermaids: snapshot.mermaids.map((card) => ({ ...card, boardId: board.boardId })),
+        tables: snapshot.tables.map((card) => ({ ...card, boardId: board.boardId })),
+    };
+}
+
 export function nextPositiveId(ids: number[]) {
     return Math.max(0, ...ids.filter((id) => id > 0)) + 1;
 }

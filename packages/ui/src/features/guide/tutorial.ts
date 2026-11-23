@@ -70,9 +70,16 @@ export function getTutorialStepMeta(step: TutorialStepId): TutorialStepMeta {
     return TUTORIAL_STEPS[step - 1];
 }
 
-export async function loadTutorialMascotBytes(): Promise<Uint8Array | null> {
+export const tutorialSandboxTitle = "Meldrift Tutorial Sandbox";
+
+export function createTutorialSandboxSnapshot(): BoardSnapshot {
+    const empty = createEmptyBoardSnapshot();
+    return { ...empty, board: { ...empty.board, title: tutorialSandboxTitle } };
+}
+
+export async function loadTutorialMascotBytes(mascotUrl: string): Promise<Uint8Array | null> {
     try {
-        const response = await fetch("/meldrift-mascot.png");
+        const response = await fetch(mascotUrl);
         if (!response.ok) {
             return null;
         }
@@ -90,6 +97,7 @@ export function getMemoOrderKey(memos: readonly Pick<BoardMemo, "id" | "sortOrde
 
 export function buildTutorialShowcaseSnapshot(
     origin: { x: number; y: number },
+    mascotUrl: string,
     mascotBytes: Uint8Array | null = null,
 ): BoardSnapshot {
     const base = createEmptyBoardSnapshot();
@@ -145,7 +153,7 @@ export function buildTutorialShowcaseSnapshot(
             syncId: createSyncId(),
             boardId,
             assetId: "meldrift-mascot.png",
-            url: "/meldrift-mascot.png",
+            url: mascotUrl,
             data: mascotBytes,
             mimeType: mascotBytes ? "image/png" : null,
             label: "Meldrift Mascot",
@@ -212,7 +220,7 @@ export function buildTutorialShowcaseSnapshot(
     return {
         board: {
             ...base.board,
-            title: "Meldrift Tutorial Sandbox",
+            title: tutorialSandboxTitle,
         },
         memos,
         images,

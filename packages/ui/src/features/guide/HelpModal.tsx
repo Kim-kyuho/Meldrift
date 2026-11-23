@@ -11,42 +11,43 @@ import remarkGfm from "remark-gfm";
 import MermaidDiagramView from "@meldrift/ui/MermaidDiagramView";
 import { splitMermaidSections } from "@meldrift/ui/mermaid-sections";
 import PressableButton from "@meldrift/ui/PressableButton";
-import { getHelpShortcut, helpMarkdownUrl, helpShortcutsUrl } from "@/lib/help";
+import { getHelpShortcut, type BoardGuide } from "./board-guide";
 
 type HelpTab = "introduce" | "short-cut";
 
 type HelpModalProps = {
+    guide: BoardGuide;
     onClose: () => void;
 };
 
 const HELP_TABS: Array<{
     id: HelpTab;
     label: string;
-    url: string;
     icon: typeof BookOpen;
 }> = [
     {
         id: "introduce",
         label: "Introduce",
-        url: helpMarkdownUrl,
         icon: BookOpen,
     },
     {
         id: "short-cut",
         label: "Short-cut",
-        url: helpShortcutsUrl,
         icon: Keyboard,
     },
 ];
 
-export default function HelpModal({ onClose }: HelpModalProps) {
+const helpTabUrl = (guide: BoardGuide, tab: HelpTab) =>
+    tab === "introduce" ? guide.helpMarkdownUrl : guide.helpShortcutsUrl;
+
+export default function HelpModal({ guide, onClose }: HelpModalProps) {
     const [activeTab, setActiveTab] = useState<HelpTab>("introduce");
     const [docs, setDocs] = useState<Partial<Record<HelpTab, string>>>({});
     const [errors, setErrors] = useState<Partial<Record<HelpTab, string>>>({});
     const contentRef = useRef<HTMLDivElement | null>(null);
     const shortcut = getHelpShortcut(typeof navigator === "undefined" ? "" : navigator.userAgent);
 
-    const activeTabConfig = HELP_TABS.find((tab) => tab.id === activeTab) ?? HELP_TABS[0];
+    const activeTabUrl = helpTabUrl(guide, activeTab);
     const activeMarkdown = docs[activeTab] ?? "";
     const activeError = errors[activeTab] ?? "";
 
@@ -57,7 +58,7 @@ export default function HelpModal({ onClose }: HelpModalProps) {
 
         const controller = new AbortController();
         const targetTab = activeTab;
-        const targetUrl = activeTabConfig.url;
+        const targetUrl = activeTabUrl;
 
         fetch(targetUrl, { signal: controller.signal })
             .then((response) => {
@@ -80,7 +81,7 @@ export default function HelpModal({ onClose }: HelpModalProps) {
             });
 
         return () => controller.abort();
-    }, [activeTab, activeTabConfig.url, docs, errors]);
+    }, [activeTab, activeTabUrl, docs, errors]);
 
     useEffect(() => {
         if (contentRef.current) {

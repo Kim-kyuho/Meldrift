@@ -2,25 +2,34 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import BoardMenu from "@/components/BoardMenu";
 
+function boardActions() {
+    return {
+        reorderOpen: false,
+        exportDisabled: false,
+        exportPaused: false,
+        importDisabled: false,
+        resetDisabled: false,
+        onReorder: vi.fn(),
+        onExport: vi.fn(),
+        onImport: vi.fn(),
+        onCompileMarkdown: vi.fn(),
+        onReset: vi.fn(),
+    };
+}
+
 function props() {
     return {
-        menuOpen: true, currentBoard: { title: "Board title" }, setMenuOpen: vi.fn(),
+        menuOpen: true, title: "Board title", setMenuOpen: vi.fn(),
         setSignInOpen: vi.fn(), setSignUpOpen: vi.fn(), onSignOut: vi.fn(), onAbout: vi.fn(),
-        transfer: {
-            exportDisabled: false, mutationDisabled: false, transferring: false, resetting: false,
-            onExport: vi.fn(), onImport: vi.fn(), onReset: vi.fn(),
-        },
+        boardActions: boardActions(),
     };
 }
 
 describe("플러스 공통 보드 메뉴", () => {
-    it("프리 보드 기능을 표시하되 로그인 전에는 파일 반출입을 비활성화한다", () => {
+    it("로그인 전에는 로그인·가입 항목을 보여 주고 누르면 메뉴를 닫는다", () => {
         const actions = props();
         render(<BoardMenu {...actions} currentUser={null} />);
-        for (const name of ["Export", "Import", "Reset"]) {
-            expect(screen.getByRole("button", { name })).toBeDisabled();
-        }
-        expect(screen.getByRole("button", { name: "Compile to Markdown" })).toBeEnabled();
+
         fireEvent.click(screen.getByRole("button", { name: "Sign-in" }));
         expect(actions.setMenuOpen).toHaveBeenCalledWith(false);
         expect(actions.setSignInOpen).toHaveBeenCalledWith(true);
@@ -28,30 +37,33 @@ describe("플러스 공통 보드 메뉴", () => {
         expect(actions.setSignUpOpen).toHaveBeenCalledWith(true);
     });
 
-    it("승인된 편집자에게 파일 반출입을 허용하고 로그아웃 항목을 표시한다", () => {
+    it("보드 화면에서는 공통 에디터가 계산한 파일 항목 상태를 그대로 쓴다", () => {
+        const actions = { ...props(), boardActions: { ...boardActions(), importDisabled: true, resetDisabled: true } };
+        render(<BoardMenu {...actions} currentUser={{ email: "reader@test.com", role: "user", isApproved: false }} />);
+
+        expect(screen.getByText("Board title")).toBeVisible();
+        expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Import" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
+    });
+
+    it("로그인하면 파일 항목과 로그아웃 항목을 쓸 수 있다", () => {
         const actions = props();
         render(<BoardMenu {...actions} currentUser={{ email: "editor@test.com", role: "user", isApproved: true }} />);
-        for (const name of ["Export", "Import", "Reset"]) {
-            expect(screen.getByRole("button", { name })).toBeEnabled();
-        }
+
         fireEvent.click(screen.getByRole("button", { name: "Import" }));
-        expect(actions.transfer.onImport).toHaveBeenCalledOnce();
+        expect(actions.boardActions.onImport).toHaveBeenCalledOnce();
         expect(actions.setMenuOpen).toHaveBeenCalledWith(false);
         expect(screen.queryByRole("button", { name: "Sign-in" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Sign-out" }));
         expect(actions.onSignOut).toHaveBeenCalledOnce();
     });
 
-    it("로그인했어도 승인되지 않은 사용자에게는 쓰기 권한을 주지 않는다", () => {
-        render(<BoardMenu {...props()} currentUser={{ email: "reader@test.com", role: "user", isApproved: false }} />);
-        expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
-        expect(screen.getByRole("button", { name: "Import" })).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
-    });
-
     it("보드 목록에서는 보드 전용 기능을 숨긴다", () => {
-        render(<BoardMenu {...props()} currentBoard={undefined} currentUser={null} />);
+        render(<BoardMenu {...props()} title={undefined} boardActions={undefined} currentUser={null} />);
+
         expect(screen.queryByRole("button", { name: "Export" })).not.toBeInTheDocument();
+        expect(screen.getByText("Board List")).toBeVisible();
         expect(screen.getByRole("button", { name: "About" })).toBeEnabled();
     });
 });

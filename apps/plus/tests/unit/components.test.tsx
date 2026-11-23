@@ -45,15 +45,24 @@ describe("보드 메뉴와 앱 정보 모달", () => {
         render(
             <BoardMenu
                 menuOpen
-                currentBoard={{ title: "Meldrift" }}
+                title="Meldrift"
                 setMenuOpen={vi.fn()}
                 setSignInOpen={vi.fn()}
                 setSignUpOpen={vi.fn()}
                 currentUser={null}
                 onSignOut={vi.fn()}
-                onCompileMarkdown={vi.fn()}
-                reorderOpen={false}
-                onReorder={vi.fn()}
+                boardActions={{
+                    reorderOpen: false,
+                    exportDisabled: true,
+                    exportPaused: false,
+                    importDisabled: true,
+                    resetDisabled: true,
+                    onReorder: vi.fn(),
+                    onExport: vi.fn(),
+                    onImport: vi.fn(),
+                    onCompileMarkdown: vi.fn(),
+                    onReset: vi.fn(),
+                }}
                 onAbout={vi.fn()}
             />
         );

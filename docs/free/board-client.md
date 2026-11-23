@@ -1,16 +1,17 @@
 # BoardClient 상세설계 (Free)
 
-소스: `app/page.tsx`, `components/BoardClient.tsx`, `components/BoardControls.tsx`, `hooks/useBoardLoad.ts`, `hooks/useBoardPersistance.ts`
+소스: `app/page.tsx`, `components/BoardClient.tsx`, `hooks/useBoardLoad.ts`, `lib/board-storage.ts`, `lib/board-guide.ts`, `public/help/`
 
 보드 화면 자체는 [공유 BoardClient](../shared/board-client.md)다. Free가 가진 것은 **불러오기와 저장, 그리고 껍데기**뿐이다.
 
-## 세 파일이 하는 일
+## 파일이 하는 일
 
 | 파일 | 역할 |
 | --- | --- |
 | `hooks/useBoardLoad.ts` | 마운트 후 워커에서 스냅샷을 한 번 읽는다 |
-| `components/BoardClient.tsx` | 읽기 전/실패 화면을 그리고, 읽히면 공유 BoardClient 또는 튜토리얼 샌드박스에 넘긴다 |
-| `components/BoardControls.tsx` | 보드 메뉴·Help·Help 종료 후 튜토리얼 런처·반출입·자동 저장을 `renderControls` 자리에 그린다 |
+| `components/BoardClient.tsx` | 읽기 전/실패 화면을 그리고, 읽히면 공유 BoardClient에 넘긴다 |
+| `lib/board-storage.ts` | `freeBoardStorage` — 브라우저 DB 저장과 세이브 파일 구현 |
+| `lib/board-guide.ts` | `freeBoardGuide` — Free Help 문서(`public/help/`)와 마스코트 경로 |
 
 `app/page.tsx`는 `BoardClient`를 그리는 것 외에 하는 일이 없다.
 
@@ -30,46 +31,29 @@
 ```text
 databaseError    → 브라우저 SQLite 안내 화면
 initialSnapshot 없음 → 제품 소개 + Loading...
-그 외            → <SharedBoardClient initialSnapshot={...} renderControls={...} />
+그 외            → <SharedBoardClient initialSnapshot={...} storage={freeBoardStorage} guide={freeBoardGuide} menuTitle="Free Board" renderMenu={...} />
 ```
 
 **빈 보드를 먼저 띄우고 나중에 채우지 않는다.** 그렇게 하면 읽기 전의 빈 스냅샷이 자동 저장에 실려 실제 데이터를 덮을 수 있다. 값이 있을 때만 편집기를 마운트하는 것이 그 방지책이다.
 
-Help 모달은 읽힌 스냅샷이 비어 있을 때(`isBoardContentEmpty`) 처음부터 열린 상태로 시작한다. 모달을 닫고 `HelpCanvasMenu`에서 `Tutorial`을 선택하면 `resumeSnapshot`에 현재 보드를 보관하고 `TutorialBoardClient` 샌드박스로 전환하며, 종료 후 복귀 시 `suppressAutoHelp`로 Help 자동 오픈을 막는다. 세부 동작은 [인터랙티브 튜토리얼](./interactive-tutorial.md)을 참조한다.
+Help와 튜토리얼은 공유 BoardClient가 `freeBoardGuide`로 처리한다. Help는 새 보드 첫 진입에만 자동으로 열린다. [Help](../shared/help-modal.md), [인터랙티브 튜토리얼](../shared/interactive-tutorial.md)을 참조한다.
 
-## 자동 저장
+## 자동 저장과 반출입
 
-`useBoardPersistance`가 `BoardControls` 안에서 돈다.
+공유 BoardClient 안의 `BoardControls`가 `freeBoardStorage`로 처리한다. 흐름은 [BoardControls](../shared/board-controls.md)를 참조한다.
 
-```text
-조건: !savePaused && !transferring
-지연: 150ms
-동작: replaceBoardState(snapshot)
-```
-
-`snapshot`이 바뀔 때마다 타이머를 다시 건다. 언마운트하면 대기 중인 저장은 취소된다. 실패 문구는 `setMessage`로 보드 메시지에 띄운다.
-
-`savePaused`는 공유 BoardClient가 계산해서 내려준다(편집 중·드로잉 중·AI 제안 대기). 여기에 파일 반출입 진행 상태를 더한다.
-
-- **파일 전송 중**: Import가 교체한 DB를 이전 화면 상태가 다시 덮지 않게 한다. Reset은 DB 삭제가 아닌 동기식 내용 교체다.
+| `freeBoardStorage` | 값 |
+| --- | --- |
+| `save` | `replaceBoardState(snapshot)` |
+| `file.exportFile` | `encodeBoardDatabase` — 현재 화면으로 세이브 파일을 새로 만든다 |
+| `file.readFile` | `decodeBoardDatabase` — board_id가 1인 파일만 해석한다. DB에는 쓰지 않는다 |
+| `file.maxImportBytes` | 50 MiB |
+| `file.fileName` | `meldrift-free.sqlite` |
+| `skipInitialSave` | `true` — 불러온 초기 값을 다시 저장하지 않는다 |
 
 부분 갱신이 없다. 워커가 `DELETE` 후 전부 다시 INSERT하므로 한 번의 저장이 보드 전체를 다시 쓴다.
 
-공통 이력의 Undo/Redo와 `replaceSnapshot`으로 교체한 Import·Reset 결과도 같은 자동 저장 경로를 따른다. [반출입](./board-transfer.md), [보드 이력](../shared/board-history.md)을 참조한다.
-
-## 내보내기 잠금
-
-```text
-exportDisabled = savePaused
-```
-
-내보내기 직전에 저장을 한 번 더 부르므로, 잠그지 않으면 확정되지 않은 초안이 파일에 들어간다. 저장을 막는 이유와 같다.
-
-## Help 단축키
-
-`useBoardShortcuts`가 `window`에 캡처 단계로 `keydown` 리스너를 붙인다. `Ctrl` 또는 `⌘` + `Shift` + `H`에서 `preventDefault` 후 Help를 연다. 캡처 단계라 메모 편집기가 키를 삼켜도 동작한다.
-
-Help를 열 때는 `closeOverlays()`로 메뉴·About·Markdown 뷰를 먼저 닫는다. 겹쳐 뜨는 것을 막는다.
+공통 이력의 Undo/Redo도 같은 자동 저장 경로를 따른다. Import·Reset은 보드 전체를 바꾸므로 예약을 기다리지 않고 바로 저장한다. [보드 이력](../shared/board-history.md)을 참조한다.
 
 ## Plus와 갈리는 지점
 

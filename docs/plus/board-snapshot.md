@@ -1,6 +1,6 @@
 # 보드 스냅샷 상세설계
 
-소스: `components/BoardSnapshotClient.tsx`, `hooks/useBoardSnapshot.ts`, `lib/snapshot.ts`, `lib/snapshot-sync.ts`, `lib/snapshot-codec.ts`, `lib/saved-board-snapshot.ts`, `lib/legacy-board-snapshot.ts`, `app/api/boards/[boardId]/snapshot/route.ts`
+소스: `components/BoardSync.tsx`, `hooks/useBoardSync.ts`, `lib/snapshot.ts`, `lib/snapshot-sync.ts`, `lib/snapshot-codec.ts`, `lib/saved-board-snapshot.ts`, `lib/legacy-board-snapshot.ts`, `app/api/boards/[boardId]/snapshot/route.ts`
 
 ## 무엇이 바뀌었나
 
@@ -115,7 +115,7 @@ WHERE u.id = ? AND u.permission_flg = true
 
 확인과 쓰기 사이에 권한이 바뀔 틈이 없다. 조건이 하나라도 어긋나면 행이 돌아오지 않고 `409`가 된다.
 
-## 불러오기 (`useBoardSnapshot`)
+## 불러오기 (`useBoardSync`)
 
 ```text
 1. 이 탭의 앞선 워커가 닫히기를 기다린다 (editorCleanup)
@@ -163,7 +163,7 @@ Cloudinary URL마다 fetch → prepareImageFile로 재압축 → data/mimeType�
 
 읽기는 막지 않는다. 마이그레이션이 카드 테이블을 그대로 읽어야 한다.
 
-## 복구 경로 (`BoardSnapshotClient`)
+## 복구 경로 (`BoardSync`)
 
 `blocked`가 되면 보드 위에 덮개를 씌우고 `inert`로 입력을 막은 뒤 세 갈래를 준다.
 

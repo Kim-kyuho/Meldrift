@@ -2,13 +2,13 @@
 
 소스: `apps/plus/components/BoardMenu.tsx`, `packages/ui/src/features/board/BoardMenu.tsx`
 
-Free와 같은 공통 메뉴를 사용하고 Plus 브랜드와 인증 영역만 주입한다. 메뉴 열림 상태는 부모가 소유한다.
+Free와 같은 공통 메뉴를 사용하고 Plus 브랜드와 인증 영역만 주입한다. 메뉴 열림 상태는 부모가 소유한다. 보드 화면에서는 공유 BoardClient의 `renderMenu`가 넘기는 `BoardMenuControls`를 그대로 펼쳐 넣는다.
 
 ## 공통 메뉴
 
-보드 화면은 제목, Reorder Memos, Export, Import, Compile to Markdown, Reset, About을 표시한다. 보드 목록 화면처럼 `currentBoard`가 없으면 보드 작업 영역을 숨기고 인증·About만 표시한다. 제목은 표시용이며 보드 CRUD는 별도 목록 화면에서 처리한다.
+보드 화면은 제목, Reorder Memos, Export, Import, Compile to Markdown, Reset, About을 표시한다. 제목은 공유 BoardClient가 넘기는 `title`이다. 보드 목록 화면은 `title`과 `boardActions`를 넘기지 않아 보드 작업 영역을 숨기고, 제목을 `Board List`로 바꿔 작게 표시한다. 보드 CRUD는 별도 목록 화면에서 처리한다.
 
-`transfer`로 파일 내보내기·불러오기·Reset 콜백과 진행 상태를 전달한다. Export는 로그인 후, Import와 Reset은 로그인·승인된 편집 권한 및 현재 작업 가능 상태를 확인한 뒤 사용할 수 있다. 진행 중 반출입과 편집 등은 공통 비활성화 조건에 반영한다.
+파일 항목의 잠금과 동작은 공유 BoardClient 안의 [BoardControls](../shared/board-controls.md)가 `boardActions`로 계산해 넘긴다. 이 래퍼는 권한을 다시 판단하지 않는다. Export는 로그인 후, Import와 Reset은 로그인·승인된 편집 권한 및 현재 작업 가능 상태일 때 열린다.
 
 Import는 현재 보드 메타데이터를 유지하면서 내용을 교체하고 복제한 객체에 새 동기화 ID를 부여한다. Reset은 현재 보드 내용만 비운다. 서버 revision과 계정 정보는 초기화하지 않는다. 두 작업 모두 공통 Undo/Redo 대상이다.
 

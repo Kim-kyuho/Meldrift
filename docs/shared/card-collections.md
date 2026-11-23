@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 삽입 | `nextPositiveId`로 클라이언트가 발급 | 같다 |
 | 갱신·삭제 | `setState`만 | 같다 |
-| 저장 | `useBoardPersistance`가 브라우저 DB에 스냅샷을 쓴다 | `SnapshotSync`가 브라우저 DB에 쓰고 서버로 올린다 |
+| 저장 | `BoardControls`가 `freeBoardStorage.save`로 브라우저 DB에 스냅샷을 쓴다 | `BoardControls`가 동기화 계층의 `save`로 브라우저 DB에 쓰고 서버로 올린다 |
 | 권한 | 없다 | `BoardClient`가 `canEdit`으로 핸들러 앞을 막는다 |
 
 권한 검사가 훅 안에 없다. 카드 컴포넌트에 핸들러를 넘기는 `BoardClient`가 `canEditCard`를 보고 막거나 통과시킨다. 훅은 권한 개념을 모른다.

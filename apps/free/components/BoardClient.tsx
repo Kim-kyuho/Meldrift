@@ -1,18 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import type { BoardSnapshot } from "@meldrift/board-data/board-state";
 import SharedBoardClient from "@meldrift/ui/BoardClient";
 import { useBoardLoad } from "@/hooks/useBoardLoad";
-import { isBoardContentEmpty } from "@/lib/help";
-import BoardControls from "./BoardControls";
-import TutorialBoardClient from "./TutorialBoardClient";
+import { freeBoardGuide } from "@/lib/board-guide";
+import { freeBoardStorage } from "@/lib/board-storage";
+import BoardMenu from "./BoardMenu";
 
 export default function BoardClient() {
     const { initialSnapshot, databaseError } = useBoardLoad();
-    const [tutorialActive, setTutorialActive] = useState(false);
-    const [resumeSnapshot, setResumeSnapshot] = useState<BoardSnapshot | null>(null);
-    const [suppressAutoHelp, setSuppressAutoHelp] = useState(false);
 
     if (databaseError) {
         return (
@@ -46,32 +41,13 @@ export default function BoardClient() {
         );
     }
 
-    if (tutorialActive) {
-        return (
-            <TutorialBoardClient
-                onExit={() => {
-                    setTutorialActive(false);
-                }}
-            />
-        );
-    }
-
-    const activeSnapshot = resumeSnapshot ?? initialSnapshot;
-
     return (
         <SharedBoardClient
-            initialSnapshot={activeSnapshot}
-            renderControls={(controls) => (
-                <BoardControls
-                    {...controls}
-                    initialHelpOpen={!suppressAutoHelp && isBoardContentEmpty(initialSnapshot)}
-                    onStartTutorial={(currentSnapshot) => {
-                        setResumeSnapshot(currentSnapshot);
-                        setSuppressAutoHelp(true);
-                        setTutorialActive(true);
-                    }}
-                />
-            )}
+            initialSnapshot={initialSnapshot}
+            storage={freeBoardStorage}
+            guide={freeBoardGuide}
+            menuTitle="Free Board"
+            renderMenu={(menu) => <BoardMenu {...menu} />}
         />
     );
 }

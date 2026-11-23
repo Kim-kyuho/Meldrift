@@ -396,7 +396,7 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
             }
         }
         case "decode":
-            return decodeDatabase(request.bytes);
+            return decodeDatabase(request.bytes, request.expectedBoardId);
         case "import":
             return importDatabase(request.bytes, request.revision);
         case "record": {
