@@ -32,7 +32,7 @@
     "@meldrift/board-data": "*",
     "@meldrift/core": "*",
     "@meldrift/ui": "*",
-    "@neondatabase/serverless": "^1.2.0",
+    "@neondatabase/serverless": "^1.2.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^3.11.3",
     "cloudinary": "^2.11.0",
