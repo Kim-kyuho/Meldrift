@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@meldrift/diagram-engine", () => ({
@@ -111,7 +111,9 @@ describe("HelpModal 동작", () => {
         expect(shortcutTab).toHaveAttribute("aria-selected", "false");
 
         expect(await screen.findByRole("heading", { name: "Welcome to Meldrift!" })).toBeVisible();
-        expect(document.querySelector(".mermaid-diagram-view .meldrift-diagram-renderer")).not.toBeNull();
+        await waitFor(() => {
+            expect(document.querySelector(".mermaid-diagram-view .meldrift-diagram-renderer")).toBeInTheDocument();
+        });
         expect(screen.getByRole("table")).toBeInTheDocument();
 
         fireEvent.click(shortcutTab);

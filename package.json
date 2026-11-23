@@ -26,7 +26,8 @@
     "test:e2e:plus": "npm run test:e2e --workspace=meldrift-plus"
   },
   "devDependencies": {
-    "concurrently": "^10.0.7"
+    "concurrently": "^10.0.7",
+    "jsdom": "31.0.1"
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-arm64-musl": "4.3.5",
