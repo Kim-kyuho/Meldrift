@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
+import FreeAnalytics from "@/components/FreeAnalytics";
 
 import "./globals.css";
 
@@ -26,7 +26,7 @@ export default function RootLayout({
         >
             <body className="min-h-full flex flex-col">
                 {children}
-                <Analytics />
+                <FreeAnalytics />
             </body>
         </html>
     );

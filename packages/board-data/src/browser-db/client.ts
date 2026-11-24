@@ -52,7 +52,7 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
     }
 
     return {
-        load: () => request<BoardSnapshot>({ type: "load" }),
+        load: (options?: { readOnly?: boolean }) => request<BoardSnapshot>({ type: "load", ...options }),
         replace: (snapshot: BoardSnapshot, dirty = false, options: ReplaceOptions = {}) => resetInProgress
             ? Promise.resolve()
             : request<void>({ type: "replace", snapshot, dirty, ...options }),
@@ -95,12 +95,29 @@ export function createBoardDatabase(storageName: string, board: BoardInfo) {
             }
         },
         close,
+        closeWhenIdle: async () => {
+            try {
+                if (worker) {
+                    await request<void>({ type: "flush" });
+                }
+            } finally {
+                close();
+            }
+        },
     };
 }
 
 export type BoardDatabaseClient = ReturnType<typeof createBoardDatabase>;
-const freeDatabase = createBoardDatabase("meldrift-free", defaultBoard);
-export const loadBoardState = freeDatabase.load;
+const freeStorage = "meldrift-free";
+const freeDatabase = createBoardDatabase(freeStorage, defaultBoard);
+export function loadBoardState(readOnly = false) {
+    if (!readOnly) {
+        return freeDatabase.load();
+    }
+    const reader = createBoardDatabase(freeStorage, defaultBoard);
+    return reader.load({ readOnly: true }).finally(reader.close);
+}
+export const closeBoardState = freeDatabase.closeWhenIdle;
 export const replaceBoardState = (snapshot: BoardSnapshot) => freeDatabase.replace(snapshot);
 export const encodeBoardDatabase = freeDatabase.encode;
 export const decodeBoardDatabase = (bytes: ArrayBuffer) => freeDatabase.decode(bytes, defaultBoard.boardId);

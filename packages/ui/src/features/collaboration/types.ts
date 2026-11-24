@@ -3,41 +3,42 @@ import type { RemotePatch } from "@meldrift/board-data/remote-patch";
 export type CollaborationStatus = "connecting" | "open" | "reconnecting" | "unavailable" | "idle" | "offline";
 export type CollaborationIntent = "move" | "edit";
 
-export type CollaborationPeer = {
+type CollaborationIdentity = { email: string | null; displayName?: string };
+
+export const participantName = (person: CollaborationIdentity) => person.displayName ?? person.email;
+
+export type CollaborationPeer = CollaborationIdentity & {
     clientId: string;
     userId: number | null;
-    email: string | null;
     role: "editor" | "viewer" | "guest";
     color: string;
     self: boolean;
 };
 
-export type CollaborationLock = {
+export type CollaborationLock = CollaborationIdentity & {
     key: string;
     clientId: string;
-    email: string | null;
     intent: CollaborationIntent;
     color: string;
     saving: boolean;
 };
 
-export type CollaborationCursor = { clientId: string; x: number; y: number; email: string | null; color: string };
+export type CollaborationCursor = CollaborationIdentity & { clientId: string; x: number; y: number; color: string };
 
-export type CollaborationTransient = {
+export type CollaborationTransient = CollaborationIdentity & {
     key: string;
     clientId: string;
     x: number;
     y: number;
     width: number;
     height: number;
-    email: string | null;
     color: string;
 };
 
-export type RemoteBatch = { seq: number; patch: RemotePatch };
+export type RemoteBatch = { seq: number; patch: RemotePatch; preserveLocalIds?: boolean };
 
 // offline: 연결이 끊겨 판정하지 못했다. 다른 사람이 쥔 것은 아니다.
-export type LockDenial = { keys: string[]; email: string | null; offline: boolean };
+export type LockDenial = CollaborationIdentity & { keys: string[]; offline: boolean };
 
 // Plus가 WebSocket·잠금·원격 반영을 묶어 넘기는 계약. 보드 화면은 이 값만 보고 WebSocket은 모른다.
 export type BoardCollaboration = {

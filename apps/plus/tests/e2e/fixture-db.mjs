@@ -31,6 +31,11 @@ if (process.env.FIXTURE_LIVE === "1") {
         SELECT 1, id, 'editor' FROM users WHERE email = 'member@example.test';
         INSERT INTO board_sync (board_id, revision, mode) VALUES (1, 0, 'delta');
         UPDATE boards SET collab_flg = 1 WHERE board_id = 1;
+        INSERT INTO boards (title, width, height, owner_id, private_flg, collab_flg)
+        VALUES ('Host rotation board', 7680, 4320, 'owner@example.test', 1, 1);
+        INSERT INTO board_members (board_id, user_id, role)
+        SELECT 2, id, 'editor' FROM users WHERE email = 'member@example.test';
+        INSERT INTO board_sync (board_id, revision, mode) VALUES (2, 0, 'delta');
     `);
 }
 

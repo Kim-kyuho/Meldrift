@@ -10,7 +10,7 @@ import {
     ChangeRequestError, changeRequestDigest, legacyChangeRequestDigest, maxOperationsPerRequest, parseChangeRequest,
 } from "@/lib/sync-operations";
 import { buildCommitStatements, referencedAssetIds } from "@/lib/sync-commit";
-import { announceCommit, foreignLockFor, liveClientIdFrom, readChangeLog } from "@/lib/live/commit-events";
+import { foreignLockFor, liveClientIdFrom, readChangeLog, recordLiveRevision } from "@/lib/live/commit-events";
 import { holderOf } from "@/lib/live/protocol";
 import { getLiveStore } from "@/lib/live/store";
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest, { params }: Context) {
     }
 
     const clientId = liveClientIdFrom(request);
-    const store = clientId ? getLiveStore() : null;
+    const store = gate.board.collabFlg === 1 ? getLiveStore() : null;
     let digest: string;
     let statements;
     let changeRequest;
@@ -144,8 +144,8 @@ export async function POST(request: NextRequest, { params }: Context) {
     }
 
     const touched = touchedKeysOf(changeRequest.operations);
-    if (clientId) {
-        const foreign = await foreignLockFor(store, boardId, holderOf(gate.identity.userId, clientId), touched);
+    if (store) {
+        const foreign = await foreignLockFor(store, boardId, clientId ? holderOf(gate.identity.userId, clientId) : null, touched);
         if (foreign) {
             return NextResponse.json({
                 code: "locked", key: foreign.key, email: foreign.email,
@@ -162,12 +162,7 @@ export async function POST(request: NextRequest, { params }: Context) {
             await discardAsset(db, boardId, stagedId);
         }
         const revision = Number(committed.rows[0].revision);
-        await announceCommit(store, boardId, touched, {
-            revision,
-            mutationId: changeRequest.mutationId,
-            by: { userId: gate.identity.userId, email: gate.user.email, clientId },
-            operations: changeRequest.operations,
-        });
+        await recordLiveRevision(store, boardId, touched, revision);
         return NextResponse.json({ ok: true, revision });
     }
 

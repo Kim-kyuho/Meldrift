@@ -8,7 +8,6 @@
   },
   "scripts": {
     "dev": "NODE_ENV=development next dev",
-    "dev:live": "NODE_ENV=development tsx watch scripts/live-dev-server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -34,7 +33,6 @@
     "@meldrift/ui": "*",
     "@neondatabase/serverless": "^1.2.1",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/functions": "^3.11.3",
     "cloudinary": "^2.11.0",
     "drizzle-orm": "^0.45.4",
     "html-to-image": "^1.11.13",
@@ -46,7 +44,6 @@
     "redis": "^6.3.1",
     "sql.js": "^1.17.0",
     "turndown": "^7.2.5",
-    "ws": "^8.23.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -61,7 +58,6 @@
     "@types/react-dom": "^19",
     "@types/sql.js": "^1.16.0",
     "@types/turndown": "^5.0.6",
-    "@types/ws": "^8.18.2",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.15.0",
     "eslint-config-next": "^16.4.6",

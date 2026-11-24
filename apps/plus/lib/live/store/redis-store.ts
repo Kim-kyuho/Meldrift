@@ -1,15 +1,23 @@
 import { createClient } from "redis";
-import type { BoardEvent, LiveLock } from "../protocol";
-import type { AcquireResult, BoardEventListener, LiveStore, PresenceRecord, StoredLock } from "./types";
+import type { LiveLock } from "../protocol";
+import type { AcquireResult, LiveStore, StoredLock } from "./types";
 
 type RedisClient = ReturnType<typeof createClient>;
 
 const dayMs = "86400000";
 const locksKey = (boardId: number) => `mdr:locks:${boardId}`;
-const presenceKey = (boardId: number) => `mdr:presence:${boardId}`;
-const presenceInfoKey = (boardId: number) => `mdr:presence-info:${boardId}`;
 const touchedKey = (boardId: number) => `mdr:touched:${boardId}`;
-const channelOf = (boardId: number) => `mdr:board:${boardId}`;
+const peerRoomKey = (boardId: number) => `mdr:peer-room:${boardId}`;
+
+const writePeerRoomScript = `
+if (redis.call('GET', KEYS[1]) or '') ~= ARGV[1] then return 0 end
+if ARGV[2] == '' then
+    redis.call('DEL', KEYS[1])
+else
+    redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+end
+return 1
+`;
 
 // 모든 스크립트는 Redis 서버 시각을 쓴다. 인스턴스마다 시계가 달라도 만료 판정이 같다.
 const clock = `
@@ -74,26 +82,6 @@ redis.call('PEXPIRE', KEYS[1], ${dayMs})
 return { 1 }
 `;
 
-const reassertScript = `${clock}${liveOthers}
-local live, first = liveOthers(KEYS[1], ARGV[1])
-local entry = cjson.decode(ARGV[3])
-entry.expiresAt = now + tonumber(ARGV[2])
-local held = {}
-local lost = {}
-for i = 4, #ARGV do
-    local key = ARGV[i]
-    if conflictFor(live, first, { key }) then
-        lost[#lost + 1] = key
-    else
-        entry.key = key
-        redis.call('HSET', KEYS[1], key, cjson.encode(entry))
-        held[#held + 1] = key
-    end
-end
-redis.call('PEXPIRE', KEYS[1], ${dayMs})
-return { held, lost }
-`;
-
 const foreignScript = `${clock}${liveOthers}
 local keys = {}
 for i = 2, #ARGV do
@@ -123,24 +111,12 @@ end
 local all = redis.call('HGETALL', KEYS[1])
 for i = 1, #all, 2 do
     local entry = cjson.decode(all[i + 1])
-    if holders[entry.holder] then
+    if tonumber(entry.expiresAt) > now and holders[entry.holder] then
         entry.expiresAt = now + tonumber(ARGV[1])
         redis.call('HSET', KEYS[1], all[i], cjson.encode(entry))
     end
 end
 return 1
-`;
-
-const purgeScript = `
-local purged = {}
-local all = redis.call('HGETALL', KEYS[1])
-for i = 1, #all, 2 do
-    if cjson.decode(all[i + 1]).holder == ARGV[1] then
-        redis.call('HDEL', KEYS[1], all[i])
-        purged[#purged + 1] = all[i]
-    end
-end
-return purged
 `;
 
 const liveLocksScript = `${clock}
@@ -152,50 +128,6 @@ for i = 1, #all, 2 do
     end
 end
 return result
-`;
-
-const joinScript = `${clock}
-local isNew = redis.call('ZSCORE', KEYS[1], ARGV[1]) == false
-redis.call('ZADD', KEYS[1], now, ARGV[1])
-redis.call('HSET', KEYS[2], ARGV[1], ARGV[2])
-redis.call('PEXPIRE', KEYS[1], ${dayMs})
-redis.call('PEXPIRE', KEYS[2], ${dayMs})
-if isNew then
-    return 1
-end
-return 0
-`;
-
-const touchScript = `${clock}
-for i = 1, #ARGV do
-    redis.call('ZADD', KEYS[1], 'XX', now, ARGV[i])
-end
-return 1
-`;
-
-const leaveScript = `
-local raw = redis.call('HGET', KEYS[2], ARGV[1])
-if not raw or cjson.decode(raw).connId ~= ARGV[2] then
-    return 0
-end
-redis.call('HDEL', KEYS[2], ARGV[1])
-redis.call('ZREM', KEYS[1], ARGV[1])
-return 1
-`;
-
-const sweepScript = `${clock}
-local stale = redis.call('ZRANGEBYSCORE', KEYS[1], '-inf', '(' .. (now - tonumber(ARGV[1])))
-local removed = {}
-for _, clientId in ipairs(stale) do
-    if redis.call('ZREM', KEYS[1], clientId) == 1 then
-        local raw = redis.call('HGET', KEYS[2], clientId)
-        redis.call('HDEL', KEYS[2], clientId)
-        if raw then
-            removed[#removed + 1] = raw
-        end
-    end
-end
-return removed
 `;
 
 const recordTouchedScript = `
@@ -214,9 +146,7 @@ const lockArgument = (lock: LiveLock) => JSON.stringify({ ...lock, key: "", expi
 
 export class RedisLiveStore implements LiveStore {
     private client: RedisClient;
-    private subscriber: RedisClient | null = null;
     private ready: Promise<unknown>;
-    private listeners = new Map<number, Set<BoardEventListener>>();
 
     constructor(url: string) {
         // 끊긴 동안 명령을 쌓아 두지 않고 바로 실패시킨다. 호출하는 쪽이 기다리지 않고 대체 경로로 간다.
@@ -231,49 +161,14 @@ export class RedisLiveStore implements LiveStore {
         return this.client.eval(script, { keys, arguments: args });
     }
 
-    private async subscriberClient() {
-        if (!this.subscriber) {
-            const subscriber = this.client.duplicate();
-            subscriber.on("error", (error) => console.error("live.redis_subscriber_error", error));
-            this.subscriber = subscriber;
-            await subscriber.connect();
-        }
-        return this.subscriber;
-    }
-
-    async publish(boardId: number, event: BoardEvent) {
+    async readPeerRoom(boardId: number) {
         await this.ready;
-        await this.client.publish(channelOf(boardId), JSON.stringify(event));
+        return this.client.get(peerRoomKey(boardId));
     }
 
-    async subscribe(boardId: number, listener: BoardEventListener) {
-        const subscriber = await this.subscriberClient();
-        let listeners = this.listeners.get(boardId);
-        if (!listeners) {
-            const created = new Set<BoardEventListener>();
-            listeners = created;
-            this.listeners.set(boardId, created);
-            await subscriber.subscribe(channelOf(boardId), (message) => {
-                let event: BoardEvent;
-                try {
-                    event = JSON.parse(message) as BoardEvent;
-                } catch {
-                    return;
-                }
-                for (const each of [...created]) {
-                    each(event);
-                }
-            });
-        }
-        listeners.add(listener);
-        return async () => {
-            const current = this.listeners.get(boardId);
-            current?.delete(listener);
-            if (current && current.size === 0) {
-                this.listeners.delete(boardId);
-                await subscriber.unsubscribe(channelOf(boardId));
-            }
-        };
+    async writePeerRoom(boardId: number, expected: string | null, data: string | null, ttlMs: number) {
+        const written = await this.run(writePeerRoomScript, [peerRoomKey(boardId)], [expected ?? "", data ?? "", String(ttlMs)]);
+        return Number(written) === 1;
     }
 
     async acquire(boardId: number, lock: LiveLock, keys: string[], ttlMs: number): Promise<AcquireResult> {
@@ -296,19 +191,6 @@ export class RedisLiveStore implements LiveStore {
         await this.run(renewScript, [locksKey(boardId)], [String(ttlMs), ...holders]);
     }
 
-    async reassert(boardId: number, lock: LiveLock, keys: string[], ttlMs: number) {
-        if (keys.length === 0) {
-            return { held: [], lost: [] };
-        }
-        const [held, lost] = await this.run(reassertScript, [locksKey(boardId)],
-            [lock.holder, String(ttlMs), lockArgument(lock), ...keys]) as [string[], string[]];
-        return { held: (held ?? []).map(String), lost: (lost ?? []).map(String) };
-    }
-
-    async purgeHolder(boardId: number, holder: string) {
-        return (await this.run(purgeScript, [locksKey(boardId)], [holder]) as string[]).map(String);
-    }
-
     async locks(boardId: number) {
         return (await this.run(liveLocksScript, [locksKey(boardId)], []) as string[]).map(parseLock);
     }
@@ -319,35 +201,6 @@ export class RedisLiveStore implements LiveStore {
         }
         const raw = await this.run(foreignScript, [locksKey(boardId)], [holder ?? "", ...keys]);
         return raw ? parseLock(raw) : null;
-    }
-
-    async join(boardId: number, record: PresenceRecord) {
-        const isNew = await this.run(joinScript, [presenceKey(boardId), presenceInfoKey(boardId)],
-            [record.clientId, JSON.stringify(record)]);
-        return Number(isNew) === 1;
-    }
-
-    async touch(boardId: number, clientIds: string[]) {
-        if (clientIds.length === 0) {
-            return;
-        }
-        await this.run(touchScript, [presenceKey(boardId)], clientIds);
-    }
-
-    async leave(boardId: number, clientId: string, connId: string) {
-        const removed = await this.run(leaveScript, [presenceKey(boardId), presenceInfoKey(boardId)], [clientId, connId]);
-        return Number(removed) === 1;
-    }
-
-    async peers(boardId: number) {
-        await this.ready;
-        const entries = await this.client.hGetAll(presenceInfoKey(boardId));
-        return Object.values(entries).map((raw) => JSON.parse(String(raw)) as PresenceRecord);
-    }
-
-    async sweep(boardId: number, staleMs: number) {
-        const removed = await this.run(sweepScript, [presenceKey(boardId), presenceInfoKey(boardId)], [String(staleMs)]);
-        return (removed as string[]).map((raw) => JSON.parse(String(raw)) as PresenceRecord);
     }
 
     async recordTouched(boardId: number, keys: string[], revision: number) {
@@ -367,7 +220,6 @@ export class RedisLiveStore implements LiveStore {
     }
 
     async close() {
-        await this.subscriber?.quit().catch(() => undefined);
         await this.client.quit().catch(() => undefined);
     }
 }

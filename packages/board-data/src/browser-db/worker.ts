@@ -32,6 +32,7 @@ let remoteLog: { seq: number; patch: RemotePatch }[] = [];
 const workerScope = self as DedicatedWorkerGlobalScope;
 
 let sqlite3: Sqlite3Static;
+let sqliteInitialization: Promise<Sqlite3Static> | null = null;
 let database: Database;
 let initialization: Promise<void> | null = null;
 let operationQueue = Promise.resolve();
@@ -244,8 +245,12 @@ async function applyRemote(operations: BoardOperation[], revision: number, asset
     return { seq: remoteSeq, patch };
 }
 
-async function initialize() {
-    sqlite3 = await sqlite3InitModule();
+async function initializeSqlite() {
+    sqlite3 = await (sqliteInitialization ??= sqlite3InitModule());
+}
+
+async function initialize(readOnly: boolean) {
+    await initializeSqlite();
     const savedFile = await loadIndexedDbFile();
     const storage = await openIndexedDb();
     try {
@@ -272,12 +277,27 @@ async function initialize() {
         initialBoard.boardId, initialBoard.title, initialBoard.width, initialBoard.height,
     ]);
     lastSaved = readSnapshot(database, initialBoard.boardId);
-    await persistDatabase();
+    if (!readOnly) {
+        await persistDatabase();
+    }
 }
 
-async function ensureInitialized() {
-    initialization ??= initialize();
+async function ensureInitialized(readOnly: boolean) {
+    initialization ??= initialize(readOnly);
     return initialization;
+}
+
+async function encodeDatabase(snapshot: BoardSnapshot) {
+    await initializeSqlite();
+    const exported = new sqlite3.oo1.DB(":memory:");
+    try {
+        exported.exec(schemaSql);
+        replaceSnapshot(exported, snapshot);
+        const bytes = exportDatabase(exported);
+        return bytes.slice().buffer as ArrayBuffer;
+    } finally {
+        exported.close();
+    }
 }
 
 function decodeDatabase(bytes: ArrayBuffer, expectedBoardId?: number) {
@@ -347,6 +367,17 @@ async function importDatabase(bytes: ArrayBuffer, revision = 0) {
 }
 
 async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> {
+    if (request.type === "flush") {
+        return;
+    }
+    // Save file conversions do not need to open or write the persistent board.
+    if (request.type === "encode") {
+        return encodeDatabase(request.snapshot);
+    }
+    if (request.type === "decode") {
+        await initializeSqlite();
+        return decodeDatabase(request.bytes, request.expectedBoardId);
+    }
     if (!initialization) {
         browserDatabaseName = request.storageName;
         initialBoard = request.board;
@@ -354,7 +385,7 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
     if (request.storageName !== browserDatabaseName || request.board.boardId !== initialBoard.boardId) {
         throw new Error("A worker cannot switch its board storage.");
     }
-    await ensureInitialized();
+    await ensureInitialized(request.type === "load" && request.readOnly === true);
     switch (request.type) {
         case "load":
             return readSnapshot(database, initialBoard.boardId);
@@ -384,19 +415,6 @@ async function handleRequest(request: BrowserDbRequest): Promise<BoardDbResult> 
             const bytes = exportDatabase(database);
             return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
         }
-        case "encode": {
-            const exported = new sqlite3.oo1.DB(":memory:");
-            try {
-                exported.exec(schemaSql);
-                replaceSnapshot(exported, request.snapshot);
-                const bytes = exportDatabase(exported);
-                return bytes.slice().buffer as ArrayBuffer;
-            } finally {
-                exported.close();
-            }
-        }
-        case "decode":
-            return decodeDatabase(request.bytes, request.expectedBoardId);
         case "import":
             return importDatabase(request.bytes, request.revision);
         case "record": {

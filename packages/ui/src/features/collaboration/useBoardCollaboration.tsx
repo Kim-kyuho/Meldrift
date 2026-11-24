@@ -8,10 +8,10 @@ import type { BoardStroke } from "@meldrift/core/board-stroke";
 import type { CardType, SelectedCard } from "@meldrift/core/cards";
 import type { BoardImage, BoardMemo, BoardMermaid, BoardTable } from "@meldrift/board-data/board-state";
 import { memoOrderKey, objectKeyOf, strokeLayerKey } from "@meldrift/board-data/board-delta";
-import { applyRemotePatch, type BoardCollections, type RemotePatch } from "@meldrift/board-data/remote-patch";
+import { alignRemoteDisplayIds, applyRemotePatch, type BoardCollections, type RemotePatch } from "@meldrift/board-data/remote-patch";
 import type { LockedCard } from "./CollaborationLayer";
 import { lockActivity } from "./CollaborationLayer";
-import type { BoardCollaboration, CollaborationIntent, CollaborationLock, LockDenial } from "./types";
+import { participantName, type BoardCollaboration, type CollaborationIntent, type CollaborationLock, type LockDenial } from "./types";
 
 type Collections = {
     memos: BoardMemo[];
@@ -60,12 +60,12 @@ function patchOne<K extends keyof BoardCollections>(key: K, items: BoardCollecti
     return applyRemotePatch({ ...emptyCollections, [key]: items }, patch)[key];
 }
 
-export const blockedText = (email: string | null, activity: string) =>
-    `${email ?? "Another member"} is ${activity} this. Try again when they finish.`;
+export const blockedText = (name: string | null, activity: string) =>
+    `${name ?? "Another member"} is ${activity} this. Try again when they finish.`;
 
 const denialText = (denial: LockDenial) => denial.offline
     ? "The live connection was interrupted. Try again in a moment."
-    : blockedText(denial.email, "editing");
+    : blockedText(participantName(denial), "editing");
 
 export function useBoardCollaboration(options: Options) {
     const {
@@ -267,13 +267,15 @@ export function useBoardCollaboration(options: Options) {
             return;
         }
         return subscribeRemote((batch) => {
+            const patch = batch.preserveLocalIds ? alignRemoteDisplayIds(collectionsRef.current, batch.patch) : batch.patch;
+            if (batch.preserveLocalIds) {collectionsRef.current = applyRemotePatch(collectionsRef.current, patch);}
             setAppliedRemoteSeq(batch.seq);
-            projectRemote(batch.patch);
-            setMemos((previous) => patchOne("memos", previous, batch.patch));
-            setImages((previous) => patchOne("images", previous, batch.patch));
-            setMermaids((previous) => patchOne("mermaids", previous, batch.patch));
-            setTables((previous) => patchOne("tables", previous, batch.patch));
-            setStrokes((previous) => patchOne("strokes", previous, batch.patch));
+            projectRemote(patch);
+            setMemos((previous) => patchOne("memos", previous, patch));
+            setImages((previous) => patchOne("images", previous, patch));
+            setMermaids((previous) => patchOne("mermaids", previous, patch));
+            setTables((previous) => patchOne("tables", previous, patch));
+            setStrokes((previous) => patchOne("strokes", previous, patch));
             // 내가 쥔 카드는 다시 마운트하지 않는다. 끌기 도중의 Rnd 상태를 잃지 않기 위해서다.
             bumpVersions(batch.patch.keys.filter((key) => !heldRef.current.has(key)));
             const deleted = new Set(batch.patch.deletes);
@@ -378,7 +380,7 @@ export function useBoardCollaboration(options: Options) {
     }, [publishTransients, groupOffset, cardsOf]);
 
     const blocked = useCallback((lock: CollaborationLock) => {
-        setMessage(blockedText(lock.email, lockActivity(lock)));
+        setMessage(blockedText(participantName(lock), lockActivity(lock)));
     }, [setMessage]);
 
     const guard = useCallback(async (keys: string[], action: () => void, intent: CollaborationIntent = "move") => {

@@ -46,26 +46,11 @@ function buildHighlightStyles(targets: string[]): string {
         .join(", ");
 
     return `
-        @keyframes meldriftTutorialPaddingGlow {
-            0%, 100% {
-                background-color: rgba(244, 63, 94, 0.06);
-                box-shadow: inset 0 0 8px rgba(244, 63, 94, 0.12);
-            }
-            50% {
-                background-color: rgba(244, 63, 94, 0.24);
-                box-shadow: inset 0 0 16px rgba(244, 63, 94, 0.34), 0 0 10px rgba(244, 63, 94, 0.18);
-            }
-        }
         ${selectors} {
-            animation: meldriftTutorialPaddingGlow 1.6s ease-in-out infinite;
+            animation: var(--meldrift-attention-animation);
+            background-color: var(--meldrift-attention-background);
+            box-shadow: var(--meldrift-attention-shadow);
             border-radius: 0.75rem;
-        }
-        @media (prefers-reduced-motion: reduce) {
-            ${selectors} {
-                animation: none;
-                background-color: rgba(244, 63, 94, 0.18);
-                box-shadow: inset 0 0 12px rgba(244, 63, 94, 0.28);
-            }
         }
     `;
 }

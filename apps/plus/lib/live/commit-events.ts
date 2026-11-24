@@ -2,13 +2,14 @@ import { and, asc, eq, gt } from "drizzle-orm";
 import type { BoardOperation } from "@meldrift/board-data/board-delta";
 import { getDb } from "@/lib/db";
 import { db_boardSync, db_syncMutations, db_users } from "@/lib/db/schema";
-import { liveLimits, maskEmail, type CommitAuthor, type LiveCommit } from "./protocol";
+import { maskEmail, type CommitAuthor } from "./protocol";
 import type { LiveStore } from "./store/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // 커밋은 Redis를 기다리지 않는다. 이 시간 안에 답이 없으면 잠금 검사·알림 없이 진행한다.
 export const liveStoreTimeoutMs = 2000;
+export const liveHeadKey = "$head";
 
 export class LiveStoreTimeout extends Error {}
 
@@ -26,7 +27,7 @@ export function liveClientIdFrom(request: Request) {
 }
 
 // Redis가 응답하지 않으면 커밋을 막지 않는다. 겹침 검사가 일관성을 지킨다.
-export async function foreignLockFor(store: LiveStore | null, boardId: number, holder: string, keys: string[]) {
+export async function foreignLockFor(store: LiveStore | null, boardId: number, holder: string | null, keys: string[]) {
     if (!store || keys.length === 0) {
         return null;
     }
@@ -38,19 +39,12 @@ export async function foreignLockFor(store: LiveStore | null, boardId: number, h
     }
 }
 
-export async function announceCommit(
-    store: LiveStore | null, boardId: number, touched: string[], commit: LiveCommit,
-) {
+export async function recordLiveRevision(store: LiveStore | null, boardId: number, touched: string[], revision: number) {
     if (!store) {
         return;
     }
     try {
-        const inline = commit.operations
-            && Buffer.byteLength(JSON.stringify(commit.operations)) <= liveLimits.inlineCommitBytes;
-        await withTimeout(Promise.all([
-            store.recordTouched(boardId, touched, commit.revision),
-            store.publish(boardId, { t: "commit", ...commit, operations: inline ? commit.operations : null }),
-        ]));
+        await withTimeout(store.recordTouched(boardId, [...touched, liveHeadKey], revision));
     } catch (error) {
         console.error("live.commit_announce_failed", error);
     }
@@ -62,12 +56,16 @@ export type ChangeLogResult =
     | { status: "ok"; head: number; mutations: ChangeLogEntry[]; more: boolean }
     | { status: "gone"; head: number };
 
+export async function boardHeadRevision(boardId: number) {
+    const [sync] = await getDb().select({ revision: db_boardSync.revision }).from(db_boardSync)
+        .where(eq(db_boardSync.boardId, boardId)).limit(1);
+    return sync?.revision ?? 0;
+}
+
 // 재연결·빈 판 채우기에 쓴다. 요청한 판 바로 다음부터 끊김 없이 이어져야 한다. 아니면 전체 재동기화를 요구한다.
 export async function readChangeLog(boardId: number, after: number, limit: number, seesEmails: boolean): Promise<ChangeLogResult> {
     const db = getDb();
-    const [sync] = await db.select({ revision: db_boardSync.revision }).from(db_boardSync)
-        .where(eq(db_boardSync.boardId, boardId)).limit(1);
-    const head = sync?.revision ?? 0;
+    const head = await boardHeadRevision(boardId);
     if (after >= head) {
         return { status: "ok", head, mutations: [], more: false };
     }

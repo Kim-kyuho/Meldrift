@@ -18,7 +18,8 @@ export type TransferredAsset = { assetId: string; data: ArrayBuffer; mimeType: s
 export type RemoteApplied = { seq: number; patch: RemotePatch };
 
 export type BrowserDbPayload =
-    | { type: "load" }
+    | { type: "load"; readOnly?: boolean }
+    | { type: "flush" }
     | { type: "replace"; snapshot: BoardSnapshot; dirty?: boolean; remoteSeq?: number; deferredKeys?: string[] }
     | { type: "export" }
     | { type: "encode"; snapshot: BoardSnapshot }

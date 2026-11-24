@@ -69,15 +69,14 @@ describe.each(stores)("Live 저장소 계약 (%s)", (_name, create) => {
         expect(await store.locks(boardId)).toEqual([]);
     });
 
-    it("만료된 잠금은 없는 것으로 보고, 재연결 재주장은 남의 것만 잃는다", async () => {
+    it("만료된 잠금은 새로 획득할 수 있다", async () => {
         const { store, boardId } = setup();
         await store.acquire(boardId, alice, ["memo:1"], 1);
         await new Promise((resolve) => setTimeout(resolve, 15));
+        await store.renew(boardId, [alice.holder], 20_000);
         expect(await store.locks(boardId)).toEqual([]);
 
-        await store.acquire(boardId, bob, ["memo:1"], 20_000);
-        expect(await store.reassert(boardId, alice, ["memo:1", "memo:3"], 20_000))
-            .toEqual({ held: ["memo:3"], lost: ["memo:1"] });
+        expect(await store.acquire(boardId, bob, ["memo:1"], 20_000)).toEqual({ granted: true });
     });
 
     it("연장과 정리는 주인 단위로 동작한다", async () => {
@@ -87,31 +86,8 @@ describe.each(stores)("Live 저장소 계약 (%s)", (_name, create) => {
         await new Promise((resolve) => setTimeout(resolve, 80));
         expect(await store.locks(boardId)).toHaveLength(2);
 
-        expect((await store.purgeHolder(boardId, alice.holder)).sort()).toEqual(["memo:1", "memo:2"]);
+        expect((await store.release(boardId, alice.holder, ["memo:1", "memo:2"])).sort()).toEqual(["memo:1", "memo:2"]);
         expect(await store.locks(boardId)).toEqual([]);
-    });
-
-    it("접속자는 처음 들어올 때만 새 사람이고, 다른 연결 id로는 내보낼 수 없다", async () => {
-        const { store, boardId } = setup();
-        const record = { clientId: "a", userId: 1, email: "a@example.com", role: "editor" as const, color: "#000", joinedAt: 1, connId: "c1" };
-        expect(await store.join(boardId, record)).toBe(true);
-        expect(await store.join(boardId, { ...record, connId: "c2" })).toBe(false);
-
-        expect(await store.leave(boardId, "a", "c1")).toBe(false);
-        expect(await store.leave(boardId, "a", "c2")).toBe(true);
-        expect(await store.peers(boardId)).toEqual([]);
-    });
-
-    it("갱신이 끊긴 접속자는 정리 대상이다", async () => {
-        const { store, boardId } = setup();
-        const record = { clientId: "a", userId: 1, email: "a@example.com", role: "editor" as const, color: "#000", joinedAt: 1, connId: "c1" };
-        await store.join(boardId, record);
-        await new Promise((resolve) => setTimeout(resolve, 30));
-        await store.join(boardId, { ...record, clientId: "b", connId: "c2" });
-
-        const removed = await store.sweep(boardId, 20);
-        expect(removed.map((peer) => peer.clientId)).toEqual(["a"]);
-        expect((await store.peers(boardId)).map((peer) => peer.clientId)).toEqual(["b"]);
     });
 
     it("키별 최신 판 번호는 줄어들지 않는다", async () => {
@@ -123,16 +99,4 @@ describe.each(stores)("Live 저장소 계약 (%s)", (_name, create) => {
         expect(await store.keyRevision(boardId, ["memo:2", "memo:9"])).toBe(3);
     });
 
-    it("발행한 사건은 구독자에게 전달되고, 구독을 끊으면 더 오지 않는다", async () => {
-        const { store, boardId } = setup();
-        const received: string[] = [];
-        const unsubscribe = await store.subscribe(boardId, (event) => received.push(event.t));
-        await store.publish(boardId, { t: "presence.leave", clientId: "x" });
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        await unsubscribe();
-        await store.publish(boardId, { t: "presence.leave", clientId: "y" });
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        expect(received).toEqual(["presence.leave"]);
-    });
 });

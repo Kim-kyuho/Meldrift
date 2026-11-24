@@ -28,6 +28,7 @@
     "@meldrift/ui": "*",
     "@sqlite.org/sqlite-wasm": "3.50.4-build1",
     "@vercel/analytics": "^2.0.1",
+    "dompurify": "^3.4.17",
     "fflate": "^0.8.3",
     "lucide-react": "^1.76.0",
     "next": "^16.4.6",

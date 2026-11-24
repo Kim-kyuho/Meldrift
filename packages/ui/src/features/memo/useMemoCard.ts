@@ -1,4 +1,5 @@
 import { PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useOutsideCardPress } from "../board/useOutsideCardPress";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import type { MemoCardData, SelectionRect } from "@meldrift/core/cards";
 import { noop } from "../../internal/noop";
@@ -59,7 +60,6 @@ export function useMemoCard({
     const [dragHandlePressed, setDragHandlePressed] = useState(false);
     const memoFocusRef = useRef<HTMLDivElement | null>(null);
     const lastMemoTapRef = useRef(0);
-    const outsidePressStartedRef = useRef(false);
 
     const [memoState, setMemoState] = useState({
         x: memo.x,
@@ -169,62 +169,15 @@ export function useMemoCard({
         }
     };
 
-    useEffect(() => {
-        const handlePressStart = (event: PointerEvent) => {
-            const target = event.target as Node;
-            const targetElement = target instanceof Element ? target : null;
-            const isPressInsideBoardToolBar = targetElement?.closest(".board-toolbar");
-            const isPressInsideMemo = targetElement?.closest(`.memo-rnd-${memo.id}`);
-            const isPressInsideBoard = targetElement?.closest(".board-scroll-layer");
-
-            outsidePressStartedRef.current = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideMemo &&
-                !isPressInsideBoardToolBar
-            );
-        };
-
-        const handlePressOutside = (event: PointerEvent) => {
-            const target = event.target as Node;
-            const targetElement = target instanceof Element ? target : null;
-
-            const isPressInsideBoardToolBar = targetElement?.closest(".board-toolbar");
-            const isPressInsideMemo = targetElement?.closest(`.memo-rnd-${memo.id}`);
-            const isPressInsideBoard = targetElement?.closest(".board-scroll-layer");
-            const isPressInsideEmptyBoard = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideMemo &&
-                !isPressInsideBoardToolBar
-            );
-
-            const startedInsideEmptyBoard = outsidePressStartedRef.current;
-            outsidePressStartedRef.current = false;
-
-            if (isEditing && startedInsideEmptyBoard && isPressInsideEmptyBoard) {
-                saveMemo();
-                onFocusClear();
-                onEditingClear();
-                return;
-            }
-
-            if (isPressInsideBoardToolBar) {
-                return;
-            }
-
-            if (isPressInsideEmptyBoard && isFocused) {
-                onFocusClear();
-            }
-
-        };
-
-        document.addEventListener("pointerdown", handlePressStart);
-        document.addEventListener("pointerup", handlePressOutside);
-
-        return () => {
-            document.removeEventListener("pointerdown", handlePressStart);
-            document.removeEventListener("pointerup", handlePressOutside);
-        };
-    }, [isEditing, isFocused, memo.id, saveMemo, onEditingClear, onFocusClear]);
+    useOutsideCardPress(isEditing || isFocused, `.memo-rnd-${memo.id}`, (startedOutside) => {
+        if (isEditing && startedOutside) {
+            saveMemo();
+            onFocusClear();
+            onEditingClear();
+        } else if (isFocused) {
+            onFocusClear();
+        }
+    });
 
     const handleMemoPress = () => {
         onFocus();
