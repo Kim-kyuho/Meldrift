@@ -227,10 +227,9 @@ export function useBoardSync(board: BoardInfo, editingAllowed: boolean, collabor
                 }
             }
             const pending = await database.record();
-            // 협업 보드에서 로그인한 사용자만 Live에 연결한다. 연결 시간만큼 서버 비용이 들기 때문이다.
+            // Signed-in users automatically enter their collaborative delta board.
             if (collaborative && storageMode === "delta" && user && active && !blocked) {
                 live = new LiveRuntime({
-                    boardId: board.boardId,
                     boardEndpoint,
                     database,
                     initialRevision: pending.sync.revision,

@@ -3,7 +3,7 @@ import path from "node:path";
 
 const nextConfig: NextConfig = {
     transpilePackages: ["@meldrift/ai", "@meldrift/core", "@meldrift/ui", "@meldrift/board-data"],
-    serverExternalPackages: ["sql.js", "ws", "redis"],
+    serverExternalPackages: ["sql.js", "redis"],
     basePath: process.env.PLUS_STANDALONE === "true" ? undefined : "/plus",
     turbopack: {
         root: path.resolve(process.cwd(), "../.."),

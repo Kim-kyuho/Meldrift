@@ -17,6 +17,8 @@ type BoardControlsProps = Omit<BoardMenuControls, "boardActions"> & {
     canSave: boolean;
     canEdit: boolean;
     canExport: boolean;
+    canReplace?: boolean;
+    collaborationMenu?: { label: string; open: (snapshot: BoardSnapshot) => void };
     reorderOpen: boolean;
     onReorder: () => void;
     onCompileMarkdown: () => void;
@@ -35,6 +37,8 @@ export default function BoardControls({
     canSave,
     canEdit,
     canExport,
+    canReplace = true,
+    collaborationMenu,
     menuOpen,
     setMenuOpen,
     reorderOpen,
@@ -64,7 +68,7 @@ export default function BoardControls({
         handleResetCancel,
         handleResetConfirm,
     } = useBoardFileTransfer({
-        file, snapshot, canEdit, canExport, savePaused, replaceSnapshot: replaceBoard, setMessage,
+        file, snapshot, canEdit: canEdit && canReplace, canExport, savePaused, replaceSnapshot: replaceBoard, setMessage,
     });
 
     const handleSaveError = useCallback((error: unknown) => {
@@ -112,13 +116,18 @@ export default function BoardControls({
                     reorderOpen,
                     exportDisabled: !file || !canExport || actionBlocked,
                     exportPaused: Boolean(file) && savePaused,
-                    importDisabled: !file || !canEdit || actionBlocked,
-                    resetDisabled: !storage || !canEdit || actionBlocked,
+                    importDisabled: !file || !canEdit || !canReplace || actionBlocked,
+                    resetDisabled: !storage || !canEdit || !canReplace || actionBlocked,
                     onReorder,
                     onExport: exportBoard,
                     onImport: handleImportClick,
                     onCompileMarkdown,
                     onReset: handleResetClick,
+                    collaboration: collaborationMenu && {
+                        label: collaborationMenu.label,
+                        disabled: actionBlocked,
+                        onOpen: () => collaborationMenu.open(snapshot),
+                    },
                 },
             })}
             {resetDialogOpen && (

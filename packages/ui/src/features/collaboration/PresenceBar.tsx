@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CollaborationLock, CollaborationPeer, CollaborationStatus } from "./types";
+import { participantName, type CollaborationLock, type CollaborationPeer, type CollaborationStatus } from "./types";
 
 type PresenceBarProps = {
     status: CollaborationStatus;
@@ -13,7 +13,7 @@ type PresenceBarProps = {
 
 type PeerGroup = {
     id: string;
-    email: string | null;
+    name: string | null;
     color: string;
     self: boolean;
     role: CollaborationPeer["role"];
@@ -54,7 +54,7 @@ function groupPeers(peers: CollaborationPeer[]) {
             continue;
         }
         groups.set(id, {
-            id, email: peer.email, color: peer.color, self: peer.self, role: peer.role, tabs: 1, clientIds: [peer.clientId],
+            id, name: participantName(peer), color: peer.color, self: peer.self, role: peer.role, tabs: 1, clientIds: [peer.clientId],
         });
     }
     return [...groups.values()].sort((left, right) => Number(right.self) - Number(left.self));
@@ -74,7 +74,7 @@ function activityOf(group: PeerGroup, locks: CollaborationLock[], selfLocks: num
     return group.role === "viewer" ? "Viewing (read only)" : "Viewing";
 }
 
-const initialOf = (email: string | null) => (email?.trim()[0] ?? "?").toUpperCase();
+const initialOf = (name: string | null) => (name?.trim()[0] ?? "?").toUpperCase();
 
 export default function PresenceBar({ status, lastError = "", peers, locks, selfLocks }: PresenceBarProps) {
     const [open, setOpen] = useState(false);
@@ -97,11 +97,11 @@ export default function PresenceBar({ status, lastError = "", peers, locks, self
                     {visible.map((group) => (
                         <span
                             key={group.id}
-                            title={group.email ?? "Member"}
+                            title={group.name ?? "Member"}
                             className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white max-sm:[&:nth-child(n+3)]:hidden"
                             style={{ backgroundColor: group.color }}
                         >
-                            {initialOf(group.email)}
+                            {initialOf(group.name)}
                         </span>
                     ))}
                 </span>
@@ -120,8 +120,8 @@ export default function PresenceBar({ status, lastError = "", peers, locks, self
                             <li key={group.id} className="flex items-center gap-2">
                                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
                                 <span className="min-w-0 flex-1">
-                                    <span className="block truncate font-medium text-neutral-900" title={group.email ?? undefined}>
-                                        {group.email ?? "Member"}{group.self ? " (you)" : ""}
+                                    <span className="block truncate font-medium text-neutral-900" title={group.name ?? undefined}>
+                                        {group.name ?? "Member"}{group.self ? " (you)" : ""}
                                     </span>
                                     <span className="block text-xs text-neutral-600">
                                         {activityOf(group, locks, selfLocks)}{group.tabs > 1 ? ` · ${group.tabs} tabs` : ""}

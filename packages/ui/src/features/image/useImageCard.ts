@@ -6,6 +6,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { useOutsideCardPress } from "../board/useOutsideCardPress";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import type { SelectionRect } from "@meldrift/core/cards";
 
@@ -106,35 +107,12 @@ export function useImageCard({
         }
     };
 
-    useEffect(() => {
-        const handlePressOutside = (event: PointerEvent) => {
-            const target = event.target as Node;
-            const targetElement = target instanceof Element ? target : null;
-
-            const isPressInsideBoardToolBar = targetElement?.closest(".board-toolbar");
-            const isPressInsideImage = targetElement?.closest(`.image-rnd-${image.imageId}`);
-            const isPressInsideBoard = targetElement?.closest(".board-scroll-layer");
-            const isPressInsideEmptyBoard = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideImage &&
-                !isPressInsideBoardToolBar
-            );
-
-            if (isEditing && isPressInsideEmptyBoard) {
-                window.setTimeout(() => {
-                    saveImageDraft();
-                    onEditingClear();
-                }, 0);
-                return;
-            }
-        };
-
-        document.addEventListener("pointerup", handlePressOutside);
-
-        return () => {
-            document.removeEventListener("pointerup", handlePressOutside);
-        };
-    }, [image.imageId, isEditing, onEditingClear, saveImageDraft]);
+    useOutsideCardPress(isEditing, `.image-rnd-${image.imageId}`, () => {
+        window.setTimeout(() => {
+            saveImageDraft();
+            onEditingClear();
+        }, 0);
+    });
 
     const handleImagePress = (event: ReactMouseEvent<HTMLDivElement>) => {
         event.stopPropagation();

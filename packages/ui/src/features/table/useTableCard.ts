@@ -1,4 +1,5 @@
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useOutsideCardPress } from "../board/useOutsideCardPress";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import { noop } from "../../internal/noop";
 import type { TableCardData as BoardTable, SelectionRect } from "@meldrift/core/cards";
@@ -49,7 +50,6 @@ export function useTableCard<T extends BoardTable>({
     const cardStateRef = useRef(cardState);
     const lastTapRef = useRef(0);
     // 카드 내부에서 드래그하여 카드 외부에서 Pointer up 이벤트가 발생한 경우 내용 저장을 방지하기 위한 Ref
-    const outsidePressStartedRef = useRef(false);
 
     useEffect(() => {
         sourceRef.current = source;
@@ -101,53 +101,12 @@ export function useTableCard<T extends BoardTable>({
         }
     };
 
-    useEffect(() => {
-        const handlePressStart = (event: PointerEvent) => {
-            const target = event.target;
-            const element = target instanceof Element ? target : null;
-            const isPressInsideCard = element?.closest(`.table-rnd-${table.id}`);
-            const isPressInsideToolBar = element?.closest(".board-toolbar");
-            const isPressInsideDialog = element?.closest(".confirm-dialog");
-            const isPressInsideBoard = element?.closest(".board-scroll-layer");
-
-            outsidePressStartedRef.current = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideCard &&
-                !isPressInsideToolBar &&
-                !isPressInsideDialog
-            );
-        };
-
-        const handlePressOutside = (event: PointerEvent) => {
-            const target = event.target;
-            const element = target instanceof Element ? target : null;
-            const isPressInsideCard = element?.closest(`.table-rnd-${table.id}`);
-            const isPressInsideToolBar = element?.closest(".board-toolbar");
-            const isPressInsideDialog = element?.closest(".confirm-dialog");
-            const isPressInsideBoard = element?.closest(".board-scroll-layer");
-            const isPressInsideEmptyBoard = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideCard &&
-                !isPressInsideToolBar &&
-                !isPressInsideDialog
-            );
-
-            const startedInsideEmptyBoard = outsidePressStartedRef.current;
-            outsidePressStartedRef.current = false;
-
-            if (isEditing && startedInsideEmptyBoard && isPressInsideEmptyBoard) {
-                saveTable();
-                onEditingClear();
-            }
-        };
-
-        document.addEventListener("pointerdown", handlePressStart);
-        document.addEventListener("pointerup", handlePressOutside);
-        return () => {
-            document.removeEventListener("pointerdown", handlePressStart);
-            document.removeEventListener("pointerup", handlePressOutside);
-        };
-    }, [isEditing, onEditingClear, saveTable, table.id]);
+    useOutsideCardPress(isEditing, `.table-rnd-${table.id}`, (startedOutside) => {
+        if (startedOutside) {
+            saveTable();
+            onEditingClear();
+        }
+    });
 
     const handleTablePress = (event: ReactMouseEvent<HTMLDivElement>) => {
         event.stopPropagation();

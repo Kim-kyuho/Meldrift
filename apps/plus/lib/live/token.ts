@@ -8,6 +8,7 @@ export type LiveTokenPayload = {
     s: string | null;
     c: string;
     e: number;
+    l?: string;
 };
 
 function tokenSecret() {
@@ -23,7 +24,7 @@ function tokenSecret() {
 
 const sign = (body: string) => createHmac("sha256", tokenSecret()).update(body).digest("base64url");
 
-// 쿠키를 실을 수 없는 경로(Free 도메인 프록시 밖의 WebSocket, 개발용 별도 포트)에서 세션을 증명한다.
+// A short-lived token binds HTTP signaling to the browser's authenticated seat.
 export function signLiveToken(payload: LiveTokenPayload) {
     const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
     return `${body}.${sign(body)}`;

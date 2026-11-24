@@ -1,6 +1,6 @@
 "use client";
 
-import type { CollaborationCursor, CollaborationLock, CollaborationTransient } from "./types";
+import { participantName, type CollaborationCursor, type CollaborationLock, type CollaborationTransient } from "./types";
 
 export type LockedCard = {
     key: string;
@@ -20,12 +20,9 @@ type CollaborationLayerProps = {
     onBlocked: (lock: CollaborationLock) => void;
 };
 
-const shortName = (email: string | null) => {
-    if (!email) {
-        return "Someone";
-    }
-    const local = email.split("@")[0];
-    return local.length > 16 ? `${local.slice(0, 15)}…` : local;
+const shortName = ({ displayName, email }: Pick<CollaborationLock, "displayName" | "email">) => {
+    const name = displayName ?? email?.split("@")[0] ?? "Someone";
+    return name.length > 16 ? `${name.slice(0, 15)}…` : name;
 };
 
 export const lockActivity = (lock: Pick<CollaborationLock, "intent" | "saving">) => {
@@ -46,7 +43,7 @@ export default function CollaborationLayer({ zoom, lockedCards, transients, curs
                     key={`lock:${card.key}`}
                     data-live-lock={card.key}
                     role="note"
-                    aria-label={`${card.lock.email ?? "Another member"} is ${lockActivity(card.lock)} this card`}
+                    aria-label={`${participantName(card.lock) ?? "Another member"} is ${lockActivity(card.lock)} this card`}
                     className="absolute rounded-md"
                     style={{
                         left: card.x,
@@ -75,9 +72,9 @@ export default function CollaborationLayer({ zoom, lockedCards, transients, curs
                     <span
                         className="absolute bottom-full left-0 mb-1 whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-semibold text-white shadow"
                         style={{ backgroundColor: card.lock.color, transform: labelScale, transformOrigin: "bottom left" }}
-                        title={card.lock.email ?? undefined}
+                        title={participantName(card.lock) ?? undefined}
                     >
-                        {shortName(card.lock.email)} · {lockActivity(card.lock)}
+                        {shortName(card.lock)} · {lockActivity(card.lock)}
                     </span>
                 </div>
             ))}
@@ -119,7 +116,7 @@ export default function CollaborationLayer({ zoom, lockedCards, transients, curs
                         className="absolute left-4 top-4 whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-semibold text-white shadow"
                         style={{ backgroundColor: cursor.color }}
                     >
-                        {shortName(cursor.email)}
+                        {shortName(cursor)}
                     </span>
                 </div>
             ))}

@@ -14,7 +14,6 @@ export type LiveRuntimeSnapshot = {
 };
 
 type RuntimeOptions = {
-    boardId: number;
     boardEndpoint: string;
     database: BoardDatabaseClient;
     initialRevision: number;
@@ -65,15 +64,13 @@ export class LiveRuntime {
             onResync: options.onBlocked,
         });
         this.session = new LiveSession({
-            boardId: options.boardId,
             boardEndpoint: options.boardEndpoint,
             clientId: this.clientId,
             heldKeys: () => [...this.held.keys()],
-            revision: () => this.applier.revision,
             onWelcome: (head) => {
                 void this.welcomed(head);
             },
-            onCommit: (commit) => this.applier.receive(commit),
+            onHead: (head) => this.applier.noteHead(head),
             onLockLost: (keys) => this.lockLost(keys),
         });
         this.snapshot = { session: this.session.getState(), held: new Set(), version: 0 };
@@ -110,10 +107,7 @@ export class LiveRuntime {
     }
 
     private handlePageHide = () => {
-        const keys = [...this.held.keys()];
-        if (keys.length > 0) {
-            this.session.release(keys);
-        }
+        this.session.pause();
     };
 
     private handleWake = () => {
@@ -171,7 +165,10 @@ export class LiveRuntime {
             clientId: this.clientId,
             deferredKeys: () => this.deferredKeys(),
             beforeCommit: () => this.settled(),
-            onCommitted: (revision, mutationId) => this.applier.noteOwnCommit(revision, mutationId),
+            onCommitted: (revision, mutationId) => {
+                this.applier.noteOwnCommit(revision, mutationId);
+                this.session.notifyCommit();
+            },
         });
     }
 
@@ -324,7 +321,7 @@ export class LiveRuntime {
     }
 
     private async releaseReady() {
-        if (this.releaseBusy) {
+        if (this.releaseBusy || this.session.getState().status !== "open") {
             return;
         }
         if (this.releasing.size === 0) {
@@ -354,7 +351,7 @@ export class LiveRuntime {
             if (free.length === 0) {
                 return;
             }
-            this.session.release(free);
+            await this.session.release(free);
             for (const key of free) {
                 this.held.delete(key);
                 this.releasing.delete(key);

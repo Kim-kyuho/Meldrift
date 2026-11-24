@@ -7,6 +7,7 @@
     "./cards": "./src/cards.ts",
     "./board-plan": "./src/board-plan.ts",
     "./board-stroke": "./src/board-stroke.ts",
+    "./direct-webrtc": "./src/direct-webrtc.ts",
     "./memo-order": "./src/memo-order.ts",
     "./table-card": "./src/table-card.ts"
   },

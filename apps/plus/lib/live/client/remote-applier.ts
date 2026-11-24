@@ -116,17 +116,6 @@ export class RemoteApplier {
         this.watchers.forEach((watcher) => watcher());
     }
 
-    receive(commit: LiveCommit) {
-        if (commit.revision <= this.watermark || this.stopped) {
-            return;
-        }
-        if (!this.buffer.has(commit.revision) || commit.operations) {
-            this.buffer.set(commit.revision, { own: false, commit });
-        }
-        this.noteHead(commit.revision);
-        this.drain();
-    }
-
     noteOwnCommit(revision: number, mutationId: string) {
         this.ownMutations.add(mutationId);
         if (revision > this.watermark) {
@@ -156,13 +145,6 @@ export class RemoteApplier {
             while (!this.stopped && this.buffer.has(this.watermark + 1)) {
                 const revision = this.watermark + 1;
                 const entry = this.buffer.get(revision)!;
-                if (!entry.own && entry.commit.operations === null) {
-                    await this.fill();
-                    if (this.buffer.get(revision) === entry) {
-                        return;
-                    }
-                    continue;
-                }
                 this.buffer.delete(revision);
                 await this.apply(revision, entry);
             }
@@ -180,7 +162,7 @@ export class RemoteApplier {
         if (own) {
             await database.advanceRevision(revision);
         } else {
-            const operations = entry.commit.operations ?? [];
+            const operations = entry.commit.operations;
             const assets = await collectRemoteAssets(database, boardEndpoint, operations);
             const applied = await database.applyRemote(operations, revision, assets);
             this.options.onBatch(applied);

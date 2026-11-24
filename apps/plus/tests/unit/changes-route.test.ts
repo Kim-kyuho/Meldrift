@@ -26,7 +26,7 @@ vi.mock("@/lib/db", () => ({ getDb: () => ({
     execute: (statement: SQL) => statement,
     batch: mocks.batch,
     select: () => ({ from: (table: Table) => getTableName(table) === "boards"
-        ? { where: () => ({ limit: async () => [{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0 }] }) }
+        ? { where: () => ({ limit: async () => [{ boardId: 7, ownerId: "owner@example.com", privateFlg: 0, collabFlg: 1 }] }) }
         : mocks.select().from(table) }),
 }) }));
 
@@ -195,7 +195,7 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
     it("다른 사람이 잠근 카드를 건드리는 커밋은 쓰기 전에 거절한다", async () => {
         const store = {
             foreignLock: vi.fn(async () => ({ key: "memo:memo-1", email: "other@example.com" })),
-            recordTouched: vi.fn(), publish: vi.fn(),
+            recordTouched: vi.fn(),
         };
         mocks.liveStore.mockReturnValue(store);
 
@@ -209,10 +209,10 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
         expect(mocks.batch).not.toHaveBeenCalled();
     });
 
-    it("Redis가 2초 안에 답하지 않으면 잠금 검사와 알림 없이 커밋한다", async () => {
+    it("Redis 응답이 지연되어도 최종 저장을 끝낸다", async () => {
         vi.useFakeTimers();
         const never = () => new Promise<never>(() => {});
-        const store = { foreignLock: vi.fn(never), recordTouched: vi.fn(never), publish: vi.fn(never) };
+        const store = { foreignLock: vi.fn(never), recordTouched: vi.fn(never) };
         mocks.liveStore.mockReturnValue(store);
 
         const pending = POST(request(body([
@@ -224,11 +224,11 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
 
         expect(response.status).toBe(200);
         expect(mocks.batch).toHaveBeenCalledOnce();
-        expect(store.publish).toHaveBeenCalledOnce();
+        expect(store.recordTouched).toHaveBeenCalledOnce();
     });
 
-    it("커밋하면 키별 판 번호를 기록하고 작성자와 연산을 발행한다", async () => {
-        const store = { foreignLock: vi.fn(async () => null), recordTouched: vi.fn(), publish: vi.fn() };
+    it("커밋 후 키별 판 번호와 방의 최신 판 번호를 기록한다", async () => {
+        const store = { foreignLock: vi.fn(async () => null), recordTouched: vi.fn() };
         mocks.liveStore.mockReturnValue(store);
         const operations = [{ type: "memo", syncId: "memo-1", action: "update", changes: { x: 30 } }];
 
@@ -237,12 +237,7 @@ describe("보드 변경 확정 API: POST /api/boards/[boardId]/changes", () => {
         }), context);
 
         expect(response.status).toBe(200);
-        expect(store.recordTouched).toHaveBeenCalledWith(7, ["memo:memo-1"], 3);
-        expect(store.publish).toHaveBeenCalledWith(7, {
-            t: "commit", revision: 3, mutationId,
-            by: { userId: 5, email: "owner@example.com", clientId: "0f8fad5b-d9cb-469f-a165-70867728950e" },
-            operations,
-        });
+        expect(store.recordTouched).toHaveBeenCalledWith(7, ["memo:memo-1", "$head"], 3);
     });
 
     it("동기화 식별자 기준의 업서트로 카드를 생성해 재전송 중복을 방지한다", async () => {

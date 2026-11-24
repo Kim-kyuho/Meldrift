@@ -54,7 +54,7 @@ import { useIsMobile } from "../../shared/useIsMobile";
 import PresenceBar from "../collaboration/PresenceBar";
 import CollaborationLayer from "../collaboration/CollaborationLayer";
 import { blockedText, useBoardCollaboration } from "../collaboration/useBoardCollaboration";
-import type { BoardCollaboration } from "../collaboration/types";
+import { participantName, type BoardCollaboration } from "../collaboration/types";
 import {
     boardLockKey, diffBoardSnapshots, memoOrderKey, strokeLayerKey, touchedKeysOf,
 } from "@meldrift/board-data/board-delta";
@@ -65,6 +65,9 @@ export type BoardWorkspaceProps = {
     storage?: BoardStorage;
     canEdit?: boolean;
     canExport?: boolean;
+    canReplace?: boolean;
+    assistantEnabled?: boolean;
+    collaborationMenu?: { label: string; open: (snapshot: BoardSnapshot) => void };
     permissionMessage?: string;
     viewportRef?: RefObject<HTMLDivElement | null>;
     menuTitle?: string;
@@ -79,6 +82,9 @@ export default function BoardWorkspace({
     storage,
     canEdit: canEditProp = true,
     canExport = true,
+    canReplace = true,
+    assistantEnabled = true,
+    collaborationMenu,
     permissionMessage: basePermissionMessage = "Please sign in before editing cards.",
     viewportRef,
     menuTitle,
@@ -95,7 +101,7 @@ export default function BoardWorkspace({
     const canEditCard = canEditProp && !liveEditPaused && !liveBoardLock;
     let permissionMessage = basePermissionMessage;
     if (canEditProp && liveBoardLock) {
-        permissionMessage = blockedText(liveBoardLock.email, "replacing");
+        permissionMessage = blockedText(participantName(liveBoardLock), "replacing");
     } else if (canEditProp && live?.status === "idle") {
         permissionMessage = "Live collaboration paused while you were away. Reconnecting now…";
     } else if (canEditProp && liveEditPaused) {
@@ -684,6 +690,8 @@ export default function BoardWorkspace({
                 canSave={canEditProp}
                 canEdit={canEditCard}
                 canExport={canExport}
+                canReplace={canReplace}
+                collaborationMenu={collaborationMenu}
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
                 reorderOpen={reorderOpen}
@@ -829,11 +837,8 @@ export default function BoardWorkspace({
             {aboutOpen && (
                 <AboutModal onClose={() => setAboutOpen(false)} />
             )}
-            <AiAssistantButton
-                aiPanelOpen={aiPanelOpen}
-                onToggle={handleToggleAiPanel}
-            />
-            {aiPanelOpen && (aiUnlocked ? (
+            {assistantEnabled && <AiAssistantButton aiPanelOpen={aiPanelOpen} onToggle={handleToggleAiPanel} />}
+            {assistantEnabled && aiPanelOpen && (aiUnlocked ? (
                 <AiChatPanel
                     messages={aiMessages}
                     sending={aiSending}

@@ -1,44 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import type { NextRequest } from "next/server";
 import { getSessionTokenHash, sessionCookieName } from "@/lib/auth/session";
 import { boardAccess } from "@/lib/board-access";
-import { liveEnabled } from "@/lib/live/store";
+import { canEditBoard } from "@/lib/board-permissions";
+import { boardHeadRevision, withTimeout } from "@/lib/live/commit-events";
+import { colorFor } from "@/lib/live/protocol";
+import { readLiveBody, serveLiveRoom, type LiveRouteContext } from "@/lib/live/p2p/http";
+import { roomStatus } from "@/lib/live/p2p/locks";
+import { joinPeerRoomSchema, peerRoomLimits, type RoomGrant } from "@/lib/live/p2p/protocol";
+import { RoomFailure } from "@/lib/live/p2p/rooms";
 import { liveTokenTtlMs, signLiveToken } from "@/lib/live/token";
 
-type Context = { params: Promise<{ boardId: string }> };
-
-const json = (data: object, status = 200) =>
-    NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
-
-const tokenRequest = z.object({ clientId: z.string().uuid() }).strict();
-
-// 쿠키로 인증한 HTTP 요청에서 60초짜리 연결 토큰을 발급한다. WebSocket은 이 토큰으로만 인증한다.
-export async function POST(request: NextRequest, { params }: Context) {
-    if (!liveEnabled()) {
-        return json({ ok: false, message: "Live collaboration is turned off." }, 404);
-    }
-    const boardId = Number((await params).boardId);
-    const parsed = tokenRequest.safeParse(await request.json().catch(() => null));
-    if (!parsed.success) {
-        return json({ ok: false, message: "Invalid live connection request." }, 400);
-    }
-    const gate = await boardAccess(request, boardId, "read");
-    if (gate.failure) {
-        return gate.failure;
-    }
-    if (!gate.user) {
-        return json({ ok: false, message: "Sign in to join live collaboration." }, 401);
-    }
-    if (gate.board.collabFlg !== 1) {
-        return json({ ok: false, message: "Live collaboration is turned off for this board." }, 404);
-    }
-    const expiresAt = Date.now() + liveTokenTtlMs;
-    const token = signLiveToken({
-        b: boardId,
-        u: gate.user.id,
-        s: getSessionTokenHash(request.cookies.get(sessionCookieName)?.value),
-        c: parsed.data.clientId,
-        e: expiresAt,
+export function POST(request: NextRequest, context: LiveRouteContext) {
+    return serveLiveRoom(request, context, async (store, rooms, boardId) => {
+        const { clientId, leaseId } = await readLiveBody(request, joinPeerRoomSchema);
+        const gate = await boardAccess(request, boardId, "read");
+        if (gate.failure) {
+            return gate.failure;
+        }
+        const { user, board, memberRole } = gate;
+        const sessionHash = getSessionTokenHash(request.cookies.get(sessionCookieName)?.value);
+        if (!user || !sessionHash) {
+            throw new RoomFailure(401, "Sign in to join Live collaboration.");
+        }
+        if (board.collabFlg !== 1) {
+            throw new RoomFailure(404, "Live collaboration is turned off for this board.");
+        }
+        const now = Date.now();
+        const expiresAt = now + liveTokenTtlMs;
+        const token = signLiveToken({ b: boardId, u: user.id, s: sessionHash, c: clientId, l: leaseId, e: expiresAt });
+        const seesEmails = user.role === "admin" || user.email === board.ownerId || memberRole !== null;
+        const [view, head] = await withTimeout(Promise.all([
+            rooms.join({
+                clientId, leaseId, userId: user.id, email: user.email, role: canEditBoard(user, board, memberRole) ? "editor" : "viewer",
+                color: colorFor(`user:${user.id}`), seesEmails, joinedAt: now, expiresAt: now + peerRoomLimits.leaseMs,
+            }),
+            boardHeadRevision(boardId),
+        ]), 5_000);
+        const status = await withTimeout(roomStatus(store, boardId, view, seesEmails));
+        return { token, expiresAt, status: { ...status, head: Math.max(status.head, head) } } satisfies RoomGrant;
     });
-    return json({ ok: true, token, expiresAt });
 }

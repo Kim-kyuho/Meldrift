@@ -1,62 +1,84 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as issueToken } from "@/app/api/boards/[boardId]/live/token/route";
-import { resolveLiveIdentity } from "@/lib/live/server/identity";
+import { POST as exchange } from "@/app/api/boards/[boardId]/live/route";
+import { createSessionToken, sessionCookieName } from "@/lib/auth/session";
+import { MemoryLiveStore } from "@/lib/live/store/memory-store";
+import type { RoomGrant } from "@/lib/live/p2p/protocol";
 
-const mocks = vi.hoisted(() => ({ boardAccess: vi.fn(), boardAccessFor: vi.fn(), sessionUser: vi.fn() }));
-vi.mock("@/lib/board-access", () => ({ boardAccess: mocks.boardAccess, boardAccessFor: mocks.boardAccessFor }));
-vi.mock("@/lib/auth/current-user", () => ({ findSessionUserById: mocks.sessionUser }));
-vi.mock("@/lib/live/store", () => ({ liveEnabled: () => true }));
+const mocks = vi.hoisted(() => ({ boardAccess: vi.fn(), store: vi.fn(), head: vi.fn() }));
+vi.mock("@/lib/board-access", () => ({
+    boardAccess: mocks.boardAccess,
+    validBoardId: (id: number) => Number.isSafeInteger(id) && id > 0,
+}));
+vi.mock("@/lib/live/commit-events", async (original) => ({
+    ...await original<typeof import("@/lib/live/commit-events")>(),
+    boardHeadRevision: mocks.head,
+}));
+vi.mock("@/lib/live/store", () => ({ liveEnabled: () => true, getLiveStore: mocks.store }));
 
 const board = { boardId: 7, ownerId: "owner@example.com", privateFlg: 0 as const, collabFlg: 1 as const };
+const user = { id: 3, email: "member@example.com", role: "user", isApproved: true };
 const clientId = "0f8fad5b-d9cb-469f-a165-70867728950e";
-const tokenRequest = () => new NextRequest("http://localhost/api/boards/7/live/token", {
-    method: "POST",
-    body: JSON.stringify({ clientId }),
-    headers: { "Content-Type": "application/json" },
-});
-const context = { params: Promise.resolve({ boardId: "7" }) };
+const leaseId = "8ec2f551-d335-42a9-9fd0-b64d10171ec6";
 
-describe("Live 접속 대상", () => {
+const context = (boardId = "7") => ({ params: Promise.resolve({ boardId }) });
+
+function tokenRequest(cookie = false) {
+    const headers = new Headers({ "Content-Type": "application/json" });
+    if (cookie) {
+        headers.set("Cookie", sessionCookieName + "=" + createSessionToken());
+    }
+    return new NextRequest("http://localhost/api/boards/7/live/token", {
+        method: "POST", body: JSON.stringify({ clientId, leaseId }), headers,
+    });
+}
+
+function roomRequest(body: object, token?: string) {
+    const headers = new Headers({ "Content-Type": "application/json" });
+    if (token) {
+        headers.set("Authorization", "Bearer " + token);
+    }
+    return new Request("http://localhost/api/boards/7/live", { method: "POST", body: JSON.stringify(body), headers });
+}
+
+describe("Plus Live admission", () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        mocks.store.mockReturnValue(new MemoryLiveStore());
+        mocks.head.mockResolvedValue(5);
     });
 
-    it("비로그인 사용자에게는 공개 보드여도 연결 토큰을 주지 않는다", async () => {
+    it("requires a login even for a publicly readable board", async () => {
         mocks.boardAccess.mockResolvedValue({ failure: null, board, user: null, memberRole: null });
-
-        const response = await issueToken(tokenRequest(), context);
-
-        expect(response.status).toBe(401);
+        expect((await issueToken(tokenRequest(), context())).status).toBe(401);
     });
 
-    it("로그인한 사용자에게는 토큰을 준다", async () => {
-        const user = { id: 3, email: "member@example.com", role: "user", isApproved: true };
+    it("automatically elects an approved editor as host and returns the current cloud revision", async () => {
         mocks.boardAccess.mockResolvedValue({ failure: null, board, user, memberRole: "editor" });
-
-        const response = await issueToken(tokenRequest(), context);
-
+        const response = await issueToken(tokenRequest(true), context());
         expect(response.status).toBe(200);
-        expect(await response.json()).toMatchObject({ ok: true, token: expect.any(String) });
+        expect(await response.json()).toMatchObject({
+            token: expect.any(String), status: { head: 5, hostId: clientId, self: { clientId, role: "editor" } },
+        });
     });
 
-    it("협업 보드가 아니면 토큰을 주지 않고, 연결도 받지 않는다", async () => {
-        const user = { id: 3, email: "member@example.com", role: "user", isApproved: true };
-        const standard = { ...board, collabFlg: 0 as const };
-        mocks.boardAccess.mockResolvedValue({ failure: null, board: standard, user, memberRole: "editor" });
-        mocks.sessionUser.mockResolvedValue(user);
-        mocks.boardAccessFor.mockResolvedValue({ failure: null, board: standard, user, memberRole: "editor" });
-
-        expect((await issueToken(tokenRequest(), context)).status).toBe(404);
-        const result = await resolveLiveIdentity({ b: 7, u: 3, s: "hash", c: clientId, e: Date.now() + 60_000 });
-        expect(result.closeCode).toBe(4404);
+    it("rejects admission on a standard board", async () => {
+        mocks.boardAccess.mockResolvedValue({ failure: null, board: { ...board, collabFlg: 0 }, user, memberRole: "editor" });
+        expect((await issueToken(tokenRequest(true), context())).status).toBe(404);
     });
 
-    it("사용자 없는 토큰으로는 연결하지 못한다", async () => {
-        const result = await resolveLiveIdentity({ b: 7, u: null, s: null, c: clientId, e: Date.now() + 60_000 });
+    it("rejects missing credentials and prevents a seat token from authorizing another board", async () => {
+        mocks.boardAccess.mockResolvedValue({ failure: null, board, user, memberRole: "editor" });
+        const grant = await (await issueToken(tokenRequest(true), context())).json() as RoomGrant;
+        expect((await exchange(roomRequest({ kind: "leave" }), context())).status).toBe(401);
+        expect((await exchange(roomRequest({ kind: "leave" }, grant.token), context("8"))).status).toBe(401);
+    });
 
-        expect(result.closeCode).toBe(4401);
-        expect(mocks.sessionUser).not.toHaveBeenCalled();
-        expect(mocks.boardAccessFor).not.toHaveBeenCalled();
+    it("allows viewers to join automatically without obtaining write locks", async () => {
+        mocks.boardAccess.mockResolvedValue({ failure: null, board, user, memberRole: "viewer" });
+        const grant = await (await issueToken(tokenRequest(true), context())).json() as RoomGrant;
+        expect(grant.status.hostId).toBeNull();
+        const result = await exchange(roomRequest({ kind: "acquire", keys: ["memo:a"], intent: "edit" }, grant.token), context());
+        expect(result.status).toBe(403);
     });
 });

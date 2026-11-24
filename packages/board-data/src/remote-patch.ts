@@ -135,6 +135,41 @@ export function applyRemotePatch<T extends BoardCollections>(content: T, patch: 
     return unchanged ? content : next;
 }
 
+// The display IDs used by the editor can differ from the IDs in the authoritative board.
+// Preserve existing IDs and assign a free one if concurrent additions used the same local ID.
+export function alignRemoteDisplayIds(content: BoardCollections, patch: RemotePatch): RemotePatch {
+    return {
+        ...patch,
+        upserts: {
+            memos: alignIds(content.memos, patch.upserts.memos, (card) => card.id, (card, id) => ({ ...card, id })),
+            images: alignIds(content.images, patch.upserts.images, (card) => card.imageId, (card, imageId) => ({ ...card, imageId })),
+            mermaids: alignIds(content.mermaids, patch.upserts.mermaids, (card) => card.id, (card, id) => ({ ...card, id })),
+            tables: alignIds(content.tables, patch.upserts.tables, (card) => card.id, (card, id) => ({ ...card, id })),
+            strokes: patch.upserts.strokes,
+        },
+    };
+}
+
+function alignIds<T extends { syncId: string }>(
+    current: T[], incoming: T[], getId: (card: T) => number, setId: (card: T, id: number) => T,
+) {
+    if (incoming.length === 0) {return incoming;}
+    const idsBySyncId = new Map(current.map((card) => [card.syncId, getId(card)]));
+    const occupied = new Set(idsBySyncId.values());
+    let next = nextId([...occupied]);
+    return incoming.map((card) => {
+        const incomingId = getId(card);
+        const existing = idsBySyncId.get(card.syncId);
+        let id = existing ?? incomingId;
+        if (existing === undefined && occupied.has(id)) {
+            while (occupied.has(next)) {next += 1;}
+            id = next++;
+        }
+        occupied.add(id);
+        return id === incomingId ? card : setId(card, id);
+    });
+}
+
 function deferCollection<T>(next: T[], base: T[], deferred: Set<string>, keyOf: (item: T) => string): T[] {
     const baseByKey = new Map(base.map((item) => [keyOf(item), item]));
     const result: T[] = [];

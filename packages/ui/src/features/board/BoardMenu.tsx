@@ -15,6 +15,7 @@ export type BoardMenuActions = {
     onImport: () => void;
     onCompileMarkdown: () => void;
     onReset: () => void;
+    collaboration?: { label: string; disabled: boolean; onOpen: () => void };
 };
 
 export type BoardMenuControls = {
@@ -71,6 +72,19 @@ export default function BoardMenu({
                         {titleDivider && <hr className="mx-2 mb-1 border-neutral-200" />}
                     </>}
                     {boardActions && <>
+                        {boardActions.collaboration && (
+                            <PressableButton
+                                variant="menu"
+                                disabled={boardActions.collaboration.disabled}
+                                className="mb-1 cursor-pointer border border-sky-200 bg-sky-50 font-semibold text-sky-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    boardActions.collaboration?.onOpen();
+                                }}
+                            >
+                                {boardActions.collaboration.label}
+                            </PressableButton>
+                        )}
                         <PressableButton
                             variant="menu"
                             data-tutorial="reorder-memos"

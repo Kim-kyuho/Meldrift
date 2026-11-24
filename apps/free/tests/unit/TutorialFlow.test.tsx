@@ -212,9 +212,9 @@ describe("Meldrift Interactive Tutorial", () => {
         expect(screen.getByText("Create & Edit a Memo Card")).toBeInTheDocument();
         expect(screen.getByText("# Heading")).toBeInTheDocument();
         const highlightStyle = document.querySelector("style");
-        expect(highlightStyle?.textContent).toContain("meldriftTutorialPaddingGlow");
-        expect(highlightStyle?.textContent).toContain("inset 0 0");
-        expect(highlightStyle?.textContent).not.toContain("0 0 0 2px");
+        expect(highlightStyle?.textContent).toContain('[data-tutorial="create-memo"]');
+        expect(highlightStyle?.textContent).toContain("animation: var(--meldrift-attention-animation)");
+        expect(highlightStyle?.textContent).toContain("box-shadow: var(--meldrift-attention-shadow)");
         fireEvent.click(screen.getByRole("button", { name: "Create memo" }));
 
         // Step 2: Table, Mermaid, and Image note

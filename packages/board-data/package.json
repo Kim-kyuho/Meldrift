@@ -11,6 +11,7 @@
     "./browser-db/protocol": "./src/browser-db/protocol.ts",
     "./sqlite-codec": "./src/sqlite-codec.ts",
     "./board-delta": "./src/board-delta.ts",
+    "./change-request": "./src/change-request.ts",
     "./remote-patch": "./src/remote-patch.ts"
   },
   "dependencies": {

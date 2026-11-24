@@ -41,7 +41,7 @@ Meldrift는 npm workspace 모노레포라 문서에서 경로를 두 가지 형�
 | 반출입 | Markdown·이미지 ZIP + SQLite Export·Import·Reset. 파일 조작은 인증·권한 검사 | 같은 파일 기능, 인증 없음 |
 | AI 잠금 | 승인된 로그인 사용자 + AI 비밀번호·서명 쿠키 | AI 비밀번호·서명 쿠키 |
 | 보드 미리보기 | 있음(WebP를 Cloudinary에 업로드) | 없음 |
-| 동시 접근 | 공동 편집자(`board_members`)와 [실시간 협업](./plus/live-collaboration.md): 접속자·커서·카드 잠금·원격 반영. 계정당 활성 세션 하나 | 원격 동기화 없음 |
+| 동시 접근 | 공동 편집자(`board_members`)와 [실시간 협업](./plus/live-collaboration.md): 기존 Live 주소에서 자동 P2P 입장, 커서·잠금·원격 반영. 계정당 활성 세션 하나 | [사용자 호스트 Live](./p2p-live-collaboration.md): 설정이 켜진 경우 최대 8명, 초대 링크와 WebRTC 직접 연결 |
 
 Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다. `snapshot` 모드 보드는 [기존 전체 파일 업로드](./plus/board-snapshot.md)를 유지하며, 전환한 `delta` 보드에는 그 경로로 다시 쓰지 않는다. 구 카드별 쓰기 API는 차단되어 있고 신규 이미지 카드는 Cloudinary에 올리지 않는다.
 
@@ -64,6 +64,7 @@ Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다.
 | 이전 스냅샷 보드는 어떻게 저장하나 | [plus/board-snapshot.md](./plus/board-snapshot.md) |
 | Plus가 변경분만 어떻게 올리나 | [plus/change-sync.md](./plus/change-sync.md) |
 | 여러 사람이 같은 보드를 어떻게 함께 편집하나 | [plus/live-collaboration.md](./plus/live-collaboration.md) |
+| Free 초대형 Live와 Plus 자동 입장 설계 | [p2p-live-collaboration.md](./p2p-live-collaboration.md) |
 | 브라우저 SQLite가 어떻게 도나 | [shared/browser-database.md](./shared/browser-database.md) |
 | 보드 값의 형태와 검증 | [shared/board-state.md](./shared/board-state.md) |
 | 전체 아키텍처와 기능 | [meldrift-basic-design.md](./meldrift-basic-design.md) |

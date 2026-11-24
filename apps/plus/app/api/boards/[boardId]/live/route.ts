@@ -1,40 +1,39 @@
-import { upgradeWebSocket } from "@vercel/functions";
-import { NextRequest, NextResponse } from "next/server";
-import { liveLimits } from "@/lib/live/protocol";
-import { liveOriginAllowed } from "@/lib/live/server/origin";
-import { getLiveHub } from "@/lib/live/server/hub";
-import { resolveLiveIdentity } from "@/lib/live/server/identity";
-import { fromWebSocket } from "@/lib/live/server/socket";
-import { getLiveStore } from "@/lib/live/store";
+import { readLiveBody, serveLiveRoom, type LiveRouteContext } from "@/lib/live/p2p/http";
+import { acquireLiveLocks, releaseLiveLocks, renewLiveLocks, roomStatus } from "@/lib/live/p2p/locks";
+import { roomRequestSchema } from "@/lib/live/p2p/protocol";
+import { RoomFailure } from "@/lib/live/p2p/rooms";
+import { withTimeout } from "@/lib/live/commit-events";
 import { verifyLiveToken } from "@/lib/live/token";
 
-type Context = { params: Promise<{ boardId: string }> };
+export const maxDuration = 10;
 
-// 연결 수명. Hobby는 300초가 상한이다. Pro에서 늘릴 때는 LIVE_MAX_DURATION_SECONDS도 같은 값으로 맞춘다.
-export const maxDuration = 300;
-
-const refuse = (status: number, message: string) =>
-    NextResponse.json({ ok: false, message }, { status, headers: { "Cache-Control": "no-store" } });
-
-export async function GET(request: NextRequest, { params }: Context) {
-    const store = getLiveStore();
-    if (!store) {
-        return refuse(404, "Live collaboration is turned off.");
-    }
-    if (!liveOriginAllowed(request.headers.get("origin"), request.headers.get("host"))) {
-        return refuse(403, "This origin cannot open live connections.");
-    }
-    const boardId = Number((await params).boardId);
-    const token = verifyLiveToken(request.nextUrl.searchParams.get("token"));
-    if (!token || token.b !== boardId) {
-        return refuse(401, "The live connection token is missing or expired.");
-    }
-    const result = await resolveLiveIdentity(token);
-    if (result.closeCode !== null) {
-        return refuse(result.closeCode === 4404 ? 404 : 403, "You cannot open this board.");
-    }
-    const hub = getLiveHub(store);
-    return upgradeWebSocket((socket) => {
-        hub.attach(fromWebSocket(socket), result.identity);
-    }, { maxPayload: liveLimits.messageBytes });
+export function POST(request: Request, context: LiveRouteContext) {
+    return serveLiveRoom(request, context, async (store, rooms, boardId) => {
+        const header = request.headers.get("authorization");
+        const token = verifyLiveToken(header?.startsWith("Bearer ") ? header.slice(7) : null);
+        if (!token || token.b !== boardId || token.u === null || !token.s || !token.l) {
+            throw new RoomFailure(401, "Your Live token expired. Reconnecting…");
+        }
+        const action = await readLiveBody(request, roomRequestSchema);
+        const key = { userId: token.u, clientId: token.c, leaseId: token.l };
+        return withTimeout((async () => {
+            if (action.kind === "leave") {
+                await rooms.leave(key);
+                return { ok: true };
+            }
+            if (action.kind === "pulse") {
+                const { seat, view } = await rooms.pulse(key, token.e, action.epoch, action.signals);
+                if (action.holding) {
+                    await renewLiveLocks(store, boardId, seat);
+                }
+                return roomStatus(store, boardId, view, seat.seesEmails);
+            }
+            const seat = await rooms.seat(key);
+            if (action.kind === "acquire") {
+                return acquireLiveLocks(store, boardId, seat, action.keys, action.intent);
+            }
+            await releaseLiveLocks(store, boardId, seat, action.keys);
+            return { ok: true };
+        })(), 5_000);
+    });
 }

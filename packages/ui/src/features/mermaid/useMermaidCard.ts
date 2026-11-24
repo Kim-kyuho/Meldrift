@@ -1,4 +1,5 @@
 import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useOutsideCardPress } from "../board/useOutsideCardPress";
 import { DraggableData, RndDragEvent, RndResizeCallback } from "react-rnd";
 import type { DiagramFit } from "./mermaid-layout";
 import type { MermaidCardData, SelectionRect } from "@meldrift/core/cards";
@@ -68,7 +69,6 @@ export function useMermaidCard({
     const sourceRef = useRef(source);
     const cardStateRef = useRef(cardState);
     // 카드 내부에서 드래그하여 카드 외부에서 Pointer up 이벤트가 발생한 경우 내용 저장을 방지하기 위한 Ref
-    const outsidePressStartedRef = useRef(false);
 
     useEffect(() => {
         sourceRef.current = source;
@@ -146,49 +146,11 @@ export function useMermaidCard({
         }
     };
 
-    useEffect(() => {
-        const handlePressStart = (event: PointerEvent) => {
-            const target = event.target as Node;
-            const targetElement = target instanceof Element ? target : null;
-            const isPressInsideCard = targetElement?.closest(`.mermaid-rnd-${mermaid.id}`);
-            const isPressInsideBoardToolBar = targetElement?.closest(".board-toolbar");
-            const isPressInsideBoard = targetElement?.closest(".board-scroll-layer");
-
-            outsidePressStartedRef.current = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideCard &&
-                !isPressInsideBoardToolBar
-            );
-        };
-
-        const handlePressOutside = (event: PointerEvent) => {
-            const target = event.target as Node;
-            const targetElement = target instanceof Element ? target : null;
-            const isPressInsideCard = targetElement?.closest(`.mermaid-rnd-${mermaid.id}`);
-            const isPressInsideBoardToolBar = targetElement?.closest(".board-toolbar");
-            const isPressInsideBoard = targetElement?.closest(".board-scroll-layer");
-            const isPressInsideEmptyBoard = Boolean(
-                isPressInsideBoard &&
-                !isPressInsideCard &&
-                !isPressInsideBoardToolBar
-            );
-
-            const startedInsideEmptyBoard = outsidePressStartedRef.current;
-            outsidePressStartedRef.current = false;
-
-            if (isEditing && startedInsideEmptyBoard && isPressInsideEmptyBoard) {
-                finishEditing();
-            }
-        };
-
-        document.addEventListener("pointerdown", handlePressStart);
-        document.addEventListener("pointerup", handlePressOutside);
-
-        return () => {
-            document.removeEventListener("pointerdown", handlePressStart);
-            document.removeEventListener("pointerup", handlePressOutside);
-        };
-    }, [isEditing, finishEditing, mermaid.id]);
+    useOutsideCardPress(isEditing, `.mermaid-rnd-${mermaid.id}`, (startedOutside) => {
+        if (startedOutside) {
+            finishEditing();
+        }
+    });
 
     const handleMermaidPress = (event: ReactMouseEvent<HTMLDivElement>) => {
         event.stopPropagation();

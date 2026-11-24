@@ -2,12 +2,13 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 
 const password = "Fixture-password-2026";
 
-async function signedInPage(browser: Browser, email: string) {
+async function signedInPage(browser: Browser, email: string, boardId = 1, inspect?: (page: Page) => void) {
     const context = await browser.newContext();
     const login = await context.request.post("/plus/api/signin", { data: { email, password } });
     expect(login.ok(), `sign-in for ${email}`).toBe(true);
     const page = await context.newPage();
-    await page.goto("/plus/boards/1");
+    inspect?.(page);
+    await page.goto(`/plus/boards/${boardId}`);
     await expect(page.locator(".board-scroll-layer")).toBeVisible({ timeout: 60_000 });
     return page;
 }
@@ -85,4 +86,30 @@ test("두 사용자가 접속자·잠금·변경을 실시간으로 주고받는
     // 나가면 남은 사람의 접속자 수가 줄어든다.
     await member.context().close();
     await expect(presence(owner)).toHaveAccessibleName(/1 people/, { timeout: 40_000 });
+    await owner.context().close();
+});
+
+test("공동 편집자가 기존 주소에서 자동 호스트가 되고 퇴장하면 남은 편집자가 이어받는다", async ({ browser }) => {
+    const liveSockets: string[] = [];
+    const inspect = (page: Page) => page.on("websocket", (socket) => {
+        if (/\/api\/boards\/\d+\/live$/.test(new URL(socket.url()).pathname)) {
+            liveSockets.push(socket.url());
+        }
+    });
+    const member = await signedInPage(browser, "member@example.test", 2, inspect);
+    await expect(presence(member)).toHaveAccessibleName(/1 people/);
+
+    const owner = await signedInPage(browser, "owner@example.test", 2, inspect);
+    await expect(presence(member)).toHaveAccessibleName(/2 people/);
+    await expect(presence(owner)).toHaveAccessibleName(/2 people/);
+    await member.context().close();
+    await expect(presence(owner)).toHaveAccessibleName(/1 people/, { timeout: 40_000 });
+
+    const returning = await signedInPage(browser, "member@example.test", 2, inspect);
+    await expect(presence(owner)).toHaveAccessibleName(/2 people/);
+    await expect(presence(returning)).toHaveAccessibleName(/2 people/);
+    expect((await owner.request.get("/plus/api/boards/2/live")).status()).toBe(405);
+    expect(liveSockets).toEqual([]);
+    await owner.context().close();
+    await returning.context().close();
 });
