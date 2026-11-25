@@ -1,4 +1,4 @@
-# Meldrift v1.5 Beta 문서
+# Meldrift v2.0 문서
 
 Meldrift는 같은 보드 기능을 두 Edition으로 배포한다. 두 Edition이 공유하는 것과 각자 다른 것을 폴더로 갈라 둔다.
 
@@ -19,9 +19,9 @@ Meldrift는 npm workspace 모노레포라 문서에서 경로를 두 가지 형�
 
 | 패키지 | 담는 것 |
 | --- | --- |
-| `@meldrift/core` | 프레임워크에 기대지 않는 규칙과 스키마 — 카드 타입, 메모 순서, 획 데이터, 표 소스, AI 보드 계획 |
-| `@meldrift/ui` | 두 Edition이 함께 쓰는 React 컴포넌트와 훅 |
-| `@meldrift/board-data` | 보드 데이터 — 브라우저 SQLite·IndexedDB, 스냅샷 타입과 검증, 변경분 모델, 이미지 변환, Markdown 컴파일 |
+| `@meldrift/core` | 프레임워크에 기대지 않는 규칙과 스키마 — 카드 타입, 메모 순서, 획 데이터, 표 소스, AI 보드 계획, WebRTC 직접 연결 |
+| `@meldrift/ui` | 두 Edition이 함께 쓰는 React 컴포넌트와 훅 (협업 UI, Help·튜토리얼, Markdown 임포터 포함) |
+| `@meldrift/board-data` | 보드 데이터 — 브라우저 SQLite·IndexedDB, 스냅샷 타입과 검증, 변경분·원격 패치, 이미지 변환, Markdown 컴파일·임포트 |
 | `@meldrift/ai` | 어시스턴트 본체 — 도구 정의, Gemini 호출, 프롬프트 뼈대 |
 
 `@meldrift/ui`는 보드 화면과 React 훅을 조립하고, `@meldrift/board-data`는 데이터·저장·변환을 제공한다. 의존 방향은 `ui → board-data → core`다.
@@ -38,9 +38,9 @@ Meldrift는 npm workspace 모노레포라 문서에서 경로를 두 가지 형�
 | 보드 수 | 여러 개, 관리자 목록 관리 | 하나(`boardId = 1`) 고정 |
 | 인증 | 세션 쿠키 로그인, 권한 플래그 | 없음. 카드 편집 권한 개념도 없다 |
 | 이미지 | 로컬 BLOB + 서버의 불변 자산·바이너리 청크 | 로컬 BLOB |
-| 반출입 | Markdown·이미지 ZIP + SQLite Export·Import·Reset. 파일 조작은 인증·권한 검사 | 같은 파일 기능, 인증 없음 |
+| 반출입 | Markdown·이미지 ZIP + SQLite Export·Reset + 단일 Import(SQLite / Markdown 자동 분기). 파일 조작은 인증·권한 검사 | 같은 파일 기능, 인증 없음 |
 | AI 잠금 | 승인된 로그인 사용자 + AI 비밀번호·서명 쿠키 | AI 비밀번호·서명 쿠키 |
-| 보드 미리보기 | 있음(WebP를 Cloudinary에 업로드) | 없음 |
+| 보드 미리보기 | 있음(PNG/WebP를 Neon `board_previews`에 저장, 구 공개 보드만 Cloudinary 호환) | 없음 |
 | 동시 접근 | 공동 편집자(`board_members`)와 [실시간 협업](./plus/live-collaboration.md): 기존 Live 주소에서 자동 P2P 입장, 커서·잠금·원격 반영. 계정당 활성 세션 하나 | [사용자 호스트 Live](./p2p-live-collaboration.md): 설정이 켜진 경우 최대 8명, 초대 링크와 WebRTC 직접 연결 |
 
 Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다. `snapshot` 모드 보드는 [기존 전체 파일 업로드](./plus/board-snapshot.md)를 유지하며, 전환한 `delta` 보드에는 그 경로로 다시 쓰지 않는다. 구 카드별 쓰기 API는 차단되어 있고 신규 이미지 카드는 Cloudinary에 올리지 않는다.
@@ -60,6 +60,7 @@ Plus의 현재 저장 경로는 [변경분 동기화](./plus/change-sync.md)다.
 | --- | --- |
 | 보드 화면이 어떻게 조립되나 | [shared/board-client.md](./shared/board-client.md) |
 | 저장 예약과 Export·Import·Reset은 어떻게 도나 | [shared/board-controls.md](./shared/board-controls.md) |
+| Markdown 임포트와 50px 코너 자동 배치는 어떻게 도나 | [shared/markdown-import.md](./shared/markdown-import.md) |
 | Help와 인터랙티브 튜토리얼 구조 | [shared/help-modal.md](./shared/help-modal.md), [shared/interactive-tutorial.md](./shared/interactive-tutorial.md) |
 | 이전 스냅샷 보드는 어떻게 저장하나 | [plus/board-snapshot.md](./plus/board-snapshot.md) |
 | Plus가 변경분만 어떻게 올리나 | [plus/change-sync.md](./plus/change-sync.md) |

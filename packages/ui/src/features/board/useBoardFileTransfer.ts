@@ -91,11 +91,9 @@ export function useBoardFileTransfer(options: UseBoardFileTransferOptions) {
         }
     };
 
-    const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
-        const selected = event.target.files?.[0];
-        event.target.value = "";
+    const importSqliteFile = async (selected: File) => {
         const { file } = latest.current;
-        if (!selected || !file || !canModify() || busy.current) {
+        if (!file || !canModify() || busy.current) {
             return;
         }
         if (selected.size > file.maxImportBytes) {
@@ -118,6 +116,15 @@ export function useBoardFileTransfer(options: UseBoardFileTransferOptions) {
         } finally {
             finish();
         }
+    };
+
+    const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
+        const selected = event.target.files?.[0];
+        event.target.value = "";
+        if (!selected) {
+            return;
+        }
+        await importSqliteFile(selected);
     };
 
     const handleResetClick = () => {
@@ -146,6 +153,7 @@ export function useBoardFileTransfer(options: UseBoardFileTransferOptions) {
         handleExport,
         handleImportClick,
         handleImport,
+        importSqliteFile,
         handleResetClick,
         handleResetCancel,
         handleResetConfirm,

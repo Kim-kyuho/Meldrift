@@ -1,4 +1,4 @@
-# Meldrift v1.5 Beta
+# Meldrift v2.0
 
 Meldrift is a personal project for organizing ideas on a visual board and compiling them into Markdown documents.
 
@@ -11,10 +11,12 @@ Ideas do not always begin in a clear order. Meldrift allows memos, images, table
 
 ## Features
 
+- [New] **Live Collaboration Board**: Collaborate in real time with live presence, cursors, card locks, and drag previews over peer-to-peer WebRTC — available in both Free (invite link, host approval, up to 8 participants) and Plus (shared collaborative boards with automatic host election).
+- [New] **Markdown Import**: Import `.md` / `.markdown` files directly from the unified Import menu, automatically splitting `#`–`######` headings into memo cards and extracting tables and Mermaid diagrams into corner-linked Table and Mermaid cards.
 - Create and manage multiple boards in Plus, or use a single local board in Free.
 - Write rich text memo cards.
-- [New] Write memos with the Meldrift Markdown Engine, which replaces TipTap and turns Markdown syntax into formatting as you type.
-- [New] Edit tables with the Meldrift Table Engine, which replaces TanStack Table.
+- Write memos with the Meldrift Markdown Engine, which replaces TipTap and turns Markdown syntax into formatting as you type.
+- Edit tables with the Meldrift Table Engine, which replaces TanStack Table.
 - Add image, Mermaid, and table cards.
 - Drag and drop images onto the board while preserving transparent backgrounds.
 - Choose Mermaid diagram types and edit them with contextual code completion, existing-node suggestions, and a hand-drawn rendering option.
@@ -29,7 +31,7 @@ Ideas do not always begin in a clear order. Meldrift allows memos, images, table
 - Undo and redo card and drawing changes, including Import and Reset, from the bottom-center toolbar.
 - Use keyboard shortcuts to switch modes and create cards.
 - Compile board contents into Markdown and download the result.
-- Export and import SQLite save files containing the complete board and image data.
+- Export SQLite save files containing the complete board and image data, and import either SQLite save files or Markdown documents from the unified Import menu.
 - Use an AI assistant to create, edit, delete, and arrange cards after reviewing its proposed changes.
 
 ## Structure
@@ -40,10 +42,10 @@ Meldrift is an npm workspace monorepo.
 - `apps/plus`: local-first edition with authentication and server synchronization, served from `/plus`
 - `packages/core`: framework-free rules and schemas shared by both editions
 - `packages/ui`: React components and hooks shared by both editions
-- `packages/board-data`: board data, browser SQLite and IndexedDB storage, image processing, change tracking, and Markdown compilation
+- `packages/board-data`: board data, browser SQLite and IndexedDB storage, image processing, change tracking, remote patching, and Markdown compilation & import
 - `packages/ai`: the assistant body shared by both editions
 
-Both editions use the same board editor and local storage flow. Free keeps its board in browser storage without requiring an account. Plus adds board management and Neon-based authentication, then synchronizes changed fields and new image assets after local saves. Cloudinary is used for Plus board previews; image cards are stored as binary data.
+Both editions use the same board editor and local storage flow. Free keeps its board in browser storage without requiring an account. Plus adds board management, role-based permissions, and Neon-based authentication, then synchronizes changed fields, board previews, and new image assets after local saves. Both editions also support peer-to-peer WebRTC live collaboration.
 
 Undo/Redo history is kept in memory for the latest 50 operations and resets when the page is reloaded. Plus file export requires login, while Import and Reset also require editing permission.
 

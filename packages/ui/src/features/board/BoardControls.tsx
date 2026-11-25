@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
 import ConfirmDialog from "@meldrift/ui/ConfirmDialog";
 import type { BoardMenuControls } from "@meldrift/ui/BoardMenu";
+import BoardMarkdownImporter from "../markdown/BoardMarkdownImporter";
+import { detectBoardImportKind } from "./board-import-kind";
 import type { BoardStorage } from "./board-storage";
 import { useBoardFileTransfer } from "./useBoardFileTransfer";
 import { useBoardPersistence } from "./useBoardPersistence";
@@ -50,6 +52,8 @@ export default function BoardControls({
 }: BoardControlsProps) {
     const file = storage?.file;
     const saveAfterReplaceRef = useRef(false);
+    const [pendingMarkdownFile, setPendingMarkdownFile] = useState<File | null>(null);
+    const [markdownImporting, setMarkdownImporting] = useState(false);
 
     // 가져오기·초기화는 보드 전체를 바꾸므로 저장 예약을 기다리지 않고 바뀐 화면을 바로 저장한다.
     const replaceBoard = useCallback((next: BoardSnapshot) => {
@@ -63,7 +67,7 @@ export default function BoardControls({
         resetDialogOpen,
         handleExport,
         handleImportClick,
-        handleImport,
+        importSqliteFile,
         handleResetClick,
         handleResetCancel,
         handleResetConfirm,
@@ -96,7 +100,26 @@ export default function BoardControls({
         await handleExport();
     };
 
-    const actionBlocked = savePaused || transferring;
+    const actionBlocked = savePaused || transferring || markdownImporting;
+    const hasExistingContent = snapshot.memos.length > 0
+        || snapshot.images.length > 0
+        || snapshot.mermaids.length > 0
+        || snapshot.tables.length > 0
+        || snapshot.strokes.length > 0;
+
+    const handleImportFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const selected = event.target.files?.[0];
+        event.target.value = "";
+        if (!selected || !canEdit || !canReplace || actionBlocked) {
+            return;
+        }
+        const kind = await detectBoardImportKind(selected);
+        if (kind === "markdown") {
+            setPendingMarkdownFile(selected);
+            return;
+        }
+        await importSqliteFile(selected);
+    };
 
     return (
         <>
@@ -105,7 +128,7 @@ export default function BoardControls({
                 type="file"
                 aria-label="Import board database"
                 className="hidden"
-                onChange={handleImport}
+                onChange={handleImportFileChange}
             />
             {renderMenu({
                 title: menuTitle,
@@ -130,6 +153,16 @@ export default function BoardControls({
                     },
                 },
             })}
+            <BoardMarkdownImporter
+                file={pendingMarkdownFile}
+                board={snapshot.board}
+                hasExistingContent={hasExistingContent}
+                disabled={!canEdit || !canReplace || savePaused}
+                onBusyChange={setMarkdownImporting}
+                onCommit={replaceBoard}
+                onMessage={setMessage}
+                onClose={() => setPendingMarkdownFile(null)}
+            />
             {resetDialogOpen && (
                 <ConfirmDialog
                     title="Reset this board?"
