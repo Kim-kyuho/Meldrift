@@ -214,4 +214,33 @@ describe("BoardControls 메뉴 항목", () => {
             board: props.snapshot.board,
         });
     });
+
+    it("단일 Import 입력에서 Markdown 파일을 선택하면 SQLite 로더 대신 Markdown 임포터로 분기한다", async () => {
+        const storage = createStorage();
+        const props = createProps({ storage });
+        render(<BoardControls {...props} />);
+
+        const bytes = new TextEncoder().encode("# Imported Title\n\nBody text");
+        const mdFile = new File([bytes], "notes.md", { type: "text/markdown" });
+        Object.defineProperty(mdFile, "arrayBuffer", { value: async () => bytes.slice().buffer });
+        Object.defineProperty(mdFile, "slice", {
+            value: (start = 0, end = bytes.byteLength) => ({
+                arrayBuffer: async () => bytes.slice(start, end).buffer,
+            }),
+        });
+
+        const input = screen.getByLabelText("Import board database");
+        await act(async () => {
+            fireEvent.change(input, { target: { files: [mdFile] } });
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(storage.file!.readFile).not.toHaveBeenCalled();
+        expect(props.replaceSnapshot).toHaveBeenCalledOnce();
+        const [replaced] = vi.mocked(props.replaceSnapshot).mock.calls[0];
+        expect(replaced.memos).toHaveLength(1);
+        expect(replaced.memos[0].content).toContain("Imported Title");
+    });
 });
