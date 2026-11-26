@@ -362,9 +362,11 @@ function estimateMemoCardHeight(markdown: string): number {
 }
 
 function estimateTableCardSize(source: TableSource): { width: number; height: number } {
+    const minWidth = Math.max(360, 42 + source.columns.length * 80);
+    const minHeight = Math.max(128, 94 + source.rows.length * 37);
     return {
-        width: clamp(source.columns.length * 140, 320, 720),
-        height: clamp(64 + source.rows.length * 40, 180, 520),
+        width: Math.max(minWidth, clamp(source.columns.length * 140, 360, 720)),
+        height: Math.max(minHeight, clamp(94 + source.rows.length * 37, 180, 960)),
     };
 }
 

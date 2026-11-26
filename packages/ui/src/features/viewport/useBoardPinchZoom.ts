@@ -151,10 +151,6 @@ export function useBoardPinchZoom({
                 boardHeight: boardElement?.offsetHeight ?? 0,
             };
             pendingFrameRef.current = null;
-
-            if (boardElement) {
-                boardElement.style.willChange = "transform";
-            }
         };
 
         const handleTouchMove = (event: TouchEvent) => {
@@ -175,11 +171,13 @@ export function useBoardPinchZoom({
 
             const boardX = (pinch.scrollLeft + pinch.offsetX) / pinch.zoom;
             const boardY = (pinch.scrollTop + pinch.offsetY) / pinch.zoom;
+            const maxScrollLeft = Math.max(0, pinch.boardWidth * nextZoom - boardScrollElement.clientWidth);
+            const maxScrollTop = Math.max(0, pinch.boardHeight * nextZoom - boardScrollElement.clientHeight);
 
             pendingFrameRef.current = {
                 zoom: nextZoom,
-                scrollLeft: boardX * nextZoom - pinch.offsetX,
-                scrollTop: boardY * nextZoom - pinch.offsetY,
+                scrollLeft: Math.min(maxScrollLeft, Math.max(0, boardX * nextZoom - pinch.offsetX)),
+                scrollTop: Math.min(maxScrollTop, Math.max(0, boardY * nextZoom - pinch.offsetY)),
             };
 
             if (animationFrameRef.current === null) {

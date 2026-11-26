@@ -28,6 +28,43 @@ const stopPointerPropagation = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
 };
 
+function getStrokesBounds(strokes: BoardStroke[]) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let maxStrokeWidth = 0;
+
+    for (const stroke of strokes) {
+        if (stroke.width > maxStrokeWidth) {
+            maxStrokeWidth = stroke.width;
+        }
+        for (const [x, y] of stroke.points) {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+    }
+
+    if (!Number.isFinite(minX)) {
+        return null;
+    }
+
+    const padding = Math.ceil(maxStrokeWidth) + 8;
+    const left = Math.max(0, Math.floor(minX - padding));
+    const top = Math.max(0, Math.floor(minY - padding));
+    const right = Math.ceil(maxX + padding);
+    const bottom = Math.ceil(maxY + padding);
+
+    return {
+        left,
+        top,
+        width: Math.max(1, right - left),
+        height: Math.max(1, bottom - top),
+    };
+}
+
 function StrokePaths({ strokes }: { strokes: BoardStroke[] }) {
     return (
         <>
@@ -77,12 +114,24 @@ export default function DrawingLayer({
     });
 
     if (!drawingMode) {
+        if (strokes.length === 0) {
+            return null;
+        }
+        const bounds = getStrokesBounds(strokes);
+        if (!bounds) {
+            return null;
+        }
         return (
             <svg
                 pointerEvents="none"
                 aria-hidden="true"
-                className="absolute left-0 top-0 h-full w-full"
+                className="absolute"
+                viewBox={`${bounds.left} ${bounds.top} ${bounds.width} ${bounds.height}`}
                 style={{
+                    left: `${bounds.left}px`,
+                    top: `${bounds.top}px`,
+                    width: `${bounds.width}px`,
+                    height: `${bounds.height}px`,
                     zIndex: ACTIVE_CARD_Z - 1,
                     pointerEvents: "none",
                     WebkitTouchCallout: "none",

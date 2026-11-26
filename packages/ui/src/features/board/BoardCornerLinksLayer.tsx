@@ -1,23 +1,58 @@
 "use client";
 
-import { ACTIVE_CARD_Z, type MemoCornerLink } from "@meldrift/core/cards";
+import type { MemoCornerLink } from "@meldrift/core/cards";
 
 type BoardCornerLinksLayerProps = {
     links: MemoCornerLink[];
 };
+
+const linkPadding = 8;
+
+function getLinksBounds(links: MemoCornerLink[]) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const link of links) {
+        minX = Math.min(minX, link.from.x, link.to.x);
+        minY = Math.min(minY, link.from.y, link.to.y);
+        maxX = Math.max(maxX, link.from.x, link.to.x);
+        maxY = Math.max(maxY, link.from.y, link.to.y);
+    }
+
+    const left = Math.max(0, Math.floor(minX - linkPadding));
+    const top = Math.max(0, Math.floor(minY - linkPadding));
+    const right = Math.ceil(maxX + linkPadding);
+    const bottom = Math.ceil(maxY + linkPadding);
+
+    return {
+        left,
+        top,
+        width: Math.max(1, right - left),
+        height: Math.max(1, bottom - top),
+    };
+}
 
 export default function BoardCornerLinksLayer({ links }: BoardCornerLinksLayerProps) {
     if (links.length === 0) {
         return null;
     }
 
+    const bounds = getLinksBounds(links);
+
     return (
         <svg
             aria-hidden="true"
             data-board-corner-links="true"
-            className="pointer-events-none absolute left-0 top-0 h-full w-full overflow-visible"
+            className="pointer-events-none absolute overflow-visible"
+            viewBox={`${bounds.left} ${bounds.top} ${bounds.width} ${bounds.height}`}
             style={{
-                zIndex: ACTIVE_CARD_Z,
+                left: `${bounds.left}px`,
+                top: `${bounds.top}px`,
+                width: `${bounds.width}px`,
+                height: `${bounds.height}px`,
+                zIndex: 0,
                 pointerEvents: "none",
             }}
         >

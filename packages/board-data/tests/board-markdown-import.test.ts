@@ -150,6 +150,26 @@ describe("importMarkdownToBoard", () => {
         expect(snapshot.memos[0].content).toContain("&lt;script&gt;");
     });
 
+    it("reserves full minimum height for tall GFM tables so following sections do not overlap", () => {
+        const rows = Array.from({ length: 17 }, (_, index) => `| Row ${index + 1} | Detail ${index + 1} |`);
+        const md = [
+            "# Table Section",
+            "",
+            "| Name | Description |",
+            "| --- | --- |",
+            ...rows,
+            "",
+            "# Next Section",
+            "Should sit below the tall table.",
+        ].join("\n");
+
+        const { snapshot } = importMarkdownToBoard(md, defaultBoard);
+        expect(snapshot.tables).toHaveLength(1);
+        expect(snapshot.memos).toHaveLength(2);
+        expect(snapshot.tables[0].height).toBeGreaterThanOrEqual(94 + 17 * 37);
+        expect(snapshot.memos[1].y).toBeGreaterThanOrEqual(snapshot.tables[0].y + snapshot.tables[0].height);
+    });
+
     it("throws on empty Markdown input", () => {
         expect(() => importMarkdownToBoard("   \n\t  ", defaultBoard)).toThrow("The Markdown file is empty.");
     });

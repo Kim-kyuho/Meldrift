@@ -436,11 +436,17 @@ export default function BoardWorkspace({
     const selectionActive = selectionMode && !isEditing && !hasPendingAiCards;
     const cardsSelected = selectionActive && selectedCards.length > 0;
     const groupOffset = selectionOffset ? clampSelectionOffset(selectionOffset) : null;
-    const selectedCardKeys = new Set(selectedCards.map((card) => `${card.type}:${card.id}`));
-    const groupOffsetOf = (type: CardType, id: number) =>
-        groupOffset && selectedCardKeys.has(`${type}:${id}`) ? groupOffset : undefined;
+    const selectedCardKeys = useMemo(
+        () => new Set(selectedCards.map((card) => `${card.type}:${card.id}`)),
+        [selectedCards],
+    );
+    const groupOffsetOf = useCallback(
+        (type: CardType, id: number) =>
+            groupOffset && selectedCardKeys.has(`${type}:${id}`) ? groupOffset : undefined,
+        [groupOffset, selectedCardKeys],
+    );
 
-    const cornerLinks = resolveMemoCornerLinks(
+    const cornerLinks = useMemo(() => resolveMemoCornerLinks(
         memos.map((memo) => {
             const offset = groupOffsetOf("memo", memo.id);
             return {
@@ -490,7 +496,7 @@ export default function BoardWorkspace({
                 };
             }),
         ],
-    );
+    ), [memos, images, mermaids, tables, groupOffsetOf]);
 
     const snapshot = useMemo<BoardSnapshot>(
         () => tagRemoteSeq({ board: currentBoard, memos, images, mermaids, tables, strokes }, appliedRemoteSeq),
@@ -908,6 +914,8 @@ export default function BoardWorkspace({
                         <div
                             ref={boardRef}
                             className="meldrift-board relative bg-white"
+                            data-low-zoom={boardZoom <= 0.5 ? "true" : undefined}
+                            data-mobile={isMobile ? "true" : undefined}
                             style={{
                                 width: `${boardWidth}px`,
                                 height: `${boardHeight}px`,
