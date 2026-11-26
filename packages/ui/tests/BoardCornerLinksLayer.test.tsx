@@ -24,6 +24,10 @@ describe("BoardCornerLinksLayer 동작", () => {
         const lines = container.querySelectorAll("line");
 
         expect(svg).not.toBeNull();
+        expect(svg?.getAttribute("viewBox")).toBe("292 92 46 16");
+        expect((svg as SVGSVGElement).style.zIndex).toBe("0");
+        expect((svg as SVGSVGElement).style.width).toBe("46px");
+        expect((svg as SVGSVGElement).style.height).toBe("16px");
         expect(lines).toHaveLength(1);
         expect(lines[0].getAttribute("stroke")).toBe("#000000");
         expect(lines[0].getAttribute("stroke-width")).toBe("1");

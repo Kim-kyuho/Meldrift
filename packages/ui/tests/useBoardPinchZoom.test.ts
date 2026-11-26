@@ -306,4 +306,22 @@ describe("useBoardPinchZoom 동작", () => {
         expect(viewport.style.overflow).toBe("auto");
         expect(frames.size).toBe(0);
     });
+
+    it("25% 축소 시 will-change를 강제하지 않고 음수 스크롤을 0으로 보정한다", () => {
+        viewport.scrollLeft = 0;
+        viewport.scrollTop = 0;
+        const { setBoardZoom } = setup();
+
+        touch("touchstart", [50, 350]);
+        expect(board.style.willChange).toBe("");
+        touch("touchmove", [150, 250]);
+        flushFrame();
+        expect(board.style.transform).toBe("translate(0px) scale(0.25)");
+
+        touch("touchend", []);
+        expect(setBoardZoom).toHaveBeenCalledExactlyOnceWith(0.25);
+        expect(board.style.transform).toBe("scale(0.25)");
+        expect(viewport.scrollLeft).toBe(0);
+        expect(viewport.scrollTop).toBe(0);
+    });
 });

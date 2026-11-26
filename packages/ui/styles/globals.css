@@ -41,8 +41,14 @@
   }
 }
 
+html:has(.board-scroll-layer),
+body:has(.board-scroll-layer) {
+  overscroll-behavior: none;
+}
+
 .board-scroll-layer {
   touch-action: pan-x pan-y;
+  overscroll-behavior: none;
 }
 
 .board-scroll-layer[data-selection-active="true"],
@@ -229,6 +235,28 @@
 /* 표는 카드 너비에 맞춰지지만 겹친 테두리 1px만큼 넓어져 가로 스크롤바가 생기므로 가로 스크롤을 막는다. */
 .meldrift-table-scroll {
   overflow-x: hidden;
+}
+
+/* 편집 중이 아닌 표의 sticky 헤더와 모바일·저배율 카드 내부 스크롤은 수십 개의 GPU 합성 레이어를 만들어 모바일 줌아웃 시 메모리 압박을 유발한다. */
+[data-editing="false"] .meldrift-table-grid thead th {
+  position: static;
+}
+
+.meldrift-board[data-low-zoom="true"] [data-editing="false"] .memo-editor-content,
+.meldrift-board[data-low-zoom="true"] [data-editing="false"] .meldrift-table-scroll,
+.meldrift-board[data-low-zoom="true"] [data-editing="false"] .meldrift-diagram-canvas,
+.meldrift-board[data-mobile="true"] [data-editing="false"] .memo-editor-content,
+.meldrift-board[data-mobile="true"] [data-editing="false"] .meldrift-table-scroll,
+.meldrift-board[data-mobile="true"] [data-editing="false"] .meldrift-diagram-canvas {
+  overflow: hidden;
+}
+
+@media (max-height: 500px) and (pointer: coarse) {
+  .meldrift-board [data-editing="false"] .memo-editor-content,
+  .meldrift-board [data-editing="false"] .meldrift-table-scroll,
+  .meldrift-board [data-editing="false"] .meldrift-diagram-canvas {
+    overflow: hidden;
+  }
 }
 
 /* 다이어그램 카드는 다른 카드처럼 보드 배경이 비쳐 보이게 둔다. */

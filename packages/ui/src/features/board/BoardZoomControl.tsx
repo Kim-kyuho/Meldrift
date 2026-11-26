@@ -25,6 +25,7 @@ export default function BoardZoomControl({
                 WebkitTouchCallout: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
+                touchAction: "manipulation",
             }}
         >
             <PressableButton

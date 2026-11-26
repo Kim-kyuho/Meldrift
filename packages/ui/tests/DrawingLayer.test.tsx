@@ -32,13 +32,33 @@ function renderLayer(drawingMode: boolean, drawingTool: DrawingTool) {
 }
 
 describe("드로잉 레이어 포인터 전달", () => {
-    it("드로잉 모드가 꺼져 있으면 표시 전용 레이어를 렌더링한다", () => {
+    it("드로잉 모드가 꺼져 있고 획이 없으면 SVG 레이어를 렌더링하지 않는다", () => {
+        const { container } = render(
+            <DrawingLayer
+                strokes={[]}
+                drawingMode={false}
+                drawingTool="draw"
+                penColor={defaultPenColor}
+                penWidth={defaultPenWidth}
+                zoom={0.25}
+                onStrokeEnd={vi.fn()}
+                onErase={vi.fn()}
+            />
+        );
+
+        expect(container.querySelector("svg")).toBeNull();
+    });
+
+    it("드로잉 모드가 꺼져 있으면 획 경계에만 맞춘 표시 전용 레이어를 렌더링한다", () => {
         const layer = renderLayer(false, "draw");
 
         expect(layer.getAttribute("pointer-events")).toBe("none");
         expect(layer.style.pointerEvents).toBe("none");
         expect(layer.style.touchAction).toBe("");
         expect(layer.getAttribute("data-drawing-capture")).toBeNull();
+        expect(layer.getAttribute("viewBox")).toBe("0 0 32 22");
+        expect(layer.style.width).toBe("32px");
+        expect(layer.style.height).toBe("22px");
         expect(layer.querySelectorAll("path")).toHaveLength(1);
     });
 
