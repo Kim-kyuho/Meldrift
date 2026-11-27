@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+    boardDatabaseContainsText,
     getBoardMenuButton,
     getBoardToolButton,
     openTestBoard,
@@ -60,6 +61,46 @@ test.describe("보드 작업 화면", () => {
 
         await page.getByRole("button", { name: "Close Markdown view" }).click();
         await expect(markdownView).toBeHidden();
+    });
+
+    test("Markdown 편집기에서 이미지 캡션을 편집하고 적용한 뒤 새로고침해도 유지한다", async ({ page }) => {
+        await getBoardMenuButton(page).click();
+        await page.getByRole("button", { name: "Compile to Markdown" }).click();
+        const editor = page.getByLabel("Compiled Markdown document");
+        await editor.getByRole("button", { name: "Add first section" }).click();
+
+        const chooserPromise = page.waitForEvent("filechooser");
+        await editor.getByRole("button", { name: "Add image to section 1" }).click();
+        const chooser = await chooserPromise;
+        await chooser.setFiles({
+            name: "local.png",
+            mimeType: "image/png",
+            buffer: Buffer.from(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                "base64",
+            ),
+        });
+
+        const caption = editor.getByRole("textbox", { name: /Image caption/ });
+        const preview = editor.locator("[data-linear-image] img");
+        await expect(preview).toHaveAttribute("src", /^blob:/);
+        const previewUrl = await preview.getAttribute("src");
+        await caption.fill("");
+        await caption.pressSequentially("Project sketch");
+        await expect(caption).toHaveValue("Project sketch");
+        await expect(caption).toBeFocused();
+        await expect(preview).toHaveAttribute("src", previewUrl!);
+
+        await editor.getByRole("button", { name: "Apply Markdown changes" }).click();
+        await expect(editor.getByRole("button", { name: "Apply Markdown changes" })).toBeDisabled();
+        await expect(preview).toHaveAttribute("src", previewUrl!);
+        await editor.getByRole("button", { name: "Close Markdown view" }).click();
+
+        const canvasImage = page.locator(".meldrift-board").getByAltText("Project sketch");
+        await expect(canvasImage).toHaveJSProperty("naturalWidth", 1);
+        await expect.poll(() => boardDatabaseContainsText(page, "Project sketch")).toBe(true);
+        await page.reload();
+        await expect(canvasImage).toHaveJSProperty("naturalWidth", 1);
     });
 
     test("Mermaid 소스 변경을 새로고침 없이 렌더링한다", async ({ page }) => {

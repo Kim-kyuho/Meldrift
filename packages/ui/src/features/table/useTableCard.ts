@@ -39,10 +39,37 @@ export function useTableCard<T extends BoardTable>({
         width: table.width,
         height: table.height,
     });
-    const [syncedPosition, setSyncedPosition] = useState({ x: table.x, y: table.y });
-    if (!isEditing && (syncedPosition.x !== table.x || syncedPosition.y !== table.y)) {
-        setSyncedPosition({ x: table.x, y: table.y });
-        setCardState((prev) => ({ ...prev, x: table.x, y: table.y }));
+    const [syncedPosition, setSyncedPosition] = useState({
+        x: table.x,
+        y: table.y,
+        width: table.width,
+        height: table.height,
+        source: table.source,
+    });
+    if (
+        !isEditing
+        && (
+            syncedPosition.x !== table.x
+            || syncedPosition.y !== table.y
+            || syncedPosition.width !== table.width
+            || syncedPosition.height !== table.height
+            || syncedPosition.source !== table.source
+        )
+    ) {
+        setSyncedPosition({
+            x: table.x,
+            y: table.y,
+            width: table.width,
+            height: table.height,
+            source: table.source,
+        });
+        setCardState({
+            x: table.x,
+            y: table.y,
+            width: table.width,
+            height: table.height,
+        });
+        setSource(table.source);
     }
     const [dragHandlePressed, setDragHandlePressed] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

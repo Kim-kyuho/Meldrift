@@ -89,6 +89,42 @@ describe("useBoardMarkdown 동작", () => {
         expect(revokeObjectURL).toHaveBeenCalledWith("blob:test-1");
     });
 
+    it("메모 편집이나 Draft 이미지 ID 확정 시 미리보기 URL을 유지한다", async () => {
+        const { createObjectURL, revokeObjectURL } = installObjectUrlMock();
+        const draft = markdownSnapshot();
+        draft.mermaids = [];
+        draft.images = [{
+            imageId: -1, syncId: "image-1", assetId: "asset-1", boardId: 1,
+            url: "", data: new Uint8Array([1, 2, 3]), mimeType: "image/png", label: "Local",
+            x: 0, y: 0, z: 2, width: 50, height: 50,
+        }];
+        const { result, rerender } = renderHook((snapshot: BoardSnapshot) => useBoardMarkdown(snapshot), {
+            initialProps: draft,
+        });
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        const edited = {
+            ...draft,
+            memos: draft.memos.map((memo) => ({ ...memo, content: "<p>Changed</p>" })),
+        };
+        rerender(edited);
+        expect(result.current.loading).toBe(false);
+        expect(result.current.previewImageUrls["./images/image--1.png"]).toBe("blob:test-1");
+
+        const applied = {
+            ...edited,
+            images: edited.images.map((image) => ({ ...image, imageId: 1 })),
+        };
+        rerender(applied);
+        expect(result.current.loading).toBe(false);
+        expect(result.current.previewImageUrls).toEqual({ "./images/image-1.png": "blob:test-1" });
+        expect(createObjectURL).toHaveBeenCalledTimes(1);
+        expect(revokeObjectURL).not.toHaveBeenCalled();
+
+        rerender({ ...applied, images: [] });
+        expect(revokeObjectURL).toHaveBeenCalledWith("blob:test-1");
+    });
+
     it("임시 Blob URL로 컴파일된 로컬 이미지를 렌더링한다", async () => {
         installObjectUrlMock();
         const snapshot = markdownSnapshot();

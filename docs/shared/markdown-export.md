@@ -1,6 +1,6 @@
-# Markdown 컴파일과 내보내기 상세설계
+# Markdown 컴파일, 선형 편집과 내보내기 상세설계
 
-소스: `packages/board-data/src/board-markdown.ts`, `packages/ui/src/features/markdown/useBoardMarkdown.ts`, `packages/ui/src/features/markdown/BoardMarkdownView.tsx`
+컴파일과 초안 변환은 `packages/board-data/src/board-markdown*.ts`에, 편집기와 미리보기는 `packages/ui/src/features/markdown/`에 있다.
 
 ## 어디서 계산하나
 
@@ -10,7 +10,7 @@ Plus에는 같은 문서를 서버에서 만드는 경로가 하나 더 있다. 
 
 ## 컴파일 (`compileBoardMarkdownDocument`)
 
-입력은 `BoardSnapshot`, 출력은 `{ markdown, imageAssets }`다.
+입력은 `BoardSnapshot`이다. 결과의 `sections`는 메모와 연결된 첨부를 묶은 편집 단위이며, `unlinkedCardCount`는 문서에 포함되지 않은 이미지·표·Mermaid 카드 수다. 같은 섹션을 사용해 `markdown`과 `imageAssets`를 구성한다.
 
 카드 목록을 먼저 하나로 모은다. 이미지는 `data`와 `mimeType`이 모두 있을 때만 자산이 된다.
 
@@ -21,7 +21,7 @@ content    = imageAsset ? "./images/image-{imageId}.png" : image.url
 
 바이트가 없는 이미지(Plus의 구버전 Cloudinary 이미지, 또는 서버 컴파일에서 링크로 바뀐 이미지)는 `url`을 그대로 링크한다.
 
-이어서 `sortMemosByOrder`로 정렬한 메모를 돌며 다음을 이어 붙인다.
+이어서 `sortMemosByOrder`로 정렬한 메모를 돌며 각 섹션과 내보내기용 본문을 구성한다.
 
 1. 메모 본문을 Turndown으로 HTML → Markdown 변환한다. 결과가 빈 문자열이면 넣지 않는다.
 2. 메모의 네 꼭짓점을 좌상 · 우상 · 좌하 · 우하 순으로 훑는다.
@@ -41,21 +41,19 @@ Turndown 설정은 `headingStyle: atx`, `bulletListMarker: -`, `codeBlockStyle: 
 
 드로잉은 컴파일 대상이 아니다.
 
-## 미리보기 (`useBoardMarkdown`)
+## 선형 편집과 적용
 
-`compileBoardMarkdownDocument`를 `useMemo`로 계산한다. 스냅샷이 바뀔 때만 다시 돈다.
+보드 메뉴에서 `Compile to Markdown`을 열면 넓은 화면에서 캔버스와 편집기가 나란히 표시된다. 좁은 화면에서는 편집기가 화면을 채운다. 편집 권한이 있으면 메모 본문, 표, Mermaid 소스, 이미지 캡션을 편집하거나 섹션을 추가·재정렬할 수 있다. 섹션당 첨부는 최대 4개다.
 
-`markdownSections`는 본문을 ` ```mermaid ` 블록 기준으로 쪼갠 배열이다. 화면은 홀수 인덱스를 Mermaid 렌더러로, 짝수 인덱스를 React Markdown으로 그린다.
+`useLinearMarkdownDraft`는 커밋된 보드에서 초안을 별도로 관리한다. `applyLinearDraftToSnapshot`은 초안을 적용한 스냅샷으로 편집기와 캔버스를 미리 보여준다. 초안은 `Apply`에서 보드에 반영한다. 이때 신규 카드에 정식 ID를 부여하고, 적용 결과를 보드의 이력과 자동 저장 흐름에 전달한다. 내려받기는 편집기에 표시된 스냅샷을 사용한다.
 
-분리는 `mermaid-sections.ts`의 순차 스캔으로 처리한다. Mermaid 블록을 찾는 중첩 정규식으로 긴 입력을 반복 탐색하지 않아 해당 분리 경로의 ReDoS 위험을 피한다.
+편집 권한이 있고 미적용 변경이 있을 때 닫기를 누르면 `Keep Editing`, `Discard & Close`, `Apply & Close`를 제공한다. 편집기 열림 상태나 대상 보드가 바뀌면 초안을 초기화한다.
 
-이미지 자산이 있으면 effect가 자산마다 object URL을 만들어 `{ "./images/image-1.png": "blob:..." }` 맵을 만든다.
+## 이미지 첨부와 미리보기
 
-- 만드는 도중 실패하면 이미 만든 URL을 전부 해제하고 오류 문구를 담는다.
-- `queueMicrotask`로 상태를 반영해 같은 커밋 안에서 setState가 겹치는 것을 피한다.
-- cleanup에서 모든 object URL을 해제한다.
+이미지 파일을 선택하면 공통 `prepareImageFile`이 파일을 준비하고, 성공한 이미지를 선택한 섹션의 초안에 추가한다. 준비 중에는 `Apply`와 `Apply & Close`를 비활성화한다. 편집기를 닫거나 초안을 버린 뒤 도착한 준비 결과는 반영하지 않는다. 캡션은 입력 중 공백을 유지하고 적용할 때 앞뒤 공백을 정리한다.
 
-`previewReady`는 자산이 없거나, 저장된 미리보기 상태가 **현재 문서와 같은 객체**일 때 참이다. 스냅샷이 바뀐 직후 옛 URL이 잠깐 보이는 것을 막는다. 같은 판정으로 `previewImageUrls`와 `previewError`도 문서가 일치할 때만 내보낸다.
+`useBoardMarkdown`은 컴파일 결과의 이미지 바이트 객체와 MIME 타입을 기준으로 Blob URL을 재사용한다. 본문·캡션을 바꾸거나 적용 중 이미지 ID가 확정되어 자산 경로가 바뀌어도 같은 바이트의 URL을 유지한다. 현재 문서에서 빠진 자산과 편집기를 닫을 때 남은 자산의 URL은 해제한다. 미리보기 준비나 오류 표시 중에도 편집 영역을 유지한다.
 
 ## zip 내려받기
 
@@ -73,7 +71,8 @@ images/image-{id}.png   자산 (있을 때만)
 | 값 | 의미 |
 | --- | --- |
 | `markdown` | 컴파일된 본문 |
-| `markdownSections` | Mermaid 블록 기준으로 쪼갠 배열 |
+| `sections` | 메모·첨부로 구성된 문서 섹션 |
+| `unlinkedCardCount` | 문서에 포함되지 않은 카드 수 |
 | `previewImageUrls` | 자산 경로 → object URL |
 | `errorMessage` | 미리보기 오류가 우선, 없으면 내려받기 오류 |
 | `loading` | 미리보기 URL이 아직 준비되지 않음 |
