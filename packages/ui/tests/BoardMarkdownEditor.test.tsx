@@ -157,6 +157,16 @@ function Harness({
 }
 
 describe("BoardMarkdownEditor 선형 편집 및 Apply 흐름", () => {
+    it("공백뿐인 메모에는 안내문을 표시하고 서식이 있는 본문은 유지한다", () => {
+        const initial = sampleSnapshot();
+        initial.memos[0].content = "<p><strong>&nbsp;&#160;&#xA0;\u200b</strong><br></p>";
+        initial.memos[1].content = "<p><code>&lt;tag&gt;</code></p>";
+        render(<Harness initial={initial} onCommitSpy={vi.fn()} />);
+
+        expect(screen.getByRole("button", { name: "Edit section 1" })).toHaveTextContent("Click to write Markdown...");
+        expect(screen.getByRole("button", { name: "Edit section 2" })).toHaveTextContent("<tag>");
+    });
+
     it("편집 내용은 캔버스 프리뷰에 실시간 반영되지만 Apply 전까지 저장되지 않는다", async () => {
         const onCommitSpy = vi.fn();
         render(<Harness initial={sampleSnapshot()} onCommitSpy={onCommitSpy} />);

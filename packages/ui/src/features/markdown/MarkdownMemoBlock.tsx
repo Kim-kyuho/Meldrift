@@ -44,8 +44,8 @@ function isCaretAtEdge(container: HTMLElement, edge: "start" | "end"): boolean {
     return probe.toString().replace(/[\u200b\ufeff]/g, "").length === 0;
 }
 
-const isHtmlVisuallyEmpty = (html: string) =>
-    html.replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim().length === 0;
+// Recognize blank memo markup without transforming the HTML.
+const emptyMemoMarkup = /^(?:[\s\u200b]|&nbsp;|&#(?:0*160|x0*a0);|<[^>]*>)*$/i;
 
 export default function MarkdownMemoBlock({
     memoId,
@@ -135,7 +135,7 @@ export default function MarkdownMemoBlock({
         );
     }
 
-    const empty = isHtmlVisuallyEmpty(html);
+    const empty = emptyMemoMarkup.test(html);
 
     return (
         <div
