@@ -7,6 +7,7 @@
     "./board-state": "./src/board-state.ts",
     "./image-file": "./src/image-file.ts",
     "./board-markdown": "./src/board-markdown.ts",
+    "./board-markdown-draft": "./src/board-markdown-draft.ts",
     "./board-markdown-import": "./src/board-markdown-import.ts",
     "./browser-db/client": "./src/browser-db/client.ts",
     "./browser-db/protocol": "./src/browser-db/protocol.ts",

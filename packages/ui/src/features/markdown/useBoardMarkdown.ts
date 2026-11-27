@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { strToU8, zipSync } from "fflate";
 import {
     compileBoardMarkdownDocument,
-    type BoardMarkdownDocument,
+    type BoardMarkdownImageAsset,
 } from "@meldrift/board-data/board-markdown";
 import type { BoardSnapshot } from "@meldrift/board-data/board-state";
 import {
@@ -10,63 +10,98 @@ import {
     imageBytesToPng,
 } from "@meldrift/board-data/image-file";
 
-type PreviewImageState = {
-    document: BoardMarkdownDocument;
-    urls: Record<string, string>;
-    errorMessage: string;
-};
+type ImagePreview =
+    | { url: string }
+    | { errorMessage: string };
+
+type ImagePreviewCache = Map<Uint8Array, Map<string, ImagePreview>>;
+
+function createImagePreview({ data, mimeType }: BoardMarkdownImageAsset): ImagePreview {
+    try {
+        return { url: URL.createObjectURL(imageBytesToBlob(data, mimeType)) };
+    } catch (error) {
+        return {
+            errorMessage: error instanceof Error
+                ? error.message
+                : "The image preview could not be created.",
+        };
+    }
+}
+
+function releaseUnusedImagePreviews(previous: ImagePreviewCache, next?: ImagePreviewCache): boolean {
+    let removed = false;
+    for (const [data, previews] of previous) {
+        for (const [mimeType, preview] of previews) {
+            if (next?.get(data)?.has(mimeType)) {
+                continue;
+            }
+            if ("url" in preview) {
+                URL.revokeObjectURL(preview.url);
+            }
+            removed = true;
+        }
+    }
+    return removed;
+}
+
+function updateImagePreviews(assets: BoardMarkdownImageAsset[], previous: ImagePreviewCache): ImagePreviewCache {
+    const next: ImagePreviewCache = new Map();
+    let added = false;
+    for (const asset of assets) {
+        const { data, mimeType } = asset;
+        const previews = next.get(data) ?? new Map<string, ImagePreview>();
+        if (!previews.has(mimeType)) {
+            const cached = previous.get(data)?.get(mimeType);
+            previews.set(mimeType, cached ?? createImagePreview(asset));
+            added ||= !cached;
+        }
+        next.set(data, previews);
+    }
+    const removed = releaseUnusedImagePreviews(previous, next);
+    return added || removed ? next : previous;
+}
 
 export function useBoardMarkdown(snapshot: BoardSnapshot) {
     const compiledDocument = useMemo(() => compileBoardMarkdownDocument(snapshot), [snapshot]);
-    const markdown = compiledDocument.markdown;
-    const [previewState, setPreviewState] = useState<PreviewImageState | null>(null);
+    const { markdown, imageAssets } = compiledDocument;
+    const previewCacheRef = useRef<ImagePreviewCache>(new Map());
+    const [previewCache, setPreviewCache] = useState<ImagePreviewCache>(() => new Map());
     const [downloadError, setDownloadError] = useState("");
     const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
-        if (compiledDocument.imageAssets.length === 0) {
-            return;
-        }
-
-        const objectUrls: string[] = [];
-        const urls: Record<string, string> = {};
+        // Keep Blob URLs across text edits and draft-to-saved image ID changes.
+        const next = updateImagePreviews(imageAssets, previewCacheRef.current);
+        previewCacheRef.current = next;
         let active = true;
-        let nextState: PreviewImageState;
-
-        try {
-            compiledDocument.imageAssets.forEach((asset) => {
-                const objectUrl = URL.createObjectURL(imageBytesToBlob(asset.data, asset.mimeType));
-                objectUrls.push(objectUrl);
-                urls[`./${asset.path}`] = objectUrl;
-            });
-            nextState = { document: compiledDocument, urls, errorMessage: "" };
-        } catch (error) {
-            objectUrls.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
-            objectUrls.length = 0;
-            nextState = {
-                document: compiledDocument,
-                urls: {},
-                errorMessage: error instanceof Error
-                    ? error.message
-                    : "The image preview could not be created.",
-            };
-        }
-
         queueMicrotask(() => {
             if (active) {
-                setPreviewState(nextState);
+                setPreviewCache(next);
             }
         });
-
         return () => {
             active = false;
-            objectUrls.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
         };
-    }, [compiledDocument]);
+    }, [imageAssets]);
 
-    const previewReady = compiledDocument.imageAssets.length === 0 || previewState?.document === compiledDocument;
-    const previewImageUrls = previewState?.document === compiledDocument ? previewState.urls : {};
-    const previewError = previewState?.document === compiledDocument ? previewState.errorMessage : "";
+    useEffect(() => () => {
+        releaseUnusedImagePreviews(previewCacheRef.current);
+        previewCacheRef.current = new Map();
+    }, []);
+
+    const previewImageUrls: Record<string, string> = {};
+    let previewError = "";
+    let loading = false;
+    for (const { path, data, mimeType } of imageAssets) {
+        const preview = previewCache.get(data)?.get(mimeType);
+        if (!preview) {
+            loading = true;
+        } else if ("url" in preview) {
+            previewImageUrls["./" + path] = preview.url;
+        } else {
+            previewError ||= preview.errorMessage;
+        }
+    }
 
     const handleMarkdownDownload = async () => {
         setDownloadError("");
@@ -100,9 +135,11 @@ export function useBoardMarkdown(snapshot: BoardSnapshot) {
 
     return {
         markdown,
+        sections: compiledDocument.sections,
+        unlinkedCardCount: compiledDocument.unlinkedCardCount,
         previewImageUrls,
         errorMessage: previewError || downloadError,
-        loading: !previewReady,
+        loading,
         downloading,
         handleMarkdownDownload,
     };

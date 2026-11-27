@@ -72,14 +72,41 @@ export function useMemoCard({
         memoStateRef.current = memoState;
     }, [memoState]);
 
-    const [syncedPosition, setSyncedPosition] = useState({ x: memo.x, y: memo.y });
-    if (!isEditing && (syncedPosition.x !== memo.x || syncedPosition.y !== memo.y)) {
-        setSyncedPosition({ x: memo.x, y: memo.y });
-        setMemoState((prev) => ({ ...prev, x: memo.x, y: memo.y }));
+    const [syncedFrame, setSyncedFrame] = useState({
+        x: memo.x,
+        y: memo.y,
+        width: memo.width ?? 300,
+        height: memo.height ?? 200,
+    });
+    const nextMemoWidth = memo.width ?? 300;
+    const nextMemoHeight = memo.height ?? 200;
+    if (
+        !isEditing
+        && (
+            syncedFrame.x !== memo.x
+            || syncedFrame.y !== memo.y
+            || syncedFrame.width !== nextMemoWidth
+            || syncedFrame.height !== nextMemoHeight
+        )
+    ) {
+        const nextFrame = {
+            x: memo.x,
+            y: memo.y,
+            width: nextMemoWidth,
+            height: nextMemoHeight,
+        };
+        setSyncedFrame(nextFrame);
+        setMemoState(nextFrame);
     }
 
     const [memoContent, setMemoContent] = useState(memo.content);
     const [memoColor, setMemoColor] = useState(memo.color);
+    const [syncedContent, setSyncedContent] = useState({ content: memo.content, color: memo.color });
+    if (!isEditing && (syncedContent.content !== memo.content || syncedContent.color !== memo.color)) {
+        setSyncedContent({ content: memo.content, color: memo.color });
+        setMemoContent(memo.content);
+        setMemoColor(memo.color);
+    }
 
     const insertMemo = useCallback(() => {
         onInsert(

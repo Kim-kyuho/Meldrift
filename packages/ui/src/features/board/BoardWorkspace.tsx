@@ -51,6 +51,9 @@ import HelpOverlay from "../guide/HelpOverlay";
 import TutorialGuide, { TutorialLinkZones } from "../guide/TutorialGuide";
 import type { BoardHelpOptions, BoardTutorialOptions } from "../guide/board-guide";
 import { useIsMobile } from "../../shared/useIsMobile";
+import { useCompactViewport } from "../../shared/useCompactViewport";
+import BoardSplitLayout from "../markdown/BoardSplitLayout";
+import { useLinearMarkdownDraft } from "../markdown/useLinearMarkdownDraft";
 import PresenceBar from "../collaboration/PresenceBar";
 import CollaborationLayer from "../collaboration/CollaborationLayer";
 import { blockedText, useBoardCollaboration } from "../collaboration/useBoardCollaboration";
@@ -349,6 +352,7 @@ export default function BoardWorkspace({
         editingTableId !== null;
 
     const isMobile = useIsMobile();
+    const isCompactViewport = useCompactViewport();
     // 데스크톱 다이어그램 편집 패널은 메모 순서 패널과 같은 자리를 쓰므로, 편집하는 동안 메모 순서 패널을 가린다.
     const mermaidEditorPanelOpen = editingMermaidId !== null && !isMobile;
 
@@ -433,7 +437,27 @@ export default function BoardWorkspace({
         onClearSelection: handleClearSelection,
     });
 
-    const selectionActive = selectionMode && !isEditing && !hasPendingAiCards;
+    const snapshot = useMemo<BoardSnapshot>(
+        () => tagRemoteSeq({ board: currentBoard, memos, images, mermaids, tables, strokes }, appliedRemoteSeq),
+        [currentBoard, memos, images, mermaids, tables, strokes, appliedRemoteSeq],
+    );
+    const commitMarkdownDraftRef = useRef<(next: BoardSnapshot, clearDraft: () => void) => Promise<boolean>>(async () => false);
+    const linearMarkdown = useLinearMarkdownDraft({
+        open: markdownViewOpen,
+        canEdit: canEditCard,
+        committedSnapshot: snapshot,
+        onCommit: (nextSnapshot, clearDraft) => commitMarkdownDraftRef.current(nextSnapshot, clearDraft),
+        onClose: () => setMarkdownViewOpen(false),
+        onMessage: setBoardMessage,
+    });
+    const hasPendingMarkdownDraft = linearMarkdown.isDirty;
+    const displaySnapshot = linearMarkdown.displaySnapshot;
+    const displayMemos = displaySnapshot.memos;
+    const displayImages = displaySnapshot.images;
+    const displayMermaids = displaySnapshot.mermaids;
+    const displayTables = displaySnapshot.tables;
+
+    const selectionActive = selectionMode && !isEditing && !hasPendingAiCards && !hasPendingMarkdownDraft;
     const cardsSelected = selectionActive && selectedCards.length > 0;
     const groupOffset = selectionOffset ? clampSelectionOffset(selectionOffset) : null;
     const selectedCardKeys = useMemo(
@@ -447,7 +471,7 @@ export default function BoardWorkspace({
     );
 
     const cornerLinks = useMemo(() => resolveMemoCornerLinks(
-        memos.map((memo) => {
+        displayMemos.map((memo) => {
             const offset = groupOffsetOf("memo", memo.id);
             return {
                 id: memo.id,
@@ -459,7 +483,7 @@ export default function BoardWorkspace({
             };
         }),
         [
-            ...images.map((image) => {
+            ...displayImages.map((image) => {
                 const offset = groupOffsetOf("image", image.imageId);
                 return {
                     type: "image" as const,
@@ -471,7 +495,7 @@ export default function BoardWorkspace({
                     height: image.height,
                 };
             }),
-            ...mermaids.map((mermaid) => {
+            ...displayMermaids.map((mermaid) => {
                 const offset = groupOffsetOf("mermaid", mermaid.id);
                 return {
                     type: "mermaid" as const,
@@ -483,7 +507,7 @@ export default function BoardWorkspace({
                     height: mermaid.height,
                 };
             }),
-            ...tables.map((table) => {
+            ...displayTables.map((table) => {
                 const offset = groupOffsetOf("table", table.id);
                 return {
                     type: "table" as const,
@@ -496,13 +520,9 @@ export default function BoardWorkspace({
                 };
             }),
         ],
-    ), [memos, images, mermaids, tables, groupOffsetOf]);
+    ), [displayMemos, displayImages, displayMermaids, displayTables, groupOffsetOf]);
 
-    const snapshot = useMemo<BoardSnapshot>(
-        () => tagRemoteSeq({ board: currentBoard, memos, images, mermaids, tables, strokes }, appliedRemoteSeq),
-        [currentBoard, memos, images, mermaids, tables, strokes, appliedRemoteSeq],
-    );
-    const savePaused = isEditing || drawingMode || hasPendingAiCards;
+    const savePaused = isEditing || drawingMode || hasPendingAiCards || hasPendingMarkdownDraft;
     const pointerActive = useBoardPointerActive(cardLocationRef);
     const applyContent = useCallback((next: BoardContent) => {
         setMemos(next.memos);
@@ -535,7 +555,7 @@ export default function BoardWorkspace({
         || tables.some((card) => card.id < 0);
     const history = useBoardHistory({
         snapshot,
-        paused: pointerActive || drawingInputActive || draggingMemoId !== null || hasDraftCards || hasPendingAiCards || aiSending || aiSaving,
+        paused: pointerActive || drawingInputActive || draggingMemoId !== null || hasDraftCards || hasPendingAiCards || hasPendingMarkdownDraft || aiSending || aiSaving,
         onRestore: applyContent,
     });
     const resetHistory = history.reset;
@@ -556,7 +576,8 @@ export default function BoardWorkspace({
         || uploadingImage
         || aiSending
         || aiSaving
-        || hasPendingAiCards;
+        || hasPendingAiCards
+        || hasPendingMarkdownDraft;
     const restoreHistory = (action: () => void) => {
         if (!historyBlocked && !document.querySelector('[aria-modal="true"], dialog[open]')) {
             action();
@@ -579,6 +600,22 @@ export default function BoardWorkspace({
         clearSelection: handleClearSelection,
         setMessage: setBoardMessage,
     });
+    useEffect(() => {
+        commitMarkdownDraftRef.current = async (nextSnapshot: BoardSnapshot, clearDraft: () => void) => {
+            if (!canEditCard) {
+                setBoardMessage(permissionMessage);
+                return false;
+            }
+            const keys = touchedKeysOf(diffBoardSnapshots(snapshot, nextSnapshot));
+            let committed = false;
+            await collab.guard(keys, () => {
+                clearDraft();
+                applyContent(nextSnapshot);
+                committed = true;
+            }, "edit");
+            return committed;
+        };
+    }, [canEditCard, permissionMessage, snapshot, collab, applyContent]);
     // 협업 중에는 되돌릴 변경이 건드리는 카드의 잠금을 먼저 얻는다. 남이 편집 중이면 되돌리지 않는다.
     const stepHistory = (direction: "undo" | "redo") => restoreHistory(() => {
         const step = live ? history.peek(direction) : null;
@@ -624,12 +661,33 @@ export default function BoardWorkspace({
             setTables((previous) => previous.map((card) => card.id === id ? { ...card, ...frame } : card));
         }
     };
+    const canEditCanvas = canEditCard && !hasPendingMarkdownDraft;
+    const showCanvasBlockedMessage = () => {
+        setBoardMessage(
+            hasPendingMarkdownDraft
+                ? "Apply or discard your Markdown changes first."
+                : permissionMessage,
+        );
+    };
     const withPermission = (action: () => void) => () => {
-        if (!canEditCard) {
-            showPermissionMessage();
+        if (!canEditCanvas) {
+            showCanvasBlockedMessage();
             return;
         }
         action();
+    };
+
+    const handleOpenMarkdownView = () => {
+        setMenuOpen(false);
+        setEditingMemoId(null);
+        setEditingImageId(null);
+        setEditingMermaidId(null);
+        setEditingTableId(null);
+        handleClearSelection();
+        if (drawingMode) {
+            handleToggleDrawingMode();
+        }
+        setMarkdownViewOpen(true);
     };
 
     const closeModePanels = () => {
@@ -687,26 +745,69 @@ export default function BoardWorkspace({
                 className="hidden"
                 onChange={handleUploadImage}
             />
-            <BoardControls
-                storage={storage}
-                renderMenu={renderMenu}
-                menuTitle={menuTitle ?? currentBoard.title}
-                snapshot={snapshot}
-                savePaused={savePaused}
-                canSave={canEditProp}
-                canEdit={canEditCard}
-                canExport={canExport}
-                canReplace={canReplace}
-                collaborationMenu={collaborationMenu}
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-                reorderOpen={reorderOpen}
-                onReorder={handleToggleReorderPanel}
-                onCompileMarkdown={() => setMarkdownViewOpen(true)}
-                onAbout={() => setAboutOpen(true)}
-                replaceSnapshot={replaceBoardContent}
-                setMessage={setBoardMessage}
+            {aboutOpen && (
+                <AboutModal onClose={() => setAboutOpen(false)} />
+            )}
+            <BoardMessage
+                variant="toast"
+                message={boardMessage}
+                onDismiss={() => setBoardMessage("")}
             />
+            <BoardMessage
+                variant="toast"
+                message={memoMessage}
+                onDismiss={() => setMemoMessage("")}
+            />
+            <BoardSplitLayout
+                open={markdownViewOpen}
+                compact={isCompactViewport}
+                scrollRef={cardLocationRef}
+                panel={markdownViewOpen ? (
+                    <BoardMarkdownView
+                        snapshot={displaySnapshot}
+                        canEdit={canEditCard}
+                        isDirty={linearMarkdown.isDirty}
+                        applying={linearMarkdown.applying}
+                        closeConfirmOpen={linearMarkdown.closeConfirmOpen}
+                        onClose={linearMarkdown.requestClose}
+                        onApply={() => { void linearMarkdown.applyDraft(); }}
+                        onApplyAndClose={() => { void linearMarkdown.handleApplyAndClose(); }}
+                        onDiscardAndClose={linearMarkdown.handleDiscardAndClose}
+                        onKeepEditing={linearMarkdown.handleKeepEditing}
+                        onEditMemoHtml={linearMarkdown.editMemoHtml}
+                        onEditTableSource={linearMarkdown.editTableSource}
+                        onEditMermaidSource={linearMarkdown.editMermaidSource}
+                        onEditImageLabel={linearMarkdown.editImageLabel}
+                        onAddSection={linearMarkdown.addSection}
+                        onAddTableToSection={linearMarkdown.addTableToSection}
+                        onAddMermaidToSection={linearMarkdown.addMermaidToSection}
+                        onAddImageToSection={linearMarkdown.addImageToSection}
+                        onReorderSection={linearMarkdown.reorderSection}
+                        onFocusMemo={focusMemoById}
+                    />
+                ) : null}
+                canvas={(
+                    <>
+                        <BoardControls
+                            storage={storage}
+                            renderMenu={renderMenu}
+                            menuTitle={menuTitle ?? currentBoard.title}
+                            snapshot={snapshot}
+                            savePaused={savePaused}
+                            canSave={canEditProp}
+                            canEdit={canEditCard}
+                            canExport={canExport}
+                            canReplace={canReplace}
+                            collaborationMenu={collaborationMenu}
+                            menuOpen={menuOpen}
+                            setMenuOpen={setMenuOpen}
+                            reorderOpen={reorderOpen}
+                            onReorder={handleToggleReorderPanel}
+                            onCompileMarkdown={handleOpenMarkdownView}
+                            onAbout={() => setAboutOpen(true)}
+                            replaceSnapshot={replaceBoardContent}
+                            setMessage={setBoardMessage}
+                        />
             {help && (
                 <HelpOverlay
                     guide={help.guide}
@@ -819,8 +920,8 @@ export default function BoardWorkspace({
                     draggingMemoId={draggingMemoId}
                     dragOffsetY={dragOffsetY}
                     onDragStart={(event, memoId) => {
-                        if (!canEditCard) {
-                            showPermissionMessage();
+                        if (!canEditCanvas) {
+                            showCanvasBlockedMessage();
                             return;
                         }
                         const orderLock = collab.foreignLock(memoOrderKey);
@@ -833,15 +934,6 @@ export default function BoardWorkspace({
                     onRowClick={handleRowClick}
                     onClose={handleCloseReorderPanel}
                 />
-            )}
-            {markdownViewOpen && (
-                <BoardMarkdownView
-                    snapshot={snapshot}
-                    onClose={() => setMarkdownViewOpen(false)}
-                />
-            )}
-            {aboutOpen && (
-                <AboutModal onClose={() => setAboutOpen(false)} />
             )}
             {assistantEnabled && <AiAssistantButton aiPanelOpen={aiPanelOpen} onToggle={handleToggleAiPanel} />}
             {assistantEnabled && aiPanelOpen && (aiUnlocked ? (
@@ -864,19 +956,9 @@ export default function BoardWorkspace({
                     onClose={handleToggleAiPanel}
                 />
             ))}
-            <BoardMessage
-                variant="toast"
-                message={boardMessage}
-                onDismiss={() => setBoardMessage("")}
-            />
-            <BoardMessage
-                variant="toast"
-                message={memoMessage}
-                onDismiss={() => setMemoMessage("")}
-            />
 
             <main
-                className="h-screen w-screen select-none bg-neutral-200 relative"
+                className="h-full w-full select-none bg-neutral-200 relative"
                 onClick={() => {
                     setBoardMessage("");
                     setMemoMessage("");
@@ -929,7 +1011,7 @@ export default function BoardWorkspace({
                                 cursor: boardCursor,
                             }}
                         >
-                            {images.map((image) => collab.wrapCard("image", image, `${contentVersion}:${image.imageId}`, (
+                            {displayImages.map((image) => collab.wrapCard("image", image, `${contentVersion}:${image.imageId}`, (
                                 <ImageCard
                                     key={`${contentVersion}:${image.imageId}:${collab.versionOf("image", image.syncId)}`}
                                     image={image}
@@ -937,8 +1019,8 @@ export default function BoardWorkspace({
                                     isEditing={editingImageId === image.imageId}
                                     groupOffset={groupOffsetOf("image", image.imageId)}
                                     onEditing={() => {
-                                        if (!canEditCard) {
-                                            showPermissionMessage();
+                                        if (!canEditCanvas) {
+                                            showCanvasBlockedMessage();
                                             return;
                                         }
                                         collab.requestEdit("image", image.imageId, () => {
@@ -958,20 +1040,20 @@ export default function BoardWorkspace({
                                     onSendToBack={() => handleCardLayer("image", image.imageId, "back")}
                                 />
                             )))}
-                            {memos.map((memo) => collab.wrapCard("memo", memo, `${contentVersion}:${memo.id}`, (
+                            {displayMemos.map((memo) => collab.wrapCard("memo", memo, `${contentVersion}:${memo.id}`, (
                                 <MemoCard
                                     key={`${contentVersion}:${memo.id}:${collab.versionOf("memo", memo.syncId)}`}
                                     memo={memo}
                                     zoom={boardZoom}
-                                    canEdit={canEditCard}
+                                    canEdit={canEditCanvas}
                                     isEditing={editingMemoId === memo.id}
                                     isFocused={focusedMemoId === memo.id}
                                     groupOffset={groupOffsetOf("memo", memo.id)}
                                     onFocus={() => setFocusedMemoId(memo.id)}
                                     onFocusClear={() => setFocusedMemoId(null)}
                                     onEditing={() => {
-                                        if (!canEditCard) {
-                                            showPermissionMessage();
+                                        if (!canEditCanvas) {
+                                            showCanvasBlockedMessage();
                                             return;
                                         }
                                         collab.requestEdit("memo", memo.id, () => {
@@ -983,7 +1065,7 @@ export default function BoardWorkspace({
                                         });
                                     }}
                                     onEditingClear={() => setEditingMemoId(null)}
-                                    onPermissionDenied={showPermissionMessage}
+                                    onPermissionDenied={showCanvasBlockedMessage}
                                     onInsert={handleInsertMemo}
                                     onUpdate={handleUpdateMemo}
                                     onGeometryChange={(geometry) => handleGeometryChange("memo", memo.id, geometry)}
@@ -992,17 +1074,17 @@ export default function BoardWorkspace({
                                     onSendToBack={() => handleCardLayer("memo", memo.id, "back")}
                                 />
                             )))}
-                            {mermaids.map((mermaid) => collab.wrapCard("mermaid", mermaid, `${contentVersion}:${mermaid.id}`, (
+                            {displayMermaids.map((mermaid) => collab.wrapCard("mermaid", mermaid, `${contentVersion}:${mermaid.id}`, (
                                 <MermaidCard
                                     key={`${contentVersion}:${mermaid.id}:${collab.versionOf("mermaid", mermaid.syncId)}`}
                                     mermaid={mermaid}
                                     zoom={boardZoom}
-                                    canEdit={canEditCard}
+                                    canEdit={canEditCanvas}
                                     isEditing={editingMermaidId === mermaid.id}
                                     groupOffset={groupOffsetOf("mermaid", mermaid.id)}
                                     onEditing={() => {
-                                        if (!canEditCard) {
-                                            showPermissionMessage();
+                                        if (!canEditCanvas) {
+                                            showCanvasBlockedMessage();
                                             return;
                                         }
                                         collab.requestEdit("mermaid", mermaid.id, () => {
@@ -1015,7 +1097,7 @@ export default function BoardWorkspace({
                                         });
                                     }}
                                     onEditingClear={() => setEditingMermaidId(null)}
-                                    onPermissionDenied={showPermissionMessage}
+                                    onPermissionDenied={showCanvasBlockedMessage}
                                     onInsert={handleInsertMermaid}
                                     onUpdate={handleUpdateMermaid}
                                     onGeometryChange={(geometry) => handleGeometryChange("mermaid", mermaid.id, geometry)}
@@ -1024,17 +1106,17 @@ export default function BoardWorkspace({
                                     onSendToBack={() => handleCardLayer("mermaid", mermaid.id, "back")}
                                 />
                             )))}
-                            {tables.map((table) => collab.wrapCard("table", table, `${contentVersion}:${table.id}`, (
+                            {displayTables.map((table) => collab.wrapCard("table", table, `${contentVersion}:${table.id}`, (
                                 <TableCard
                                     key={`${contentVersion}:${table.id}:${collab.versionOf("table", table.syncId)}`}
                                     table={table}
                                     zoom={boardZoom}
-                                    canEdit={canEditCard}
+                                    canEdit={canEditCanvas}
                                     isEditing={editingTableId === table.id}
                                     groupOffset={groupOffsetOf("table", table.id)}
                                     onEditing={() => {
-                                        if (!canEditCard) {
-                                            showPermissionMessage();
+                                        if (!canEditCanvas) {
+                                            showCanvasBlockedMessage();
                                             return;
                                         }
                                         collab.requestEdit("table", table.id, () => {
@@ -1047,7 +1129,7 @@ export default function BoardWorkspace({
                                         });
                                     }}
                                     onEditingClear={() => setEditingTableId(null)}
-                                    onPermissionDenied={showPermissionMessage}
+                                    onPermissionDenied={showCanvasBlockedMessage}
                                     onInsert={handleInsertTable}
                                     onUpdate={handleUpdateTable}
                                     onGeometryChange={(geometry) => handleGeometryChange("table", table.id, geometry)}
@@ -1057,7 +1139,7 @@ export default function BoardWorkspace({
                                 />
                             )))}
                             <BoardCornerLinksLayer links={cornerLinks} />
-                            {tutorial?.step === 4 && <TutorialLinkZones memos={snapshot.memos} />}
+                            {tutorial?.step === 4 && <TutorialLinkZones memos={displayMemos} />}
                             <DrawingLayer
                                 key={`${contentVersion}:${drawingMode ? "drawing-active" : "drawing-inactive"}`}
                                 strokes={strokes}
@@ -1090,6 +1172,9 @@ export default function BoardWorkspace({
                     </div>
                 </div>
             </main>
+                    </>
+                )}
+            />
         </>
     );
 }

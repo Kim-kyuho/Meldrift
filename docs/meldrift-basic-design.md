@@ -282,7 +282,8 @@ Mermaid 카드 편집 중 다이어그램 캔버스에서 노드·화살표를 �
 1. `sortMemosByOrder`로 메모를 `(sortOrder, id)` 순으로 순회한다.
 2. 각 메모의 HTML을 Turndown(`atx` 헤딩, `-` 목록, `fenced` 코드 블록, `~~취소선~~` 규칙)으로 변환한다.
 3. 메모의 네 꼭짓점을 **`TL → TR → BL → BR`** 순으로 스캔해 반경 `50px` 이내 최상위 카드(Image/Mermaid/Table)를 출력한다(문서당 카드 1회 중복 방지).
-4. 로컬 이미지가 있으면 `images/image-{imageId}.png` 자산과 Markdown을 `.zip`으로, 없으면 `.md` 파일로 내려받는다. Plus 서버는 `GET /api/boards/[boardId]/markdown`으로도 동일 문서를 제공한다.
+4. 브라우저에서는 Markdown과 연결된 로컬 이미지 자산을 ZIP으로 내려받는다. Plus 서버는 `GET /api/boards/[boardId]/markdown`으로 저장된 보드의 Markdown을 제공한다.
+5. 컴파일 화면은 메모·첨부를 선형으로 편집할 수 있다. 초안은 편집기와 캔버스에 표시되며 `Apply`에서 보드에 반영한다. 이미지 준비 중에는 적용을 기다린다. 자세한 동작은 [Markdown 상세설계](./shared/markdown-export.md)를 참고한다.
 
 ### 12.2 임포트 (`importMarkdownToBoard`)
 
